@@ -169,6 +169,16 @@ class DashboardController extends Controller
 
         $user = Auth::user();
         
+        // Admin has direct access to all portals
+        if ($user->role === 'admin') {
+            $parsedUrl = parse_url($client->redirect);
+            $baseUrl = ($parsedUrl['scheme'] ?? 'http') . '://' . ($parsedUrl['host'] ?? '');
+            if (isset($parsedUrl['port'])) {
+                $baseUrl .= ':' . $parsedUrl['port'];
+            }
+            return redirect($baseUrl . '/login');
+        }
+
         // Cek apakah user memiliki akses ke aplikasi ini (tabel client_user_access)
         $access = $user->accessedClients()->where('client_id', $client->id)->first();
 
@@ -289,12 +299,25 @@ class DashboardController extends Controller
     {
         try {
             $user = $request->user();
+            $allowedRoles = array_merge(['admin'], User::ROLES);
+
             $request->validate([
                 'name' => 'required|string|max:255',
                 'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
                 'phone' => 'nullable|string|max:20',
-                'role' => 'required|string|in:' . implode(',', User::ROLES),
+                'role' => 'required|string|in:' . implode(',', $allowedRoles),
             ]);
+
+            // Jika user adalah admin, langsung update data tanpa persetujuan
+            if ($user->role === 'admin') {
+                $user->update([
+                    'name' => $request->name,
+                    'email' => $request->email,
+                    'phone' => $request->phone,
+                    'role' => $request->role,
+                ]);
+                return back()->with('success', 'Profil Anda berhasil diperbarui.');
+            }
 
             // Update or create pending request
             ProfileUpdateRequest::updateOrCreate(
@@ -312,7 +335,7 @@ class DashboardController extends Controller
 
             return back()->with('success', 'Permintaan perubahan profil berhasil diajukan dan sedang menunggu persetujuan Admin.');
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Gagal mengajukan perubahan profil: ' . $e->getMessage()]);
+            return back()->withErrors(['error' => 'Gagal memproses perubahan profil: ' . $e->getMessage()]);
         }
     }
 

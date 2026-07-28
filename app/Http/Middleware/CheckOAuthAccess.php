@@ -23,6 +23,10 @@ class CheckOAuthAccess
                 $client = Client::find($clientId);
 
                 if ($client) {
+                    if ($user->role === 'admin') {
+                        return $next($request);
+                    }
+
                     $access = $user->accessedClients()->where('client_id', $clientId)->first();
 
                     if (!$access || $access->pivot->status !== 'approved') {
