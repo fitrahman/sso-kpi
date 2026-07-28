@@ -12,6 +12,8 @@ class User extends Authenticatable
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, HasApiTokens;
 
+    const ROLES = ['Humas', 'Manajerial', 'Kepegawaian', 'Hukum', 'Visualisasi Data', 'Pengawasan Siaran'];
+
     /**
      * The attributes that are mass assignable.
      *
@@ -21,7 +23,9 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'phone',
         'role',
+        'status',
         'email_verified_at',
     ];
 
@@ -48,19 +52,23 @@ class User extends Authenticatable
         ];
     }
 
-    // // Scope for filtering users by role
-    // public function scopeByRole($query, $role)
-    // {
-    //     return $query->where('role', $role);
-    // }
-
     public function isAdmin()
     {
         return $this->role === 'admin';
     }
 
-    public function isUser()
+    /**
+     * Get the clients that the user has requested/been approved access for.
+     */
+    public function accessedClients()
     {
-        return $this->role === 'user';
+        return $this->belongsToMany(\Laravel\Passport\Client::class, 'client_user_access', 'user_id', 'client_id')
+                    ->withPivot('status')
+                    ->withTimestamps();
+    }
+
+    public function isStaff()
+    {
+        return in_array($this->role, self::ROLES);
     }
 }

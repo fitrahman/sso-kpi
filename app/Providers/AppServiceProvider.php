@@ -25,18 +25,17 @@ class AppServiceProvider extends ServiceProvider
         Passport::refreshTokensExpireIn(now()->addDays(30));
         Passport::personalAccessTokensExpireIn(now()->addMonths(6));
 
+
         // Define OAuth2 Scopes
-        // Passport::tokensCan([
-        //     'user-read'  => 'Read user information',
-        //     'user-write' => 'Create, update, and delete users',
-        //     // 'post-read'  => 'Read posts',
-        //     // 'post-write' => 'Create, update, and delete posts',
-        //     'admin'      => 'Full administrative access',
-        // ]);
+        Passport::tokensCan([
+            'admin-access' => 'Access admin panel',
+            'user-read'    => 'Read user information',
+            'user-write'   => 'Create, update, and delete users',
+        ]);
 
         // Default scope
-        // Passport::setDefaultScope([
-        //     'user-read',
-        // ]);
+        Passport::setDefaultScope([
+            'user-read',
+        ]);
     }
 }

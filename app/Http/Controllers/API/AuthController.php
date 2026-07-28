@@ -21,7 +21,8 @@ class AuthController extends Controller
                 'name'     => 'required|string|max:255',
                 'email'    => 'required|string|email|max:255|unique:users',
                 'password' => 'required|string|min:8|confirmed',
-                'role'     => 'required|in:admin,user',
+                'phone'    => 'nullable|string|max:15',
+                'role'     => 'required|in:' . implode(',', User::ROLES),
             ]);
 
             if ($validator->fails()) {
@@ -36,24 +37,14 @@ class AuthController extends Controller
                 'name'     => $request->name,
                 'email'    => $request->email,
                 'password' => Hash::make($request->password),
+                'phone'    => $request->phone,
                 'role'     => $request->role,
+                'status'   => 'pending',
             ]);
 
-            // $scopes = $user->isAdmin() ? ['admin-access', 'user-read', 'user-write'] : ['user-read'];
-
-            // $token = $user->createToken('AuthToken', $scopes)->accessToken;
-
-            // Create token WITHOUT scopes (this fixes the error)
-            $token = $user->createToken('AuthToken')->accessToken;
-
             return response()->json([
-                'success' => true,
-                'message' => 'User registered successfully',
-                'data'    => [
-                    'user'         => $user,
-                    'access_token' => $token,
-                    'token_type'   => 'Bearer',
-                ],
+                'message' => 'Registration successful! Waiting for approval.',
+                'user'    => $user,
             ], 201);
 
         } catch (\Exception $e) {
@@ -88,18 +79,19 @@ class AuthController extends Controller
 
             if (! Auth::attempt($credentials)) {
                 return response()->json([
-                    'success' => false,
                     'message' => 'Invalid credentials',
                 ], 401);
             }
 
             $user = Auth::user();
-            // $scopes = $user->isAdmin() ? ['admin-access', 'user-read', 'user-write'] : ['user-read'];
+            if ($user->status === 'pending') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Akun Anda masih menunggu persetujuan dari Administrator.',
+                ], 403);
+            }
 
-            // $token = $user->createToken('AuthToken', $scopes)->accessToken;
-
-            // Create token WITHOUT scopes
-            $token = $user->createToken('AuthToken')->accessToken;
+            $token = $user->createToken('API Token')->accessToken;
 
             return response()->json([
                 'success' => true,

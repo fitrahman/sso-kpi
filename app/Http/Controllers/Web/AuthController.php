@@ -24,6 +24,18 @@ class AuthController extends Controller
     }
 
     /**
+     * Show registration form
+     */
+    public function showRegisterForm()
+    {
+        if (Auth::check()) {
+            return redirect()->route('dashboard');
+        }
+
+        return view('auth.register');
+    }
+
+    /**
      * Handle login request
      */
     public function login(Request $request)
@@ -42,18 +54,28 @@ class AuthController extends Controller
 
             if (! Auth::attempt($credentials)) {
                 return back()
-                    ->withErrors(['email' => 'Invalid credentials'])
+                    ->withErrors(['email' => 'Email atau kata sandi yang Anda masukkan salah.'])
+                    ->withInput();
+            }
+
+            $user = Auth::user();
+            if ($user->status === 'pending') {
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                return back()
+                    ->withErrors(['email' => 'Akun Anda masih menunggu persetujuan dari Administrator.'])
                     ->withInput();
             }
 
             $request->session()->regenerate();
 
-            return redirect()->intended('dashboard')
-                ->with('success', 'Login successful!');
+            return redirect()->intended('dashboard');
 
         } catch (\Exception $e) {
             return back()
-                ->withErrors(['error' => 'Login failed: ' . $e->getMessage()])
+                ->withErrors(['error' => 'Gagal masuk: ' . $e->getMessage()])
                 ->withInput();
         }
     }
@@ -68,7 +90,8 @@ class AuthController extends Controller
                 'name'              => 'required|string|max:255',
                 'email'             => 'required|string|email|max:255|unique:users',
                 'password'          => 'required|string|min:8|confirmed',
-                'role'              => 'required|in:admin,user',
+                'phone'             => 'nullable|string|max:20',
+                'role'              => 'required|string|in:' . implode(',', User::ROLES),
                 'email_verified_at' => 'nullable|date',
             ]);
 
@@ -80,15 +103,14 @@ class AuthController extends Controller
                 'name'              => $request->name,
                 'email'             => $request->email,
                 'password'          => Hash::make($request->password),
+                'phone'             => $request->phone,
                 'role'              => $request->role,
+                'status'            => 'pending',
                 'email_verified_at' => $request->email_verified_at ? Carbon::parse($request->email_verified_at) : now(),
             ]);
 
-            Auth::login($user);
-            $request->session()->regenerate();
-
-            return redirect()->route('dashboard')
-                ->with('success', 'Registration successful!');
+            return redirect()->route('register.pending')
+                ->with('success', 'Registration successful! Waiting for approval.');
 
         } catch (\Exception $e) {
             return back()
@@ -113,6 +135,23 @@ class AuthController extends Controller
         } catch (\Exception $e) {
             return back()
                 ->withErrors(['error' => 'Logout failed: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Handle SSO Logout request (from client applications)
+     */
+    public function ssoLogout(Request $request)
+    {
+        try {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            $redirectUrl = $request->query('redirect', route('login'));
+            return redirect($redirectUrl)->with('success', 'Berhasil logout dari sistem SSO.');
+        } catch (\Exception $e) {
+            return redirect()->route('login')->withErrors(['error' => 'Logout gagal: ' . $e->getMessage()]);
         }
     }
 }

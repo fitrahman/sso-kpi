@@ -1,0 +1,38 @@
+<?php
+
+namespace App\Http\Middleware;
+
+use Closure;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Laravel\Passport\Client;
+
+class CheckOAuthAccess
+{
+    /**
+     * Handle an incoming request.
+     */
+    public function handle(Request $request, Closure $next)
+    {
+        // Hanya proses rute /oauth/authorize (menggunakan GET karena redirect dari klien)
+        if ($request->is('oauth/authorize') && $request->isMethod('get') && Auth::check()) {
+            $clientId = $request->query('client_id');
+            
+            if ($clientId) {
+                $user = Auth::user();
+                $client = Client::find($clientId);
+
+                if ($client) {
+                    $access = $user->accessedClients()->where('client_id', $clientId)->first();
+
+                    if (!$access || $access->pivot->status !== 'approved') {
+                        // Arahkan ke gateway agar menampilkan halaman request akses / pending
+                        return redirect()->route('app.gateway', ['appName' => $client->name]);
+                    }
+                }
+            }
+        }
+
+        return $next($request);
+    }
+}
