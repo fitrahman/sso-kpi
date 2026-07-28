@@ -87,3 +87,43 @@ Gunakan akun tes berikut untuk masuk dan menguji alur sistem:
 7. Anda akan melihat daftar permintaan perubahan data dengan format perbandingan data lama vs data baru.
 8. Klik **Setujui** (atau **Tolak**).
 9. Jika disetujui, data pengguna di tabel `users` akan diperbarui secara otomatis.
+
+---
+
+## 🌐 Integrasi Aplikasi Klien (Lokal & Produksi/Global)
+
+Agar aplikasi klien (seperti Sistem Informasi, Dashboard internal, dll.) dapat terhubung ke portal **SSO KPI** ini (baik di lingkungan lokal maupun setelah di-deploy ke server produksi/global), ikuti panduan berikut:
+
+### 1. Dapatkan Kredensial OAuth Client
+1. Masuk ke database/admin panel **SSO KPI Portal** Anda.
+2. Daftarkan entri baru di tabel `oauth_clients` untuk aplikasi klien Anda untuk mendapatkan **Client ID** dan **Client Secret** (bisa dibuat secara otomatis menggunakan Laravel Passport CLI: `php artisan passport:client`).
+3. Tentukan **Redirect URL** (alamat callback pada aplikasi klien Anda di mana portal akan mengarahkan kembali setelah login sukses).
+
+### 2. Konfigurasi di Sisi Aplikasi Klien
+Pada berkas `.env` aplikasi klien Anda, tambahkan/sesuaikan variabel berikut:
+
+```env
+# ==========================================
+# SSO Passport Configuration
+# ==========================================
+
+# 1. Masukkan Client ID yang didapatkan dari SSO Portal
+SSO_CLIENT_ID="MASUKKAN_CLIENT_ID_ANDA"
+
+# 2. Masukkan Client Secret yang didapatkan dari SSO Portal
+SSO_CLIENT_SECRET="MASUKKAN_CLIENT_SECRET_ANDA"
+
+# 3. Alamat callback sistem klien Anda (harus sama persis dengan yang didaftarkan di SSO)
+SSO_REDIRECT_URI="http://nama-sistem-klien.test/auth/sso/callback"
+
+# 4. Alamat host SSO Portal (Pusat Autentikasi)
+# Gunakan http://sso-kpi.test untuk lokal Laragon, atau ganti ke domain produksi global Anda (misal: https://sso.kpi.go.id)
+SSO_HOST="http://sso-kpi.test"
+```
+
+### 3. Bersihkan Cache Klien
+Setelah memperbarui konfigurasi `.env` pada aplikasi klien, bersihkan cache agar konfigurasi baru terbaca:
+```bash
+php artisan config:clear
+php artisan cache:clear
+```
