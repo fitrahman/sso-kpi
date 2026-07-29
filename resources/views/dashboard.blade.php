@@ -177,6 +177,20 @@
                 </div>
             </a>
 
+            <a href="{{ route('app.gateway', ['appName' => 'Sistem 3']) }}" class="group block bg-white rounded-2xl border border-slate-200 p-6 shadow-sm transition-all duration-300 app-card-hover relative overflow-hidden">
+                <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <svg class="w-24 h-24 text-blue-600 transform rotate-12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                </div>
+                <div class="w-14 h-14 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center mb-6 shadow-sm group-hover:scale-110 transition-transform duration-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                </div>
+                <h3 class="text-xl font-bold text-slate-900 mb-2 group-hover:text-blue-700 transition-colors">Sistem Kepegawaian</h3>
+                <p class="text-sm text-slate-500 font-medium">Sistem Kepegawaian</p>
+                <div class="mt-6 flex items-center text-sm font-bold text-blue-600 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
+                    Buka Aplikasi <svg class="w-4 h-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                </div>
+            </a>
+
         </div>
 
     </main>
@@ -241,8 +255,11 @@
                         @else
                             <div class="flex flex-wrap gap-1.5">
                                 @forelse ($approvedApps as $app)
+                                    @php
+                                        $clientRole = $user->clientRoles->where('oauth_client_id', $app->id)->first()?->role ?? 'viewer';
+                                    @endphp
                                     <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-green-50 text-green-700 border border-green-100">
-                                        {{ $app->name }}
+                                        {{ $app->name }} ({{ ucfirst($clientRole) }})
                                     </span>
                                 @empty
                                     <span class="text-xs font-medium text-slate-400 italic">Belum memiliki akses portal apa pun. Hubungi Administrator.</span>

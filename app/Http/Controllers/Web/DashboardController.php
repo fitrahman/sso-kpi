@@ -22,6 +22,7 @@ class DashboardController extends Controller
     {
         try {
             $user = $request->user();
+            $user->load('clientRoles');
             
             $approvedApps = $user->accessedClients()
                 ->where('client_user_access.status', 'approved')
