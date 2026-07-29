@@ -244,22 +244,6 @@
                                                     </a>
                                                     
                                                     @if ($user->role !== 'admin' && $user->id !== Auth::id())
-                                                        @if ($user->status === 'approved')
-                                                            <form action="{{ route('admin.users.deactivate', $user->id) }}" method="POST" class="inline-block">
-                                                                @csrf
-                                                                <button type="submit" class="inline-flex items-center px-3 py-1.5 bg-amber-600 border border-transparent rounded-md text-xs font-semibold text-white hover:bg-amber-700 shadow-sm">
-                                                                    Nonaktifkan
-                                                                </button>
-                                                            </form>
-                                                        @elseif ($user->status === 'inactive')
-                                                            <form action="{{ route('admin.users.activate', $user->id) }}" method="POST" class="inline-block">
-                                                                @csrf
-                                                                <button type="submit" class="inline-flex items-center px-3 py-1.5 bg-green-600 border border-transparent rounded-md text-xs font-semibold text-white hover:bg-green-700 shadow-sm">
-                                                                    Aktifkan
-                                                                </button>
-                                                            </form>
-                                                        @endif
-
                                                         <form action="{{ route('admin.users.delete', $user->id) }}" method="POST" class="inline-block" onsubmit="return confirm('Apakah Anda yakin ingin menghapus akun ini secara permanen?');">
                                                             @csrf
                                                             @method('DELETE')
