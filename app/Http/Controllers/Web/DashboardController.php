@@ -497,9 +497,7 @@ class DashboardController extends Controller
                 $token->revoke();
             });
 
-            // Delete user requests
-            $user->profileRequests()->delete();
-            $user->accessedClients()->detach();
+            // Delete the user (database cascade will handle profile_update_requests and client_user_access)
             $user->delete();
 
             return back()->with('success', 'Akun berhasil dihapus secara permanen.');
