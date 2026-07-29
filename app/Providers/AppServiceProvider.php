@@ -19,6 +19,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Skip authorization prompt by using custom client model
+        Passport::useClientModel(\App\Models\PassportClient::class);
 
         // Token expiration times
         Passport::tokensExpireIn(now()->addDays(15));
