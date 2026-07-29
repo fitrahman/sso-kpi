@@ -166,19 +166,29 @@
                             <!-- Hak Akses Portal Aplikasi -->
                             @if ($user->role !== 'admin')
                             <div>
-                                <label class="block text-sm font-bold text-slate-700 mb-2">Hak Akses Portal Aplikasi</label>
-                                <p class="text-xs text-slate-500 mb-3">Pilih portal aplikasi lokal server yang boleh diakses oleh pengguna ini.</p>
+                                <label class="block text-sm font-bold text-slate-700 mb-2">Hak Akses & Role Portal Aplikasi</label>
+                                <p class="text-xs text-slate-500 mb-3">Pilih portal aplikasi lokal server yang boleh diakses beserta peran (role) pengguna di aplikasi tersebut.</p>
                                 <div class="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
                                     @forelse ($clients as $client)
-                                        <label class="flex items-start gap-3 cursor-pointer">
-                                            <input type="checkbox" name="clients[]" value="{{ $client->id }}" 
-                                                {{ in_array($client->id, $userAccessIds) ? 'checked' : '' }}
-                                                class="mt-1 h-4 w-4 rounded border-slate-300 text-kpi-600 focus:ring-kpi-500">
-                                            <div>
-                                                <span class="block text-sm font-semibold text-slate-800">{{ $client->name }}</span>
-                                                <span class="block text-xs text-slate-500">{{ $client->redirect }}</span>
+                                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
+                                            <label class="flex items-start gap-3 cursor-pointer flex-grow">
+                                                <input type="checkbox" name="clients[]" value="{{ $client->id }}" 
+                                                    {{ in_array($client->id, $userAccessIds) ? 'checked' : '' }}
+                                                    class="mt-1 h-4 w-4 rounded border-slate-300 text-kpi-600 focus:ring-kpi-500">
+                                                <div>
+                                                    <span class="block text-sm font-semibold text-slate-800">{{ $client->name }}</span>
+                                                    <span class="block text-xs text-slate-500">{{ $client->redirect }}</span>
+                                                </div>
+                                            </label>
+                                            <div class="flex items-center gap-2">
+                                                <span class="text-xs font-semibold text-slate-500">Peran:</span>
+                                                <select name="client_roles[{{ $client->id }}]" class="text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-kpi-500 bg-white text-slate-750 font-medium">
+                                                    <option value="viewer" {{ ($userClientRoles[$client->id] ?? 'viewer') === 'viewer' ? 'selected' : '' }}>Viewer</option>
+                                                    <option value="editor" {{ ($userClientRoles[$client->id] ?? 'viewer') === 'editor' ? 'selected' : '' }}>Editor</option>
+                                                    <option value="admin" {{ ($userClientRoles[$client->id] ?? 'viewer') === 'admin' ? 'selected' : '' }}>Admin</option>
+                                                </select>
                                             </div>
-                                        </label>
+                                        </div>
                                     @empty
                                         <p class="text-sm text-slate-500">Tidak ada aplikasi klien yang terdaftar.</p>
                                     @endforelse

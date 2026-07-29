@@ -11,6 +11,7 @@ use App\Mail\UserApprovedMail;
 use App\Mail\UserRejectedMail;
 use Laravel\Passport\Client;
 use App\Models\ProfileUpdateRequest;
+use App\Models\UserClientRole;
 
 class DashboardController extends Controller
 {
@@ -93,12 +94,18 @@ class DashboardController extends Controller
                 ->where('client_user_access.status', 'approved')
                 ->pluck('client_id')
                 ->toArray();
+
+            // Get the list of client roles mapped by client ID
+            $userClientRoles = $user->clientRoles()
+                ->pluck('role', 'oauth_client_id')
+                ->toArray();
             
             return view('admin.edit_user', [
-                'user'          => $user,
-                'roles'         => $roles,
-                'clients'       => $clients,
-                'userAccessIds' => $userAccessIds,
+                'user'            => $user,
+                'roles'           => $roles,
+                'clients'         => $clients,
+                'userAccessIds'   => $userAccessIds,
+                'userClientRoles' => $userClientRoles,
             ]);
         } catch (\Exception $e) {
             return redirect()->route('admin.users')
@@ -157,10 +164,17 @@ class DashboardController extends Controller
                 
             $validSelectedClientIds = array_intersect($clientIds, $allClients);
             
-            // We want to delete any access records for clients NOT selected
+            // 1. We want to delete any access records for clients NOT selected
             $user->accessedClients()->wherePivotNotIn('client_id', $validSelectedClientIds)->detach();
+
+            // 2. Delete roles for clients NOT selected
+            UserClientRole::where('user_id', $user->id)
+                ->whereNotIn('oauth_client_id', $validSelectedClientIds)
+                ->delete();
             
-            // For each selected client, we attach or update it with 'approved' status
+            // 3. For each selected client, we attach or update it with 'approved' status AND updateOrCreate role
+            $inputRoles = $request->input('client_roles', []);
+
             foreach ($validSelectedClientIds as $cId) {
                 $existing = $user->accessedClients()->where('client_id', $cId)->first();
                 if ($existing) {
@@ -168,6 +182,17 @@ class DashboardController extends Controller
                 } else {
                     $user->accessedClients()->attach($cId, ['status' => 'approved']);
                 }
+
+                // Save or update client role
+                $roleValue = $inputRoles[$cId] ?? 'viewer';
+                if (!in_array($roleValue, ['admin', 'editor', 'viewer'])) {
+                    $roleValue = 'viewer';
+                }
+
+                UserClientRole::updateOrCreate(
+                    ['user_id' => $user->id, 'oauth_client_id' => $cId],
+                    ['role' => $roleValue]
+                );
             }
 
             return redirect()->route('admin.users')
