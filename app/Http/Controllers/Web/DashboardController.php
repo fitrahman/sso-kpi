@@ -44,17 +44,27 @@ class DashboardController extends Controller
         try {
             $status = $request->get('status', 'approved');
             
-            $users = User::where('status', $status)->orderBy('created_at', 'desc')->paginate(10)->withQueryString();
+            if ($status === 'approved') {
+                $users = User::whereIn('status', ['approved', 'inactive'])
+                    ->orderByRaw("CASE WHEN status = 'approved' THEN 0 ELSE 1 END ASC")
+                    ->orderBy('created_at', 'desc')
+                    ->paginate(10)
+                    ->withQueryString();
+            } else {
+                $users = User::where('status', 'pending')
+                    ->orderBy('created_at', 'desc')
+                    ->paginate(10)
+                    ->withQueryString();
+            }
+
             $pendingCount = User::where('status', 'pending')->count();
-            $approvedCount = User::where('status', 'approved')->count();
-            $inactiveCount = User::where('status', 'inactive')->count();
+            $approvedCount = User::whereIn('status', ['approved', 'inactive'])->count();
 
             return view('admin.users', [
                 'users'         => $users,
                 'status'        => $status,
                 'pendingCount'  => $pendingCount,
                 'approvedCount' => $approvedCount,
-                'inactiveCount' => $inactiveCount,
             ]);
 
         } catch (\Exception $e) {

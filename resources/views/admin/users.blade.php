@@ -126,7 +126,7 @@
                 @endif
 
                 <!-- Stats/Tabs -->
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                     <a href="{{ route('admin.users', ['status' => 'pending']) }}" class="bg-white rounded-xl p-5 border shadow-sm flex items-center transition-all hover:shadow-md {{ $status == 'pending' ? 'border-kpi-500 ring-1 ring-kpi-500' : 'border-slate-200' }}">
                         <div class="w-12 h-12 rounded-full {{ $status == 'pending' ? 'bg-kpi-100 text-kpi-600' : 'bg-slate-100 text-slate-500' }} flex items-center justify-center mr-4">
                             <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -146,16 +146,6 @@
                             <div class="text-2xl font-bold text-slate-900">{{ $approvedCount }}</div>
                         </div>
                     </a>
-
-                    <a href="{{ route('admin.users', ['status' => 'inactive']) }}" class="bg-white rounded-xl p-5 border shadow-sm flex items-center transition-all hover:shadow-md {{ $status == 'inactive' ? 'border-slate-500 ring-1 ring-slate-500' : 'border-slate-200' }}">
-                        <div class="w-12 h-12 rounded-full {{ $status == 'inactive' ? 'bg-slate-200 text-slate-700' : 'bg-slate-100 text-slate-500' }} flex items-center justify-center mr-4">
-                            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636" /></svg>
-                        </div>
-                        <div>
-                            <div class="text-sm font-medium text-slate-500">Pengguna Nonaktif</div>
-                            <div class="text-2xl font-bold text-slate-900">{{ $inactiveCount }}</div>
-                        </div>
-                    </a>
                 </div>
 
                 <!-- Main Data Table Area -->
@@ -164,7 +154,7 @@
                     <!-- Table Toolbar -->
                     <div class="p-4 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-50/50">
                         <h2 class="text-lg font-bold text-slate-800">
-                            Daftar {{ $status == 'pending' ? 'Pendaftar Baru' : ($status == 'approved' ? 'Pengguna Aktif' : 'Pengguna Nonaktif') }}
+                            Daftar {{ $status == 'pending' ? 'Pendaftar Baru' : 'Pengguna Aktif' }}
                         </h2>
                         
                         <div class="relative w-full sm:w-72">
