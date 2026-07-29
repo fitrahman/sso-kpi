@@ -243,74 +243,35 @@
                         </div>
                         <div class="flex justify-between text-sm">
                             <span class="text-slate-500 font-medium">Status Akun</span>
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-50 text-green-700 border border-green-100">Aktif</span>
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-50 text-green-700 border border-green-100">
+                                {{ auth()->user()->status === 'approved' ? 'Aktif' : (auth()->user()->status === 'inactive' ? 'Nonaktif' : 'Menunggu Persetujuan') }}
+                            </span>
                         </div>
                     </div>
 
-                    @if ($pendingProfileRequest)
-                        <div class="bg-amber-50 border border-amber-100 rounded-xl p-4 mt-4 space-y-2">
-                            <div class="flex items-center text-amber-800 font-bold text-sm">
-                                <svg class="h-4 w-4 text-amber-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                                Permintaan Perubahan (Pending)
+                    <!-- Hak Akses Portal Aplikasi -->
+                    <div class="border-t border-slate-100 py-4">
+                        <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Akses Portal Aplikasi</span>
+                        @if (auth()->user()->isAdmin())
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-100">
+                                Semua Portal (Administrator)
+                            </span>
+                        @else
+                            <div class="flex flex-wrap gap-1.5">
+                                @forelse ($approvedApps as $app)
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-green-50 text-green-700 border border-green-100">
+                                        {{ $app->name }}
+                                    </span>
+                                @empty
+                                    <span class="text-xs font-medium text-slate-400 italic">Belum memiliki akses portal apa pun. Hubungi Administrator.</span>
+                                @endforelse
                             </div>
-                            <div class="text-xs text-amber-700 space-y-1 font-medium">
-                                <div><strong>Nama:</strong> {{ $pendingProfileRequest->name }}</div>
-                                <div><strong>Email:</strong> {{ $pendingProfileRequest->email }}</div>
-                                <div><strong>Telepon:</strong> {{ $pendingProfileRequest->phone ?? '-' }}</div>
-                                <div><strong>Divisi:</strong> {{ $pendingProfileRequest->role }}</div>
-                            </div>
-                        </div>
-                    @endif
-
-                    <div class="mt-6 flex justify-end gap-3">
-                        <button onclick="toggleModal('profileModal')" class="px-4 py-2 border border-slate-300 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors">Tutup</button>
-                        <button onclick="switchToEditMode()" class="px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-semibold hover:bg-slate-800 transition-colors">Edit Profil</button>
-                    </div>
-                </div>
-
-                <!-- Edit Profile Form Mode -->
-                <div id="profileEditContainer" class="p-6 hidden">
-                    <div class="flex justify-between items-start mb-6">
-                        <h3 class="text-lg font-bold text-slate-900">Ajukan Perubahan Profil</h3>
-                        <button onclick="toggleModal('profileModal')" class="text-slate-400 hover:text-slate-600">
-                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                        </button>
+                        @endif
                     </div>
 
-                    <form method="POST" action="{{ route('profile.updateRequest') }}" class="space-y-4">
-                        @csrf
-                        <div>
-                            <label for="edit_name" class="block text-sm font-semibold text-slate-700 mb-1">Nama Lengkap</label>
-                            <input type="text" id="edit_name" name="name" value="{{ old('name', $pendingProfileRequest->name ?? auth()->user()->name) }}" required class="block w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-kpi-600">
-                        </div>
-
-                        <div>
-                            <label for="edit_email" class="block text-sm font-semibold text-slate-700 mb-1">Alamat Email</label>
-                            <input type="email" id="edit_email" name="email" value="{{ old('email', $pendingProfileRequest->email ?? auth()->user()->email) }}" required class="block w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-kpi-600">
-                        </div>
-
-                        <div>
-                            <label for="edit_phone" class="block text-sm font-semibold text-slate-700 mb-1">Nomor Telepon</label>
-                            <input type="text" id="edit_phone" name="phone" value="{{ old('phone', $pendingProfileRequest->phone ?? auth()->user()->phone) }}" class="block w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-kpi-600">
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-semibold text-slate-700 mb-2">Divisi / Peran</label>
-                            <div class="grid grid-cols-2 gap-2 text-xs">
-                                @foreach(\App\Models\User::ROLES as $r)
-                                <label class="flex items-center gap-2 p-2 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50">
-                                    <input type="radio" name="role" value="{{ $r }}" {{ old('role', $pendingProfileRequest->role ?? auth()->user()->role) == $r ? 'checked' : '' }} required class="text-kpi-600 focus:ring-kpi-500">
-                                    <span class="font-medium text-slate-700">{{ $r }}</span>
-                                </label>
-                                @endforeach
-                            </div>
-                        </div>
-
-                        <div class="mt-6 flex justify-end gap-3 pt-4 border-t border-slate-100">
-                            <button type="button" onclick="switchToViewMode()" class="px-4 py-2 border border-slate-300 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors">Batal</button>
-                            <button type="submit" class="px-4 py-2 bg-kpi-700 text-white rounded-lg text-sm font-semibold hover:bg-kpi-800 transition-colors">Ajukan Perubahan</button>
-                        </div>
-                    </form>
+                    <div class="mt-6 flex justify-end">
+                        <button onclick="toggleModal('profileModal')" class="px-5 py-2.5 bg-slate-950 text-white rounded-xl text-sm font-semibold hover:bg-slate-800 transition-colors">Tutup</button>
+                    </div>
                 </div>
 
             </div>
@@ -321,20 +282,6 @@
         function toggleModal(id) {
             const modal = document.getElementById(id);
             modal.classList.toggle('hidden');
-            // Reset to view mode whenever modal is opened/closed
-            if (!modal.classList.contains('hidden')) {
-                switchToViewMode();
-            }
-        }
-
-        function switchToEditMode() {
-            document.getElementById('profileViewContainer').classList.add('hidden');
-            document.getElementById('profileEditContainer').classList.remove('hidden');
-        }
-
-        function switchToViewMode() {
-            document.getElementById('profileViewContainer').classList.remove('hidden');
-            document.getElementById('profileEditContainer').classList.add('hidden');
         }
     </script>
 

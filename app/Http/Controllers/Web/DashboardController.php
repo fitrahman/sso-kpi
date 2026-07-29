@@ -21,13 +21,14 @@ class DashboardController extends Controller
     {
         try {
             $user = $request->user();
-            $pendingProfileRequest = ProfileUpdateRequest::where('user_id', $user->id)
-                ->where('status', 'pending')
-                ->first();
+            
+            $approvedApps = $user->accessedClients()
+                ->where('client_user_access.status', 'approved')
+                ->get();
 
             return view('dashboard', [
-                'user' => $user,
-                'pendingProfileRequest' => $pendingProfileRequest,
+                'user'         => $user,
+                'approvedApps' => $approvedApps,
             ]);
 
         } catch (\Exception $e) {
@@ -269,119 +270,7 @@ class DashboardController extends Controller
 
 
 
-    /**
-     * Handle user profile edit request submission
-     */
-    public function updateProfileRequest(Request $request)
-    {
-        try {
-            $user = $request->user();
-            $allowedRoles = array_merge(['admin'], User::ROLES);
 
-            $request->validate([
-                'name' => 'required|string|max:255',
-                'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
-                'phone' => 'nullable|string|max:20',
-                'role' => 'required|string|in:' . implode(',', $allowedRoles),
-            ]);
-
-            // Jika user adalah admin, langsung update data tanpa persetujuan
-            if ($user->role === 'admin') {
-                $user->update([
-                    'name' => $request->name,
-                    'email' => $request->email,
-                    'phone' => $request->phone,
-                    'role' => $request->role,
-                ]);
-                return back()->with('success', 'Profil Anda berhasil diperbarui.');
-            }
-
-            // Update or create pending request
-            ProfileUpdateRequest::updateOrCreate(
-                [
-                    'user_id' => $user->id,
-                    'status' => 'pending'
-                ],
-                [
-                    'name' => $request->name,
-                    'email' => $request->email,
-                    'phone' => $request->phone,
-                    'role' => $request->role,
-                ]
-            );
-
-            return back()->with('success', 'Permintaan perubahan profil berhasil diajukan dan sedang menunggu persetujuan Admin.');
-        } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Gagal memproses perubahan profil: ' . $e->getMessage()]);
-        }
-    }
-
-    /**
-     * Show pending profile update requests (Admin only)
-     */
-    public function profileRequests()
-    {
-        try {
-            $requests = ProfileUpdateRequest::with('user')
-                ->where('status', 'pending')
-                ->orderBy('created_at', 'desc')
-                ->paginate(10);
-
-            return view('admin.profile-requests', compact('requests'));
-        } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Gagal memuat permintaan edit profil.']);
-        }
-    }
-
-    /**
-     * Approve profile update request (Admin only)
-     */
-    public function approveProfileRequest($id)
-    {
-        try {
-            $profileRequest = ProfileUpdateRequest::findOrFail($id);
-            
-            // Check if email already taken by someone else in the meantime
-            $existingUser = User::where('email', $profileRequest->email)
-                ->where('id', '!=', $profileRequest->user_id)
-                ->first();
-
-            if ($existingUser) {
-                return back()->withErrors(['error' => 'Gagal menyetujui: Email sudah digunakan oleh pengguna lain.']);
-            }
-
-            // Update user table
-            $user = User::findOrFail($profileRequest->user_id);
-            $user->update([
-                'name' => $profileRequest->name,
-                'email' => $profileRequest->email,
-                'phone' => $profileRequest->phone,
-                'role' => $profileRequest->role,
-            ]);
-
-            // Update request status
-            $profileRequest->update(['status' => 'approved']);
-
-            return back()->with('success', 'Permintaan perubahan profil berhasil disetujui. Data profil pengguna telah diperbarui.');
-        } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Gagal menyetujui perubahan profil: ' . $e->getMessage()]);
-        }
-    }
-
-    /**
-     * Reject profile update request (Admin only)
-     */
-    public function rejectProfileRequest($id)
-    {
-        try {
-            $profileRequest = ProfileUpdateRequest::findOrFail($id);
-            $profileRequest->update(['status' => 'rejected']);
-
-            return back()->with('success', 'Permintaan perubahan profil berhasil ditolak.');
-        } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Gagal menolak perubahan profil: ' . $e->getMessage()]);
-        }
-    }
 
     /**
      * Deactivate user account (Admin only)

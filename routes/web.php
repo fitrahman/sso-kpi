@@ -34,8 +34,7 @@ Route::middleware('auth:web')->group(function () {
     Route::get('/sso/gateway', [DashboardController::class, 'appGateway'])->name('app.gateway');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     
-    // User profile update request
-    Route::post('/profile/update-request', [DashboardController::class, 'updateProfileRequest'])->name('profile.updateRequest');
+
 
     // Admin only routes
     Route::middleware('admin')->group(function () {
@@ -52,9 +51,6 @@ Route::middleware('auth:web')->group(function () {
 
 
 
-        // Admin Profile Update Requests
-        Route::get('/admin/profile-requests', [DashboardController::class, 'profileRequests'])->name('admin.profileRequests');
-        Route::post('/admin/profile-requests/{id}/approve', [DashboardController::class, 'approveProfileRequest'])->name('admin.profileRequests.approve');
-        Route::post('/admin/profile-requests/{id}/reject', [DashboardController::class, 'rejectProfileRequest'])->name('admin.profileRequests.reject');
+
     });
 });
