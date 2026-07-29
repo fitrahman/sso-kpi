@@ -67,6 +67,14 @@ class User extends Authenticatable
                     ->withTimestamps();
     }
 
+    /**
+     * Relasi ke UserClientRole (HasMany)
+     */
+    public function clientRoles()
+    {
+        return $this->hasMany(UserClientRole::class);
+    }
+
     public function isStaff()
     {
         return in_array($this->role, self::ROLES);
