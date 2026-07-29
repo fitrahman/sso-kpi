@@ -119,14 +119,39 @@ class AuthController extends Controller
     {
         try {
             $user = $request->user();
-            return response()->json([
-                'success' => true,
-                // 'data'    => $request->user(),
-                'data'    => [
-                    'user'        => $user,
-                    'permissions' => $this->getUserPermissions($user),
-                ],
-            ], 200);
+            $clientId = $request->query('client_id');
+            
+            $role = 'none';
+            if ($clientId) {
+                $clientRole = \App\Models\UserClientRole::where('user_id', $user->id)
+                    ->where('oauth_client_id', $clientId)
+                    ->first();
+                if ($clientRole) {
+                    $role = $clientRole->role;
+                }
+            }
+
+            // Target response format requested by the user
+            $responsePayload = [
+                'id'    => $user->id,
+                'name'  => $user->name,
+                'email' => $user->email,
+                'role'  => $role,
+            ];
+
+            // Backward compatibility wrapper for SocialiteProviders (expects data.user structure)
+            $responsePayload['success'] = true;
+            $responsePayload['data'] = [
+                'user' => [
+                    'id'    => $user->id,
+                    'name'  => $user->name,
+                    'email' => $user->email,
+                    // If client_id is not provided, fallback to the global role for backward compatibility
+                    'role'  => $clientId ? $role : ($user->role ?? 'user'),
+                ]
+            ];
+
+            return response()->json($responsePayload, 200);
 
         } catch (\Exception $e) {
             return response()->json([
