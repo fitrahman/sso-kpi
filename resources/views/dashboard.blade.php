@@ -256,7 +256,7 @@
                             <div class="flex flex-wrap gap-1.5">
                                 @forelse ($approvedApps as $app)
                                     @php
-                                        $clientRole = $user->clientRoles->where('oauth_client_id', $app->id)->first()?->role ?? 'pegawai';
+                                        $clientRole = $user->clientRoles->where('oauth_client_id', $app->id)->first()?->role ?? 'pengguna';
                                     @endphp
                                     <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-green-50 text-green-700 border border-green-100">
                                         {{ $app->name }} ({{ ucfirst($clientRole) }})

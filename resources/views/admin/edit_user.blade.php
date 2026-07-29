@@ -183,9 +183,8 @@
                                             <div class="flex items-center gap-2">
                                                 <span class="text-xs font-semibold text-slate-500">Peran:</span>
                                                 <select name="client_roles[{{ $client->id }}]" class="text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-kpi-500 bg-white text-slate-750 font-medium">
-                                                    <option value="pegawai" {{ ($userClientRoles[$client->id] ?? 'pegawai') === 'pegawai' ? 'selected' : '' }}>Pegawai</option>
-                                                    <option value="atasan" {{ ($userClientRoles[$client->id] ?? 'pegawai') === 'atasan' ? 'selected' : '' }}>Atasan</option>
-                                                    <option value="admin" {{ ($userClientRoles[$client->id] ?? 'pegawai') === 'admin' ? 'selected' : '' }}>Admin</option>
+                                                    <option value="pengguna" {{ ($userClientRoles[$client->id] ?? 'pengguna') === 'pengguna' ? 'selected' : '' }}>Pengguna</option>
+                                                    <option value="admin" {{ ($userClientRoles[$client->id] ?? 'pengguna') === 'admin' ? 'selected' : '' }}>Admin</option>
                                                 </select>
                                             </div>
                                         </div>
@@ -203,7 +202,6 @@
                                     <select name="status" id="status" required class="appearance-none w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-kpi-500 focus:border-kpi-500 transition-shadow bg-white">
                                         <option value="approved" {{ old('status', $user->status) === 'approved' ? 'selected' : '' }}>Aktif</option>
                                         <option value="inactive" {{ old('status', $user->status) === 'inactive' ? 'selected' : '' }}>Nonaktif</option>
-                                        <option value="pending" {{ old('status', $user->status) === 'pending' ? 'selected' : '' }}>Menunggu Persetujuan</option>
                                     </select>
                                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
                                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>

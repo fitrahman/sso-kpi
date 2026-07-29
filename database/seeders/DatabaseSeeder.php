@@ -88,32 +88,32 @@ class DatabaseSeeder extends Seeder
         $kepegawaian = \App\Models\User::where('email', 'kepegawaian@kpi.com')->first();
         $manajerial = \App\Models\User::where('email', 'manajerial@kpi.com')->first();
 
-        // Humas: Akses ke Sistem 1 (Atasan) & Sistem 2 (Pegawai)
+        // Humas: Akses ke Sistem 1 (Pengguna) & Sistem 2 (Pengguna)
         if ($humas) {
             $humas->accessedClients()->attach(2, ['status' => 'approved']);
-            \App\Models\UserClientRole::create(['user_id' => $humas->id, 'oauth_client_id' => 2, 'role' => 'atasan']);
+            \App\Models\UserClientRole::create(['user_id' => $humas->id, 'oauth_client_id' => 2, 'role' => 'pengguna']);
             
             $humas->accessedClients()->attach(3, ['status' => 'approved']);
-            \App\Models\UserClientRole::create(['user_id' => $humas->id, 'oauth_client_id' => 3, 'role' => 'pegawai']);
+            \App\Models\UserClientRole::create(['user_id' => $humas->id, 'oauth_client_id' => 3, 'role' => 'pengguna']);
         }
 
-        // Kepegawaian: Akses ke Sistem 1 (Pegawai), Sistem 2 (Atasan), & Sistem 3 / Sistem Kepegawaian (Admin)
+        // Kepegawaian: Akses ke Sistem 1 (Pengguna), Sistem 2 (Pengguna), & Sistem 3 / Sistem Kepegawaian (Admin)
         if ($kepegawaian) {
             $kepegawaian->accessedClients()->attach(2, ['status' => 'approved']);
-            \App\Models\UserClientRole::create(['user_id' => $kepegawaian->id, 'oauth_client_id' => 2, 'role' => 'pegawai']);
+            \App\Models\UserClientRole::create(['user_id' => $kepegawaian->id, 'oauth_client_id' => 2, 'role' => 'pengguna']);
 
             $kepegawaian->accessedClients()->attach(3, ['status' => 'approved']);
-            \App\Models\UserClientRole::create(['user_id' => $kepegawaian->id, 'oauth_client_id' => 3, 'role' => 'atasan']);
+            \App\Models\UserClientRole::create(['user_id' => $kepegawaian->id, 'oauth_client_id' => 3, 'role' => 'pengguna']);
 
             $kepegawaian->accessedClients()->attach(5, ['status' => 'approved']);
             \App\Models\UserClientRole::create(['user_id' => $kepegawaian->id, 'oauth_client_id' => 5, 'role' => 'admin']);
         }
 
-        // Manajerial: Akses ke semua Sistem (Pegawai)
+        // Manajerial: Akses ke semua Sistem (Pengguna)
         if ($manajerial) {
             foreach ([2, 3, 4, 5] as $cId) {
                 $manajerial->accessedClients()->attach($cId, ['status' => 'approved']);
-                \App\Models\UserClientRole::create(['user_id' => $manajerial->id, 'oauth_client_id' => $cId, 'role' => 'pegawai']);
+                \App\Models\UserClientRole::create(['user_id' => $manajerial->id, 'oauth_client_id' => $cId, 'role' => 'pengguna']);
             }
         }
     }

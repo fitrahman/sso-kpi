@@ -61,7 +61,7 @@ class UserApiTest extends TestCase
         UserClientRole::create([
             'user_id' => $user->id,
             'oauth_client_id' => 2,
-            'role' => 'atasan',
+            'role' => 'pengguna',
         ]);
 
         Passport::actingAs($user);
@@ -73,7 +73,7 @@ class UserApiTest extends TestCase
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
-                'role' => 'atasan',
+                'role' => 'pengguna',
             ]);
     }
 }
