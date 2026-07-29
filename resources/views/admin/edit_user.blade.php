@@ -183,9 +183,9 @@
                                             <div class="flex items-center gap-2">
                                                 <span class="text-xs font-semibold text-slate-500">Peran:</span>
                                                 <select name="client_roles[{{ $client->id }}]" class="text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-kpi-500 bg-white text-slate-750 font-medium">
-                                                    <option value="viewer" {{ ($userClientRoles[$client->id] ?? 'viewer') === 'viewer' ? 'selected' : '' }}>Viewer</option>
-                                                    <option value="editor" {{ ($userClientRoles[$client->id] ?? 'viewer') === 'editor' ? 'selected' : '' }}>Editor</option>
-                                                    <option value="admin" {{ ($userClientRoles[$client->id] ?? 'viewer') === 'admin' ? 'selected' : '' }}>Admin</option>
+                                                    <option value="pegawai" {{ ($userClientRoles[$client->id] ?? 'pegawai') === 'pegawai' ? 'selected' : '' }}>Pegawai</option>
+                                                    <option value="atasan" {{ ($userClientRoles[$client->id] ?? 'pegawai') === 'atasan' ? 'selected' : '' }}>Atasan</option>
+                                                    <option value="admin" {{ ($userClientRoles[$client->id] ?? 'pegawai') === 'admin' ? 'selected' : '' }}>Admin</option>
                                                 </select>
                                             </div>
                                         </div>

@@ -183,11 +183,10 @@ class DashboardController extends Controller
                 } else {
                     $user->accessedClients()->attach($cId, ['status' => 'approved']);
                 }
-
                 // Save or update client role
-                $roleValue = $inputRoles[$cId] ?? 'viewer';
-                if (!in_array($roleValue, ['admin', 'editor', 'viewer'])) {
-                    $roleValue = 'viewer';
+                $roleValue = $inputRoles[$cId] ?? 'pegawai';
+                if (!in_array($roleValue, ['admin', 'atasan', 'pegawai'])) {
+                    $roleValue = 'pegawai';
                 }
 
                 UserClientRole::updateOrCreate(
