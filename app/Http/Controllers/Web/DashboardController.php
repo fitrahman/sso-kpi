@@ -82,9 +82,22 @@ class DashboardController extends Controller
             $user = User::findOrFail($id);
             $roles = array_merge(['admin'], User::ROLES);
             
+            // Get all OAuth clients (Sistem 1, Sistem 2, etc.) excluding personal and password clients
+            $clients = Client::where('personal_access_client', 0)
+                ->where('password_client', 0)
+                ->get();
+                
+            // Get the list of client IDs that this user currently has approved access to
+            $userAccessIds = $user->accessedClients()
+                ->where('client_user_access.status', 'approved')
+                ->pluck('client_id')
+                ->toArray();
+            
             return view('admin.edit_user', [
-                'user'  => $user,
-                'roles' => $roles,
+                'user'          => $user,
+                'roles'         => $roles,
+                'clients'       => $clients,
+                'userAccessIds' => $userAccessIds,
             ]);
         } catch (\Exception $e) {
             return redirect()->route('admin.users')
@@ -131,6 +144,30 @@ class DashboardController extends Controller
             }
 
             $user->update($updateData);
+
+            // Sync client access from admin checkboxes
+            $clientIds = $request->input('clients', []); // list of checked client IDs
+            
+            // Get all valid clients to prevent manipulating other client types
+            $allClients = Client::where('personal_access_client', 0)
+                ->where('password_client', 0)
+                ->pluck('id')
+                ->toArray();
+                
+            $validSelectedClientIds = array_intersect($clientIds, $allClients);
+            
+            // We want to delete any access records for clients NOT selected
+            $user->accessedClients()->wherePivotNotIn('client_id', $validSelectedClientIds)->detach();
+            
+            // For each selected client, we attach or update it with 'approved' status
+            foreach ($validSelectedClientIds as $cId) {
+                $existing = $user->accessedClients()->where('client_id', $cId)->first();
+                if ($existing) {
+                    $user->accessedClients()->updateExistingPivot($cId, ['status' => 'approved']);
+                } else {
+                    $user->accessedClients()->attach($cId, ['status' => 'approved']);
+                }
+            }
 
             return redirect()->route('admin.users')
                 ->with('success', 'Data pengguna berhasil diperbarui!');
@@ -209,118 +246,28 @@ class DashboardController extends Controller
             return redirect($baseUrl . '/login');
         }
 
-        // Cek apakah user memiliki akses ke aplikasi ini (tabel client_user_access)
-        $access = $user->accessedClients()->where('client_id', $client->id)->first();
+        // Cek apakah user memiliki akses ke aplikasi ini (tabel client_user_access) dengan status approved
+        $access = $user->accessedClients()
+            ->where('client_id', $client->id)
+            ->where('client_user_access.status', 'approved')
+            ->first();
 
         if ($access) {
-            if ($access->pivot->status === 'approved') {
-                // Beri akses -> Redirect ke halaman OAuth Authorize aplikasi terkait
-                // Redirect user to the login endpoint of the client application
-                $parsedUrl = parse_url($client->redirect);
-                $baseUrl = ($parsedUrl['scheme'] ?? 'http') . '://' . ($parsedUrl['host'] ?? '');
-                if (isset($parsedUrl['port'])) {
-                    $baseUrl .= ':' . $parsedUrl['port'];
-                }
-                
-                return redirect($baseUrl . '/login');
-            } elseif ($access->pivot->status === 'pending') {
-                // Menunggu persetujuan
-                return view('auth.app-pending', ['appName' => $appName]);
-            } else {
-                // Ditolak
-                return view('auth.app-rejected', ['appName' => $appName]);
+            // Beri akses -> Redirect ke halaman OAuth Authorize aplikasi terkait
+            $parsedUrl = parse_url($client->redirect);
+            $baseUrl = ($parsedUrl['scheme'] ?? 'http') . '://' . ($parsedUrl['host'] ?? '');
+            if (isset($parsedUrl['port'])) {
+                $baseUrl .= ':' . $parsedUrl['port'];
             }
+            
+            return redirect($baseUrl . '/login');
         }
 
-        // Jika belum pernah request
-        return view('auth.app-request', ['appName' => $appName, 'clientId' => $client->id]);
+        // Jika tidak memiliki akses approved, langsung tampilkan halaman Akses Ditolak
+        return view('auth.app-denied', ['appName' => $appName]);
     }
 
-    public function requestAccess(Request $request)
-    {
-        $request->validate([
-            'client_id' => 'required'
-        ]);
 
-        $user = Auth::user();
-        $clientId = $request->client_id;
-
-        // Cek apakah sudah ada request
-        $existing = $user->accessedClients()->where('client_id', $clientId)->first();
-        if (!$existing) {
-            $user->accessedClients()->attach($clientId, ['status' => 'pending']);
-        }
-
-        return redirect()->route('dashboard')->with('success', 'Permintaan akses berhasil dikirim. Menunggu persetujuan Admin.');
-    }
-
-    public function accessRequests(Request $request)
-    {
-        $status = $request->get('status', 'pending');
-        
-        // Mengambil data user beserta client yang mereka request aksesnya
-        $users = User::whereHas('accessedClients', function($query) use ($status) {
-            $query->where('client_user_access.status', $status);
-        })->with(['accessedClients' => function($query) use ($status) {
-            $query->where('client_user_access.status', $status);
-        }])->paginate(15)->withQueryString();
-
-        $pendingCount = \DB::table('client_user_access')->where('status', 'pending')->count();
-        $approvedCount = \DB::table('client_user_access')->where('status', 'approved')->count();
-        $rejectedCount = \DB::table('client_user_access')->where('status', 'rejected')->count();
-
-        return view('admin.access-requests', compact('users', 'status', 'pendingCount', 'approvedCount', 'rejectedCount'));
-    }
-
-    public function approveAppAccess($userId, $clientId)
-    {
-        try {
-            $user = User::findOrFail($userId);
-            $user->accessedClients()->updateExistingPivot($clientId, ['status' => 'approved']);
-
-            // Send Email
-            try {
-                $client = Client::find($clientId);
-                Mail::to($user->email)->send(new \App\Mail\AppAccessApprovedMail($user, $client));
-                return back()->with('success', 'Akses aplikasi disetujui dan email pemberitahuan telah dikirim.');
-            } catch (\Exception $e) {
-                return back()->with('success', 'Akses aplikasi disetujui, tetapi email gagal dikirim: ' . ltrim(substr($e->getMessage(), 0, 100)));
-            }
-        } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Gagal menyetujui akses.']);
-        }
-    }
-
-    public function rejectAppAccess($userId, $clientId)
-    {
-        try {
-            $user = User::findOrFail($userId);
-            $user->accessedClients()->updateExistingPivot($clientId, ['status' => 'rejected']);
-
-            // Send Email
-            try {
-                $client = Client::find($clientId);
-                Mail::to($user->email)->send(new \App\Mail\AppAccessRejectedMail($user, $client));
-                return back()->with('success', 'Permintaan akses ditolak dan email pemberitahuan telah dikirim.');
-            } catch (\Exception $e) {
-                return back()->with('success', 'Permintaan akses ditolak, tetapi email gagal dikirim (Cek konfigurasi SMTP): ' . ltrim(substr($e->getMessage(), 0, 100)));
-            }
-        } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Gagal menolak akses.']);
-        }
-    }
-
-    public function undoRejectAppAccess($userId, $clientId)
-    {
-        try {
-            $user = User::findOrFail($userId);
-            $user->accessedClients()->updateExistingPivot($clientId, ['status' => 'pending']);
-
-            return back()->with('success', 'Penolakan dibatalkan. Status dikembalikan menjadi Menunggu.');
-        } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Gagal membatalkan penolakan.']);
-        }
-    }
 
     /**
      * Handle user profile edit request submission

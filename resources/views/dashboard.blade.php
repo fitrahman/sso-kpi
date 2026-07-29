@@ -54,7 +54,6 @@
                     <nav class="hidden md:flex items-center gap-1">
                         <a href="{{ route('dashboard') }}" class="px-3 py-2 text-sm font-semibold text-kpi-700 bg-kpi-50 rounded-md">Portal</a>
                         <a href="{{ route('admin.users') }}" class="px-3 py-2 text-sm font-medium text-slate-600 hover:text-kpi-700 hover:bg-slate-50 rounded-md transition-colors">Users</a>
-                        <a href="{{ route('admin.accessRequests') }}" class="px-3 py-2 text-sm font-medium text-slate-600 hover:text-kpi-700 hover:bg-slate-50 rounded-md transition-colors">Requests</a>
                     </nav>
                 @endif
                 

@@ -32,7 +32,6 @@ Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('regi
 Route::middleware('auth:web')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/sso/gateway', [DashboardController::class, 'appGateway'])->name('app.gateway');
-    Route::post('/sso/request-access', [DashboardController::class, 'requestAccess'])->name('app.requestAccess');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     
     // User profile update request
@@ -51,11 +50,7 @@ Route::middleware('auth:web')->group(function () {
         Route::post('/admin/users/{id}/approve', [DashboardController::class, 'approveUser'])->name('admin.users.approve');
         Route::delete('/admin/users/{id}/reject', [DashboardController::class, 'rejectUser'])->name('admin.users.reject');
 
-        // App Access Requests
-        Route::get('/admin/access-requests', [DashboardController::class, 'accessRequests'])->name('admin.accessRequests');
-        Route::post('/admin/access-requests/{userId}/{clientId}/approve', [DashboardController::class, 'approveAppAccess'])->name('admin.accessRequests.approve');
-        Route::post('/admin/access-requests/{userId}/{clientId}/undo-reject', [DashboardController::class, 'undoRejectAppAccess'])->name('admin.accessRequests.undoReject');
-        Route::delete('/admin/access-requests/{userId}/{clientId}/reject', [DashboardController::class, 'rejectAppAccess'])->name('admin.accessRequests.reject');
+
 
         // Admin Profile Update Requests
         Route::get('/admin/profile-requests', [DashboardController::class, 'profileRequests'])->name('admin.profileRequests');

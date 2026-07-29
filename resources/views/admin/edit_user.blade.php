@@ -55,10 +55,7 @@
                     Manajemen Pengguna
                 </a>
                 
-                <a href="{{ route('admin.accessRequests') }}" class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:text-kpi-700 hover:bg-slate-50 transition-colors">
-                    <svg class="w-5 h-5 mr-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
-                    Permintaan Akses
-                </a>
+
             </nav>
         </div>
         
@@ -165,6 +162,29 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- Hak Akses Portal Aplikasi -->
+                            @if ($user->role !== 'admin')
+                            <div>
+                                <label class="block text-sm font-bold text-slate-700 mb-2">Hak Akses Portal Aplikasi</label>
+                                <p class="text-xs text-slate-500 mb-3">Pilih portal aplikasi lokal server yang boleh diakses oleh pengguna ini.</p>
+                                <div class="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                                    @forelse ($clients as $client)
+                                        <label class="flex items-start gap-3 cursor-pointer">
+                                            <input type="checkbox" name="clients[]" value="{{ $client->id }}" 
+                                                {{ in_array($client->id, $userAccessIds) ? 'checked' : '' }}
+                                                class="mt-1 h-4 w-4 rounded border-slate-300 text-kpi-600 focus:ring-kpi-500">
+                                            <div>
+                                                <span class="block text-sm font-semibold text-slate-800">{{ $client->name }}</span>
+                                                <span class="block text-xs text-slate-500">{{ $client->redirect }}</span>
+                                            </div>
+                                        </label>
+                                    @empty
+                                        <p class="text-sm text-slate-500">Tidak ada aplikasi klien yang terdaftar.</p>
+                                    @endforelse
+                                </div>
+                            </div>
+                            @endif
              
                             @if ($user->role !== 'admin' && $user->id !== Auth::id())
                             <div>
