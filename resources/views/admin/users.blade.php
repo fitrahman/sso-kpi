@@ -126,7 +126,7 @@
                 @endif
 
                 <!-- Stats/Tabs -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                     <a href="{{ route('admin.users', ['status' => 'pending']) }}" class="bg-white rounded-xl p-5 border shadow-sm flex items-center transition-all hover:shadow-md {{ $status == 'pending' ? 'border-kpi-500 ring-1 ring-kpi-500' : 'border-slate-200' }}">
                         <div class="w-12 h-12 rounded-full {{ $status == 'pending' ? 'bg-kpi-100 text-kpi-600' : 'bg-slate-100 text-slate-500' }} flex items-center justify-center mr-4">
                             <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -146,6 +146,16 @@
                             <div class="text-2xl font-bold text-slate-900">{{ $approvedCount }}</div>
                         </div>
                     </a>
+
+                    <a href="{{ route('admin.users', ['status' => 'inactive']) }}" class="bg-white rounded-xl p-5 border shadow-sm flex items-center transition-all hover:shadow-md {{ $status == 'inactive' ? 'border-slate-500 ring-1 ring-slate-500' : 'border-slate-200' }}">
+                        <div class="w-12 h-12 rounded-full {{ $status == 'inactive' ? 'bg-slate-200 text-slate-700' : 'bg-slate-100 text-slate-500' }} flex items-center justify-center mr-4">
+                            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636" /></svg>
+                        </div>
+                        <div>
+                            <div class="text-sm font-medium text-slate-500">Pengguna Nonaktif</div>
+                            <div class="text-2xl font-bold text-slate-900">{{ $inactiveCount }}</div>
+                        </div>
+                    </a>
                 </div>
 
                 <!-- Main Data Table Area -->
@@ -154,7 +164,7 @@
                     <!-- Table Toolbar -->
                     <div class="p-4 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-50/50">
                         <h2 class="text-lg font-bold text-slate-800">
-                            Daftar {{ $status == 'pending' ? 'Pendaftar Baru' : 'Pengguna Aktif' }}
+                            Daftar {{ $status == 'pending' ? 'Pendaftar Baru' : ($status == 'approved' ? 'Pengguna Aktif' : 'Pengguna Nonaktif') }}
                         </h2>
                         
                         <div class="relative w-full sm:w-72">
@@ -206,9 +216,13 @@
                                             @endif
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            @if($status === 'pending')
+                                            @if($user->status === 'pending')
                                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-100">
                                                     Menunggu
+                                                </span>
+                                            @elseif($user->status === 'inactive')
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-700 border border-red-100">
+                                                    Nonaktif
                                                 </span>
                                             @else
                                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-100">
@@ -239,10 +253,38 @@
                                                     </form>
                                                 </div>
                                             @else
-                                                <a href="{{ route('admin.users.edit', $user->id) }}" class="inline-flex items-center px-3 py-1.5 bg-white border border-slate-300 rounded-md text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-sm">
-                                                    <svg class="w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                                                    Edit
-                                                </a>
+                                                <div class="flex justify-end gap-2">
+                                                    <a href="{{ route('admin.users.edit', $user->id) }}" class="inline-flex items-center px-3 py-1.5 bg-white border border-slate-300 rounded-md text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-sm">
+                                                        <svg class="w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                                                        Edit
+                                                    </a>
+                                                    
+                                                    @if ($user->role !== 'admin' && $user->id !== Auth::id())
+                                                        @if ($user->status === 'approved')
+                                                            <form action="{{ route('admin.users.deactivate', $user->id) }}" method="POST" class="inline-block">
+                                                                @csrf
+                                                                <button type="submit" class="inline-flex items-center px-3 py-1.5 bg-amber-600 border border-transparent rounded-md text-xs font-semibold text-white hover:bg-amber-700 shadow-sm">
+                                                                    Nonaktifkan
+                                                                </button>
+                                                            </form>
+                                                        @elseif ($user->status === 'inactive')
+                                                            <form action="{{ route('admin.users.activate', $user->id) }}" method="POST" class="inline-block">
+                                                                @csrf
+                                                                <button type="submit" class="inline-flex items-center px-3 py-1.5 bg-green-600 border border-transparent rounded-md text-xs font-semibold text-white hover:bg-green-700 shadow-sm">
+                                                                    Aktifkan
+                                                                </button>
+                                                            </form>
+                                                        @endif
+
+                                                        <form action="{{ route('admin.users.delete', $user->id) }}" method="POST" class="inline-block" onsubmit="return confirm('Apakah Anda yakin ingin menghapus akun ini secara permanen?');">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button type="submit" class="inline-flex items-center px-3 py-1.5 bg-red-600 border border-transparent rounded-md text-xs font-semibold text-white hover:bg-red-700 shadow-sm">
+                                                                Hapus
+                                                            </button>
+                                                        </form>
+                                                    @endif
+                                                </div>
                                             @endif
                                         </td>
                                     </tr>

@@ -67,6 +67,14 @@ class AuthController extends Controller
                 return back()
                     ->withErrors(['email' => 'Akun Anda masih menunggu persetujuan dari Administrator.'])
                     ->withInput();
+            } elseif ($user->status === 'inactive') {
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                return back()
+                    ->withErrors(['email' => 'Akun Anda telah dinonaktifkan oleh Administrator.'])
+                    ->withInput();
             }
 
             $request->session()->regenerate();

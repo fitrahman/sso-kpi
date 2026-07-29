@@ -47,12 +47,14 @@ class DashboardController extends Controller
             $users = User::where('status', $status)->orderBy('created_at', 'desc')->paginate(10)->withQueryString();
             $pendingCount = User::where('status', 'pending')->count();
             $approvedCount = User::where('status', 'approved')->count();
+            $inactiveCount = User::where('status', 'inactive')->count();
 
             return view('admin.users', [
                 'users'         => $users,
                 'status'        => $status,
                 'pendingCount'  => $pendingCount,
                 'approvedCount' => $approvedCount,
+                'inactiveCount' => $inactiveCount,
             ]);
 
         } catch (\Exception $e) {
@@ -88,22 +90,40 @@ class DashboardController extends Controller
         try {
             $user = User::findOrFail($id);
 
-            $request->validate([
+            $rules = [
                 'name'  => 'required|string|max:255',
                 'email' => 'required|string|email|max:255|unique:users,email,' . $id,
                 'phone' => 'nullable|string|min:10|max:15',
                 'role'  => 'required|in:admin,' . implode(',', User::ROLES),
-            ]);
+            ];
 
-            $user->update([
+            if ($user->role !== 'admin' && $user->id !== Auth::id()) {
+                $rules['status'] = 'required|in:pending,approved,inactive';
+            }
+
+            $request->validate($rules);
+
+            $updateData = [
                 'name'  => $request->name,
                 'email' => $request->email,
                 'phone' => $request->phone,
                 'role'  => $request->role,
-            ]);
+            ];
+
+            if ($user->role !== 'admin' && $user->id !== Auth::id()) {
+                $updateData['status'] = $request->status;
+
+                if ($request->status === 'inactive') {
+                    $user->tokens()->each(function ($token) {
+                        $token->revoke();
+                    });
+                }
+            }
+
+            $user->update($updateData);
 
             return redirect()->route('admin.users')
-                ->with('success', 'User updated successfully!');
+                ->with('success', 'Data pengguna berhasil diperbarui!');
 
         } catch (\Exception $e) {
             return back()->withInput()->withErrors(['error' => config('app.debug') ? 'Failed to update user: ' . $e->getMessage() : 'Failed to update user: Internal Server Error']);
@@ -403,6 +423,78 @@ class DashboardController extends Controller
             return back()->with('success', 'Permintaan perubahan profil berhasil ditolak.');
         } catch (\Exception $e) {
             return back()->withErrors(['error' => 'Gagal menolak perubahan profil: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Deactivate user account (Admin only)
+     */
+    public function deactivateUser($id)
+    {
+        try {
+            $user = User::findOrFail($id);
+            if ($user->role === 'admin') {
+                return back()->withErrors(['error' => 'Akun administrator utama tidak dapat dinonaktifkan.']);
+            }
+            if ($user->id === Auth::id()) {
+                return back()->withErrors(['error' => 'Anda tidak dapat menonaktifkan akun Anda sendiri.']);
+            }
+
+            $user->update(['status' => 'inactive']);
+
+            // Revoke all of the user's OAuth access tokens
+            $user->tokens()->each(function ($token) {
+                $token->revoke();
+            });
+
+            return back()->with('success', 'Akun ' . $user->name . ' berhasil dinonaktifkan.');
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Gagal menonaktifkan akun: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Activate user account (Admin only)
+     */
+    public function activateUser($id)
+    {
+        try {
+            $user = User::findOrFail($id);
+            $user->update(['status' => 'approved']);
+
+            return back()->with('success', 'Akun ' . $user->name . ' berhasil diaktifkan kembali.');
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Gagal mengaktifkan akun: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Delete user account (Admin only)
+     */
+    public function deleteUser($id)
+    {
+        try {
+            $user = User::findOrFail($id);
+            if ($user->role === 'admin') {
+                return back()->withErrors(['error' => 'Akun administrator utama tidak dapat dihapus.']);
+            }
+            if ($user->id === Auth::id()) {
+                return back()->withErrors(['error' => 'Anda tidak dapat menghapus akun Anda sendiri.']);
+            }
+
+            // Revoke tokens
+            $user->tokens()->each(function ($token) {
+                $token->revoke();
+            });
+
+            // Delete user requests
+            $user->profileRequests()->delete();
+            $user->accessedClients()->detach();
+            $user->delete();
+
+            return back()->with('success', 'Akun berhasil dihapus secara permanen.');
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Gagal menghapus akun: ' . $e->getMessage()]);
         }
     }
 }

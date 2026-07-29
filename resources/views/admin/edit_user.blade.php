@@ -165,6 +165,22 @@
                                     </div>
                                 </div>
                             </div>
+             
+                            @if ($user->role !== 'admin' && $user->id !== Auth::id())
+                            <div>
+                                <label for="status" class="block text-sm font-bold text-slate-700 mb-2">Status Akun</label>
+                                <div class="relative">
+                                    <select name="status" id="status" required class="appearance-none w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-kpi-500 focus:border-kpi-500 transition-shadow bg-white">
+                                        <option value="approved" {{ old('status', $user->status) === 'approved' ? 'selected' : '' }}>Aktif</option>
+                                        <option value="inactive" {{ old('status', $user->status) === 'inactive' ? 'selected' : '' }}>Nonaktif</option>
+                                        <option value="pending" {{ old('status', $user->status) === 'pending' ? 'selected' : '' }}>Menunggu Persetujuan</option>
+                                    </select>
+                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
+                                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                    </div>
+                                </div>
+                            </div>
+                            @endif
             
                             <div class="pt-4 flex gap-4">
                                 <a href="{{ route('admin.users') }}" class="w-1/3 flex justify-center py-3 border border-slate-300 rounded-xl shadow-sm text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors">
