@@ -120,7 +120,7 @@
                 @endif
 
                 <!-- Stats/Tabs -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                     <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex items-center">
                         <div class="w-12 h-12 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center mr-4">
                             <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
@@ -138,6 +138,16 @@
                         <div>
                             <div class="text-sm font-medium text-slate-500">Menunggu Persetujuan</div>
                             <div class="text-2xl font-bold text-amber-600">{{ $pendingCount }}</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex items-center">
+                        <div class="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mr-4">
+                            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
+                        </div>
+                        <div>
+                            <div class="text-sm font-medium text-slate-500">Pengguna Nonaktif</div>
+                            <div class="text-2xl font-bold text-red-600">{{ $inactiveCount }}</div>
                         </div>
                     </div>
                 </div>

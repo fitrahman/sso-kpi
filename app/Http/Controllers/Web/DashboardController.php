@@ -82,11 +82,13 @@ class DashboardController extends Controller
             $users = $usersQuery->paginate(10)->withQueryString();
             $totalCount = User::count();
             $pendingCount = User::where('status', 'pending')->count();
+            $inactiveCount = User::where('status', 'inactive')->count();
  
             return view('admin.users', [
-                'users'        => $users,
-                'totalCount'   => $totalCount,
-                'pendingCount' => $pendingCount,
+                'users'         => $users,
+                'totalCount'    => $totalCount,
+                'pendingCount'  => $pendingCount,
+                'inactiveCount' => $inactiveCount,
             ]);
 
         } catch (\Exception $e) {
