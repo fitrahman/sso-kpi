@@ -182,9 +182,21 @@
                                             </label>
                                             <div class="flex items-center gap-2">
                                                 <span class="text-xs font-semibold text-slate-500">Peran:</span>
+                                                @php
+                                                    $supportedRoles = [];
+                                                    if (!empty($client->supported_roles)) {
+                                                        $supportedRoles = json_decode($client->supported_roles, true);
+                                                    }
+                                                    if (empty($supportedRoles) || !is_array($supportedRoles)) {
+                                                        $supportedRoles = ['admin', 'pengguna'];
+                                                    }
+                                                @endphp
                                                 <select name="client_roles[{{ $client->id }}]" class="text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-kpi-500 bg-white text-slate-750 font-medium">
-                                                    <option value="pengguna" {{ ($userClientRoles[$client->id] ?? 'pengguna') === 'pengguna' ? 'selected' : '' }}>Pengguna</option>
-                                                    <option value="admin" {{ ($userClientRoles[$client->id] ?? 'pengguna') === 'admin' ? 'selected' : '' }}>Admin</option>
+                                                    @foreach ($supportedRoles as $role)
+                                                        <option value="{{ $role }}" {{ ($userClientRoles[$client->id] ?? $supportedRoles[0]) === $role ? 'selected' : '' }}>
+                                                            {{ ucfirst($role) }}
+                                                        </option>
+                                                    @endforeach
                                                 </select>
                                             </div>
                                         </div>

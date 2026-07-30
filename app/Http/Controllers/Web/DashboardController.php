@@ -183,10 +183,21 @@ class DashboardController extends Controller
                 } else {
                     $user->accessedClients()->attach($cId, ['status' => 'approved']);
                 }
+                
+                // Fetch the client model to validate its supported roles dynamically
+                $clientModel = Client::find($cId);
+                $supportedRoles = [];
+                if ($clientModel && !empty($clientModel->supported_roles)) {
+                    $supportedRoles = json_decode($clientModel->supported_roles, true);
+                }
+                if (empty($supportedRoles) || !is_array($supportedRoles)) {
+                    $supportedRoles = ['admin', 'pengguna'];
+                }
+
                 // Save or update client role
-                $roleValue = $inputRoles[$cId] ?? 'pengguna';
-                if (!in_array($roleValue, ['admin', 'pengguna'])) {
-                    $roleValue = 'pengguna';
+                $roleValue = $inputRoles[$cId] ?? $supportedRoles[0];
+                if (!in_array($roleValue, $supportedRoles)) {
+                    $roleValue = $supportedRoles[0];
                 }
 
                 UserClientRole::updateOrCreate(
