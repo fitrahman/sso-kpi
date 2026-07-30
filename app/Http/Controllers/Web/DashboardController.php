@@ -44,29 +44,47 @@ class DashboardController extends Controller
     public function users(Request $request)
     {
         try {
-            $status = $request->get('status', 'approved');
-            
-            if ($status === 'approved') {
-                $users = User::whereIn('status', ['approved', 'inactive'])
-                    ->orderByRaw("CASE WHEN status = 'approved' THEN 0 ELSE 1 END ASC")
-                    ->orderBy('created_at', 'desc')
-                    ->paginate(10)
-                    ->withQueryString();
-            } else {
-                $users = User::where('status', 'pending')
-                    ->orderBy('created_at', 'desc')
-                    ->paginate(10)
-                    ->withQueryString();
+            $search = $request->get('search');
+            $sort = $request->get('sort');
+            $direction = $request->get('direction', 'asc');
+
+            if (!in_array(strtolower($direction), ['asc', 'desc'])) {
+                $direction = 'asc';
             }
 
-            $pendingCount = User::where('status', 'pending')->count();
-            $approvedCount = User::whereIn('status', ['approved', 'inactive'])->count();
+            $usersQuery = User::query();
+
+            // Handle search
+            if (!empty($search)) {
+                $usersQuery->where(function($q) use ($search) {
+                    $q->where('name', 'like', '%' . $search . '%')
+                      ->orWhere('email', 'like', '%' . $search . '%');
+                });
+            }
+
+            // Handle sorting
+            if ($sort === 'role') {
+                $usersQuery->orderBy('role', $direction);
+            } elseif ($sort === 'status') {
+                $usersQuery->orderBy('status', $direction);
+            } elseif ($sort === 'created_at') {
+                $usersQuery->orderBy('created_at', $direction);
+            } else {
+                // Default: pending (menunggu) first, then approved (aktif), then inactive (nonaktif)
+                $usersQuery->orderByRaw("CASE 
+                    WHEN status = 'pending' THEN 1 
+                    WHEN status = 'approved' THEN 2 
+                    WHEN status = 'inactive' THEN 3 
+                    ELSE 4 END ASC")
+                    ->orderBy('created_at', 'desc');
+            }
+
+            $users = $usersQuery->paginate(10)->withQueryString();
+            $totalCount = User::count();
 
             return view('admin.users', [
-                'users'         => $users,
-                'status'        => $status,
-                'pendingCount'  => $pendingCount,
-                'approvedCount' => $approvedCount,
+                'users'      => $users,
+                'totalCount' => $totalCount,
             ]);
 
         } catch (\Exception $e) {

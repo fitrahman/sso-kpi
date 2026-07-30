@@ -34,8 +34,6 @@ Route::middleware('auth:web')->group(function () {
     Route::get('/sso/gateway', [DashboardController::class, 'appGateway'])->name('app.gateway');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     
-
-
     // Admin only routes
     Route::middleware('admin')->group(function () {
         Route::get('/admin/users', [DashboardController::class, 'users'])->name('admin.users');
@@ -46,9 +44,6 @@ Route::middleware('auth:web')->group(function () {
         // Approval Routes
         Route::post('/admin/users/{id}/approve', [DashboardController::class, 'approveUser'])->name('admin.users.approve');
         Route::delete('/admin/users/{id}/reject', [DashboardController::class, 'rejectUser'])->name('admin.users.reject');
-
-
-
 
     });
 });

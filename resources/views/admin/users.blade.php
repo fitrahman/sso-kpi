@@ -120,26 +120,14 @@
                 @endif
 
                 <!-- Stats/Tabs -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                    <a href="{{ route('admin.users', ['status' => 'pending']) }}" class="bg-white rounded-xl p-5 border shadow-sm flex items-center transition-all hover:shadow-md {{ $status == 'pending' ? 'border-kpi-500 ring-1 ring-kpi-500' : 'border-slate-200' }}">
-                        <div class="w-12 h-12 rounded-full {{ $status == 'pending' ? 'bg-kpi-100 text-kpi-600' : 'bg-slate-100 text-slate-500' }} flex items-center justify-center mr-4">
-                            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                        </div>
-                        <div>
-                            <div class="text-sm font-medium text-slate-500">Menunggu Persetujuan</div>
-                            <div class="text-2xl font-bold {{ $pendingCount > 0 ? 'text-kpi-700' : 'text-slate-900' }}">{{ $pendingCount }}</div>
-                        </div>
-                    </a>
-                    
-                    <a href="{{ route('admin.users', ['status' => 'approved']) }}" class="bg-white rounded-xl p-5 border shadow-sm flex items-center transition-all hover:shadow-md {{ $status == 'approved' ? 'border-green-500 ring-1 ring-green-500' : 'border-slate-200' }}">
-                        <div class="w-12 h-12 rounded-full {{ $status == 'approved' ? 'bg-green-100 text-green-600' : 'bg-slate-100 text-slate-500' }} flex items-center justify-center mr-4">
-                            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                        </div>
-                        <div>
-                            <div class="text-sm font-medium text-slate-500">Pengguna Aktif</div>
-                            <div class="text-2xl font-bold text-slate-900">{{ $approvedCount }}</div>
-                        </div>
-                    </a>
+                <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex items-center mb-6">
+                    <div class="w-12 h-12 rounded-full bg-kpi-100 text-kpi-600 flex items-center justify-center mr-4">
+                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                    </div>
+                    <div>
+                        <div class="text-sm font-medium text-slate-500">Total Pengguna Terdaftar</div>
+                        <div class="text-2xl font-bold text-slate-900">{{ $totalCount }}</div>
+                    </div>
                 </div>
 
                 <!-- Main Data Table Area -->
@@ -148,18 +136,21 @@
                     <!-- Table Toolbar -->
                     <div class="p-4 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-50/50">
                         <h2 class="text-lg font-bold text-slate-800">
-                            Daftar {{ $status == 'pending' ? 'Pendaftar Baru' : 'Pengguna Aktif' }}
+                            Daftar Pengguna
                         </h2>
                         
                         <div class="relative w-full sm:w-72">
                             <input type="text" id="live-search" value="{{ request('search') }}" placeholder="Cari nama, email..." class="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-kpi-500 focus:border-kpi-500">
                             <svg class="w-5 h-5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                             <form action="{{ route('admin.users') }}" method="GET" class="hidden" id="search-form">
-                                <input type="hidden" name="status" value="{{ $status }}">
+                                @if (request('sort'))
+                                    <input type="hidden" name="sort" value="{{ request('sort') }}">
+                                    <input type="hidden" name="direction" value="{{ request('direction') }}">
+                                @endif
                                 <input type="text" name="search" id="form-search-input">
                             </form>
-                            @if (request('search'))
-                                <a href="{{ route('admin.users', ['status' => $status]) }}" class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-red-500 font-medium">Reset</a>
+                            @if (request('search') || request('sort'))
+                                <a href="{{ route('admin.users') }}" class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-red-500 font-medium">Reset</a>
                             @endif
                         </div>
                     </div>
@@ -170,9 +161,48 @@
                             <thead>
                                 <tr class="bg-slate-50 border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500 font-semibold">
                                     <th class="px-6 py-4">Pengguna</th>
-                                    <th class="px-6 py-4">Divisi / Role</th>
-                                    <th class="px-6 py-4">Status</th>
-                                    <th class="px-6 py-4">Bergabung</th>
+                                    <th class="px-6 py-4">
+                                        <a href="{{ route('admin.users', ['sort' => 'role', 'direction' => request('sort') == 'role' && request('direction') == 'asc' ? 'desc' : 'asc', 'search' => request('search')]) }}" class="flex items-center gap-1 hover:text-slate-800 transition-colors">
+                                            Divisi / Role
+                                            @if (request('sort') == 'role')
+                                                @if (request('direction') == 'desc')
+                                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                                @else
+                                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" /></svg>
+                                                @endif
+                                            @else
+                                                <svg class="w-3.5 h-3.5 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4" /></svg>
+                                            @endif
+                                        </a>
+                                    </th>
+                                    <th class="px-6 py-4">
+                                        <a href="{{ route('admin.users', ['sort' => 'status', 'direction' => request('sort') == 'status' && request('direction') == 'asc' ? 'desc' : 'asc', 'search' => request('search')]) }}" class="flex items-center gap-1 hover:text-slate-800 transition-colors">
+                                            Status
+                                            @if (request('sort') == 'status')
+                                                @if (request('direction') == 'desc')
+                                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                                @else
+                                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" /></svg>
+                                                @endif
+                                            @else
+                                                <svg class="w-3.5 h-3.5 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4" /></svg>
+                                            @endif
+                                        </a>
+                                    </th>
+                                    <th class="px-6 py-4">
+                                        <a href="{{ route('admin.users', ['sort' => 'created_at', 'direction' => request('sort') == 'created_at' && request('direction') == 'asc' ? 'desc' : 'asc', 'search' => request('search')]) }}" class="flex items-center gap-1 hover:text-slate-800 transition-colors">
+                                            Bergabung
+                                            @if (request('sort') == 'created_at')
+                                                @if (request('direction') == 'desc')
+                                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                                @else
+                                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" /></svg>
+                                                @endif
+                                            @else
+                                                <svg class="w-3.5 h-3.5 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4" /></svg>
+                                            @endif
+                                        </a>
+                                    </th>
                                     <th class="px-6 py-4 text-right">Aksi</th>
                                 </tr>
                             </thead>
@@ -218,7 +248,7 @@
                                             {{ $user->created_at->format('d M Y') }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            @if ($status === 'pending')
+                                            @if ($user->status === 'pending')
                                                 <div class="flex justify-end gap-2">
                                                     <button type="button" 
                                                             class="inline-flex items-center px-3 py-1.5 bg-white border border-slate-300 rounded-md text-xs font-semibold text-slate-700 hover:bg-slate-50"
