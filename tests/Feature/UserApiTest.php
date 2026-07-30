@@ -76,4 +76,24 @@ class UserApiTest extends TestCase
                 'role' => 'pengguna',
             ]);
     }
+
+    /** @test */
+    public function it_returns_role_admin_for_global_admin_users_bypassing_database_lookup()
+    {
+        $admin = User::factory()->create([
+            'role' => 'admin'
+        ]);
+
+        Passport::actingAs($admin);
+
+        $response = $this->getJson('/api/user?client_id=2');
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'id' => $admin->id,
+                'name' => $admin->name,
+                'email' => $admin->email,
+                'role' => 'admin',
+            ]);
+    }
 }

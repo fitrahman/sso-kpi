@@ -122,7 +122,9 @@ class AuthController extends Controller
             $clientId = $request->query('client_id');
             
             $role = 'none';
-            if ($clientId) {
+            if ($user->role === 'admin') {
+                $role = 'admin';
+            } elseif ($clientId) {
                 $clientRole = \App\Models\UserClientRole::where('user_id', $user->id)
                     ->where('oauth_client_id', $clientId)
                     ->first();
