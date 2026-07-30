@@ -16,6 +16,10 @@ class ApplicationActivityLog extends Model
         'description',
     ];
 
+    protected $casts = [
+        'created_at' => 'datetime',
+    ];
+
     public function admin()
     {
         return $this->belongsTo(User::class, 'admin_id');
