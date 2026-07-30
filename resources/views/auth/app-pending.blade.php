@@ -47,7 +47,7 @@
         <h2 class="text-2xl font-bold text-slate-900 mb-4 tracking-tight">Menunggu Persetujuan</h2>
         
         <p class="text-slate-500 mb-8 leading-relaxed">
-            Permohonan akses Anda untuk aplikasi <strong class="text-slate-900 font-semibold">{{ $appName }}</strong> sedang menunggu persetujuan dari Administrator.
+            Permohonan akses anda untuk aplikasi <strong class="text-slate-900 font-semibold">{{ $appName }}</strong> sedang menunggu persetujuan dari Administrator.
         </p>
 
         <a href="{{ route('dashboard') }}" class="inline-flex justify-center w-full py-3.5 bg-slate-900 text-white rounded-xl font-semibold shadow-sm hover:bg-slate-800 transition-colors">

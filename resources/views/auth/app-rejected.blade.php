@@ -47,7 +47,7 @@
         <h2 class="text-2xl font-bold text-slate-900 mb-4 tracking-tight">Permohonan Ditolak</h2>
         
         <p class="text-slate-500 mb-8 leading-relaxed">
-            Mohon maaf, permohonan akses Anda untuk aplikasi <strong class="text-slate-900 font-semibold">{{ $appName }}</strong> telah <strong class="text-red-600">ditolak</strong> oleh Administrator.
+            Mohon maaf, permohonan akses anda untuk aplikasi <strong class="text-slate-900 font-semibold">{{ $appName }}</strong> telah <strong class="text-red-600">ditolak</strong> oleh Administrator.
         </p>
 
         <a href="{{ route('dashboard') }}" class="inline-flex justify-center w-full py-3.5 bg-slate-900 text-white rounded-xl font-semibold shadow-sm hover:bg-slate-800 transition-colors">

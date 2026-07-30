@@ -48,7 +48,7 @@
         <h2 class="text-2xl font-bold text-slate-900 mb-4 tracking-tight">Pendaftaran Berhasil!</h2>
         
         <p class="text-slate-500 mb-8 leading-relaxed">
-            Akun Anda telah berhasil didaftarkan dan saat ini sedang menunggu persetujuan dari Administrator. Anda dapat masuk ke dalam sistem setelah akun Anda disetujui.
+            Akun anda telah berhasil didaftarkan dan saat ini sedang menunggu persetujuan dari Administrator. Anda dapat masuk ke dalam sistem setelah akun anda disetujui.
         </p>
 
         <a href="{{ route('dashboard') }}" class="inline-flex justify-center w-full py-3.5 bg-kpi-700 text-white rounded-xl font-semibold shadow-sm hover:bg-kpi-800 transition-colors">

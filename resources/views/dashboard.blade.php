@@ -52,7 +52,6 @@
                 <!-- Admin Menu -->
                 @if (auth()->user()->isAdmin())
                     <nav class="hidden md:flex items-center gap-1">
-                        <a href="{{ route('dashboard') }}" class="px-3 py-2 text-sm font-semibold text-kpi-700 bg-kpi-50 rounded-md">Portal</a>
                         <a href="{{ route('admin.users') }}" class="px-3 py-2 text-sm font-medium text-slate-600 hover:text-kpi-700 hover:bg-slate-50 rounded-md transition-colors">Users</a>
                     </nav>
                 @endif
@@ -89,7 +88,7 @@
         
         <div class="mb-10">
             <h1 class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mb-2">Aplikasi Tersedia</h1>
-            <p class="text-slate-500 text-lg">Pilih aplikasi yang ingin Anda akses melalui portal SSO ini.</p>
+            <p class="text-slate-500 text-lg">Pilih aplikasi yang ingin anda akses melalui portal SSO ini.</p>
         </div>
 
         @if (session('success'))

@@ -58,7 +58,7 @@
                 <img src="{{ asset('logoKPI.png') }}" alt="KPI Logo" class="h-24 w-auto mb-8">
                 <h2 class="text-3xl font-bold mb-4 tracking-tight">Bergabung dengan KPI</h2>
                 <p class="text-slate-300 text-lg leading-relaxed">
-                    Daftarkan diri Anda untuk mendapatkan akses ke berbagai layanan aplikasi internal kami secara aman.
+                    Daftarkan diri anda untuk mendapatkan akses ke berbagai layanan aplikasi internal secara aman.
                 </p>
             </div>
             <div class="absolute -bottom-24 -left-24 w-64 h-64 border-4 border-slate-700 rounded-full"></div>
@@ -73,7 +73,7 @@
                     <img src="{{ asset('logoKPI.png') }}" alt="KPI Logo" class="h-12 w-auto">
                 </a>
                 <h1 class="text-3xl font-extrabold text-slate-900 mb-2">Buat Akun</h1>
-                <p class="text-slate-500 font-medium">Lengkapi data diri Anda di bawah ini.</p>
+                <p class="text-slate-500 font-medium">Lengkapi data diri anda di bawah ini.</p>
             </div>
 
             <!-- Stepper Indicator -->
@@ -157,7 +157,7 @@
 
                 <!-- STEP 2: Pilih Divisi -->
                 <div id="step2" class="form-step">
-                    <p class="text-sm font-semibold text-slate-700 mb-3">Pilih Divisi/Peran Anda:</p>
+                    <p class="text-sm font-semibold text-slate-700 mb-3">Pilih Divisi/Peran anda:</p>
                     <div class="grid grid-cols-2 gap-3 mb-8">
                         @php
                             $roles = ['Humas', 'Kepegawaian', 'Manajerial', 'Hukum', 'Visualisasi Data', 'Pengawasan Siaran'];

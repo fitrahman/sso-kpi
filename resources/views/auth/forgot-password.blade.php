@@ -334,7 +334,7 @@
             <div class="form-wrapper">
                 <div class="logo-kpi"></div>
                 <h2 class="card-title">Lupa Kata Sandi</h2>
-                <p class="card-subtitle">Masukkan alamat email Anda yang terdaftar, kami akan mengirimkan tautan untuk mengatur ulang kata sandi.</p>
+                <p class="card-subtitle">Masukkan alamat email anda yang terdaftar, kami akan mengirimkan tautan untuk mengatur ulang kata sandi.</p>
 
                 @if (session('status'))
                     <div class="message-wrapper">

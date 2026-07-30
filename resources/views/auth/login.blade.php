@@ -52,9 +52,9 @@
             <div class="absolute inset-0 bg-kpi-800/90 mix-blend-multiply"></div>
             <div class="relative z-10 w-full max-w-sm flex flex-col items-center">
                 <img src="{{ asset('logoKPI.png') }}" alt="KPI Logo" class="h-24 w-auto mb-8">
-                <h2 class="text-3xl font-bold mb-4 tracking-tight">Selamat Datang Kembali</h2>
+                <h2 class="text-3xl font-bold mb-4 tracking-tight">Selamat Datang</h2>
                 <p class="text-kpi-100 text-lg leading-relaxed">
-                    Masuk ke portal SSO untuk mengakses semua aplikasi pekerjaan Anda dalam satu tempat.
+                    Masuk ke portal SSO untuk mengakses semua aplikasi pekerjaan anda dalam satu tempat.
                 </p>
             </div>
             
@@ -71,7 +71,7 @@
                     <img src="{{ asset('logoKPI.png') }}" alt="KPI Logo" class="h-12 w-auto">
                 </a>
                 <h1 class="text-3xl font-extrabold text-slate-900 mb-2">Masuk</h1>
-                <p class="text-slate-500 font-medium">Silakan masukkan kredensial akun Anda.</p>
+                <p class="text-slate-500 font-medium">Silakan masukkan akun anda.</p>
             </div>
 
             <!-- Validation/Session Alerts -->

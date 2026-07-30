@@ -10,7 +10,6 @@ use Illuminate\Support\Facades\Mail;
 use App\Mail\UserApprovedMail;
 use App\Mail\UserRejectedMail;
 use Laravel\Passport\Client;
-use App\Models\ProfileUpdateRequest;
 use App\Models\UserClientRole;
 
 class DashboardController extends Controller
@@ -308,47 +307,6 @@ class DashboardController extends Controller
 
 
 
-    /**
-     * Deactivate user account (Admin only)
-     */
-    public function deactivateUser($id)
-    {
-        try {
-            $user = User::findOrFail($id);
-            if ($user->role === 'admin') {
-                return back()->withErrors(['error' => 'Akun administrator utama tidak dapat dinonaktifkan.']);
-            }
-            if ($user->id === Auth::id()) {
-                return back()->withErrors(['error' => 'Anda tidak dapat menonaktifkan akun Anda sendiri.']);
-            }
-
-            $user->update(['status' => 'inactive']);
-
-            // Revoke all of the user's OAuth access tokens
-            $user->tokens()->each(function ($token) {
-                $token->revoke();
-            });
-
-            return back()->with('success', 'Akun ' . $user->name . ' berhasil dinonaktifkan.');
-        } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Gagal menonaktifkan akun: ' . $e->getMessage()]);
-        }
-    }
-
-    /**
-     * Activate user account (Admin only)
-     */
-    public function activateUser($id)
-    {
-        try {
-            $user = User::findOrFail($id);
-            $user->update(['status' => 'approved']);
-
-            return back()->with('success', 'Akun ' . $user->name . ' berhasil diaktifkan kembali.');
-        } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Gagal mengaktifkan akun: ' . $e->getMessage()]);
-        }
-    }
 
     /**
      * Delete user account (Admin only)

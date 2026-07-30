@@ -41,8 +41,6 @@ Route::middleware('auth:web')->group(function () {
         Route::get('/admin/users', [DashboardController::class, 'users'])->name('admin.users');
         Route::get('/admin/users/{id}/edit', [DashboardController::class, 'editUser'])->name('admin.users.edit');
         Route::put('/admin/users/{id}', [DashboardController::class, 'updateUser'])->name('admin.users.update');
-        Route::post('/admin/users/{id}/deactivate', [DashboardController::class, 'deactivateUser'])->name('admin.users.deactivate');
-        Route::post('/admin/users/{id}/activate', [DashboardController::class, 'activateUser'])->name('admin.users.activate');
         Route::delete('/admin/users/{id}', [DashboardController::class, 'deleteUser'])->name('admin.users.delete');
         
         // Approval Routes
