@@ -180,25 +180,27 @@
                                                     <span class="block text-xs text-slate-500">{{ $client->redirect }}</span>
                                                 </div>
                                             </label>
-                                            <div class="flex items-center gap-2">
-                                                <span class="text-xs font-semibold text-slate-500">Peran:</span>
-                                                @php
-                                                    $supportedRoles = [];
-                                                    if (!empty($client->supported_roles)) {
-                                                        $supportedRoles = json_decode($client->supported_roles, true);
-                                                    }
-                                                    if (empty($supportedRoles) || !is_array($supportedRoles)) {
-                                                        $supportedRoles = ['admin', 'pengguna'];
-                                                    }
-                                                @endphp
-                                                <select name="client_roles[{{ $client->id }}]" class="text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-kpi-500 bg-white text-slate-750 font-medium">
-                                                    @foreach ($supportedRoles as $role)
-                                                        <option value="{{ $role }}" {{ ($userClientRoles[$client->id] ?? $supportedRoles[0]) === $role ? 'selected' : '' }}>
-                                                            {{ ucfirst($role) }}
-                                                        </option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
+                                            <div class="relative min-w-[130px]">
+                                                 @php
+                                                     $supportedRoles = [];
+                                                     if (!empty($client->supported_roles)) {
+                                                         $supportedRoles = json_decode($client->supported_roles, true);
+                                                     }
+                                                     if (empty($supportedRoles) || !is_array($supportedRoles)) {
+                                                         $supportedRoles = ['admin', 'pengguna'];
+                                                     }
+                                                 @endphp
+                                                 <select name="client_roles[{{ $client->id }}]" class="appearance-none w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-kpi-500 bg-white text-slate-750 font-medium pr-8">
+                                                     @foreach ($supportedRoles as $role)
+                                                         <option value="{{ $role }}" {{ ($userClientRoles[$client->id] ?? $supportedRoles[0]) === $role ? 'selected' : '' }}>
+                                                             {{ ucfirst($role) }}
+                                                         </option>
+                                                     @endforeach
+                                                 </select>
+                                                 <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-slate-500">
+                                                     <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                                 </div>
+                                             </div>
                                         </div>
                                     @empty
                                         <p class="text-sm text-slate-500">Tidak ada aplikasi klien yang terdaftar.</p>
