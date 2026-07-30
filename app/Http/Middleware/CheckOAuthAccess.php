@@ -23,6 +23,14 @@ class CheckOAuthAccess
                 $client = Client::find($clientId);
 
                 if ($client) {
+                    // Blokir jika aplikasi sedang maintenance (kecuali admin)
+                    if ($client->is_maintenance && $user->role !== 'admin') {
+                        return redirect()->route('app.maintenance', [
+                            'appName' => $client->name,
+                            'message' => $client->maintenance_message,
+                        ]);
+                    }
+
                     if ($user->role === 'admin') {
                         return $next($request);
                     }

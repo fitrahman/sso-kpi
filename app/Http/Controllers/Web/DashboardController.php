@@ -3,8 +3,10 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\ApplicationActivityLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\UserApprovedMail;
@@ -22,14 +24,22 @@ class DashboardController extends Controller
         try {
             $user = $request->user();
             $user->load('clientRoles');
-            
+
             $approvedApps = $user->accessedClients()
                 ->where('client_user_access.status', 'approved')
+                ->get();
+
+            // Load all visible clients ordered by display_order for the dashboard
+            $allClients = Client::where('personal_access_client', 0)
+                ->where('password_client', 0)
+                ->orderBy('display_order')
+                ->orderBy('id')
                 ->get();
 
             return view('dashboard', [
                 'user'         => $user,
                 'approvedApps' => $approvedApps,
+                'allClients'   => $allClients,
             ]);
 
         } catch (\Exception $e) {
@@ -329,6 +339,143 @@ class DashboardController extends Controller
 
 
 
+
+    // =========================================================
+    // Application Management (Admin only)
+    // =========================================================
+
+    public function clients()
+    {
+        try {
+            $clients = Client::where('personal_access_client', 0)
+                ->where('password_client', 0)
+                ->orderBy('display_order')
+                ->orderBy('id')
+                ->get();
+
+            // Attach user count per client
+            $clients->each(function ($client) {
+                $client->user_count = \DB::table('client_user_access')
+                    ->where('client_id', $client->id)
+                    ->where('status', 'approved')
+                    ->count();
+            });
+
+            $activityLogs = ApplicationActivityLog::with('admin')
+                ->orderByDesc('created_at')
+                ->limit(30)
+                ->get();
+
+            return view('admin.apps', [
+                'clients'      => $clients,
+                'activityLogs' => $activityLogs,
+            ]);
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Gagal memuat manajemen aplikasi: ' . $e->getMessage()]);
+        }
+    }
+
+    public function updateClient(Request $request, $id)
+    {
+        try {
+            $client = Client::findOrFail($id);
+            $admin  = Auth::user();
+            $changes = [];
+
+            $validated = $request->validate([
+                'name'                => 'required|string|max:255',
+                'description'         => 'nullable|string|max:500',
+                'maintenance_message' => 'nullable|string|max:500',
+                'display_order'       => 'nullable|integer|min:0',
+                'is_visible'          => 'nullable|boolean',
+                'logo'                => 'nullable|image|mimes:png,jpg,jpeg,svg|max:2048',
+            ]);
+
+            if ($client->name !== $validated['name']) {
+                $changes[] = "Nama: '{$client->name}' → '{$validated['name']}'";
+            }
+
+            $client->name                = $validated['name'];
+            $client->description         = $validated['description'] ?? null;
+            $client->maintenance_message = $validated['maintenance_message'] ?? null;
+            $client->display_order       = $validated['display_order'] ?? 0;
+            $client->is_visible          = $request->boolean('is_visible', true);
+
+            if ($request->hasFile('logo')) {
+                if ($client->logo_path) {
+                    Storage::disk('public')->delete($client->logo_path);
+                }
+                $path = $request->file('logo')->store('app-logos', 'public');
+                $client->logo_path = $path;
+                $changes[] = 'Logo diperbarui';
+            }
+
+            $client->save();
+
+            if (!empty($changes)) {
+                ApplicationActivityLog::create([
+                    'oauth_client_id' => $client->id,
+                    'admin_id'        => $admin->id,
+                    'action'          => 'updated',
+                    'description'     => implode(', ', $changes),
+                ]);
+            }
+
+            return back()->with('success', "Aplikasi '{$client->name}' berhasil diperbarui.");
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Gagal memperbarui aplikasi: ' . $e->getMessage()]);
+        }
+    }
+
+    public function toggleMaintenance($id)
+    {
+        try {
+            $client = Client::findOrFail($id);
+            $client->is_maintenance = !$client->is_maintenance;
+            $client->save();
+
+            ApplicationActivityLog::create([
+                'oauth_client_id' => $client->id,
+                'admin_id'        => Auth::id(),
+                'action'          => $client->is_maintenance ? 'maintenance_on' : 'maintenance_off',
+                'description'     => $client->is_maintenance
+                    ? "Mode maintenance diaktifkan untuk '{$client->name}'"
+                    : "Mode maintenance dinonaktifkan untuk '{$client->name}'",
+            ]);
+
+            return back()->with('success', $client->is_maintenance
+                ? "Aplikasi '{$client->name}' sekarang dalam mode maintenance."
+                : "Aplikasi '{$client->name}' kembali aktif."
+            );
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Gagal mengubah status maintenance: ' . $e->getMessage()]);
+        }
+    }
+
+    public function toggleVisibility($id)
+    {
+        try {
+            $client = Client::findOrFail($id);
+            $client->is_visible = !$client->is_visible;
+            $client->save();
+
+            ApplicationActivityLog::create([
+                'oauth_client_id' => $client->id,
+                'admin_id'        => Auth::id(),
+                'action'          => $client->is_visible ? 'visibility_on' : 'visibility_off',
+                'description'     => $client->is_visible
+                    ? "Aplikasi '{$client->name}' ditampilkan kembali di dashboard"
+                    : "Aplikasi '{$client->name}' disembunyikan dari dashboard",
+            ]);
+
+            return back()->with('success', $client->is_visible
+                ? "Aplikasi '{$client->name}' kini tampil di dashboard."
+                : "Aplikasi '{$client->name}' disembunyikan dari dashboard."
+            );
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Gagal mengubah visibilitas: ' . $e->getMessage()]);
+        }
+    }
 
     /**
      * Delete user account (Admin only)

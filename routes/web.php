@@ -32,6 +32,12 @@ Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('regi
 Route::middleware('auth:web')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/sso/gateway', [DashboardController::class, 'appGateway'])->name('app.gateway');
+    Route::get('/sso/maintenance', function () {
+        return view('auth.app-maintenance', [
+            'appName' => request('appName', 'Aplikasi'),
+            'message' => request('message'),
+        ]);
+    })->name('app.maintenance');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     
     // Admin only routes
@@ -45,5 +51,10 @@ Route::middleware('auth:web')->group(function () {
         Route::post('/admin/users/{id}/approve', [DashboardController::class, 'approveUser'])->name('admin.users.approve');
         Route::delete('/admin/users/{id}/reject', [DashboardController::class, 'rejectUser'])->name('admin.users.reject');
 
+        // Application Management Routes
+        Route::get('/admin/applications', [DashboardController::class, 'clients'])->name('admin.clients');
+        Route::put('/admin/applications/{id}', [DashboardController::class, 'updateClient'])->name('admin.clients.update');
+        Route::post('/admin/applications/{id}/toggle-maintenance', [DashboardController::class, 'toggleMaintenance'])->name('admin.clients.maintenance');
+        Route::post('/admin/applications/{id}/toggle-visibility', [DashboardController::class, 'toggleVisibility'])->name('admin.clients.visibility');
     });
 });
