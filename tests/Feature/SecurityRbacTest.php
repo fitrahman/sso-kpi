@@ -209,4 +209,28 @@ class SecurityRbacTest extends TestCase
 
         $this->assertEquals('inactive', $user->fresh()->status);
     }
+
+    /** @test */
+    public function admin_can_create_new_oauth_application()
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'status' => 'approved']);
+        $this->actingAs($admin);
+
+        $response = $this->post('/admin/applications', [
+            'name'            => 'Aplikasi Testing Baru',
+            'redirect'        => 'http://localhost:8005/auth/callback',
+            'description'     => 'Deskripsi aplikasi testing',
+            'supported_roles' => 'Admin, Operator, Supervisor',
+            'display_order'   => 5,
+            'is_visible'      => 1,
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('oauth_clients', [
+            'name'     => 'Aplikasi Testing Baru',
+            'redirect' => 'http://localhost:8005/auth/callback',
+        ]);
+    }
 }

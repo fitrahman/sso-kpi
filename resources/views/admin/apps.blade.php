@@ -112,9 +112,17 @@
             @endif
 
             <!-- Page Header -->
-            <div class="mb-8">
-                <h1 class="text-2xl font-bold text-slate-900">Manajemen Aplikasi</h1>
-                <p class="text-slate-500 mt-1">Kelola nama, deskripsi, logo, status maintenance, dan visibilitas setiap aplikasi.</p>
+            <div class="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h1 class="text-2xl font-bold text-slate-900">Manajemen Aplikasi</h1>
+                    <p class="text-slate-500 mt-1">Kelola nama, deskripsi, logo, status maintenance, dan visibilitas setiap aplikasi.</p>
+                </div>
+                <button onclick="openCreateModal()" class="inline-flex items-center gap-2 px-4 py-2.5 bg-kpi-700 hover:bg-kpi-800 text-white rounded-xl font-semibold text-sm transition-colors shadow-sm cursor-pointer w-fit">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Tambah Aplikasi Baru
+                </button>
             </div>
 
             <!-- Apps Grid -->
@@ -252,6 +260,84 @@
         </div>
     </main>
 
+    <!-- Create Application Modal -->
+    <div id="createModal" class="modal fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4" aria-modal="true">
+        <div class="fixed inset-0 bg-slate-900/60" onclick="closeCreateModal()"></div>
+        <div class="modal-content bg-white rounded-2xl shadow-2xl w-full max-w-lg relative z-10">
+            <div class="flex justify-between items-center px-6 py-5 border-b border-slate-100">
+                <h3 class="text-lg font-bold text-slate-900">Tambah Aplikasi Baru</h3>
+                <button onclick="closeCreateModal()" class="text-slate-400 hover:text-slate-600">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+
+            <form action="{{ route('admin.clients.store') }}" method="POST" enctype="multipart/form-data" class="p-6 space-y-5">
+                @csrf
+
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">Nama Aplikasi <span class="text-red-500">*</span></label>
+                    <input type="text" name="name" required placeholder="Contoh: Sistem Kepegawaian 3"
+                        class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500 focus:border-transparent">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">Redirect URI / Callback URL <span class="text-red-500">*</span></label>
+                    <input type="url" name="redirect" required placeholder="Contoh: http://sistem3.test/auth/sso/callback"
+                        class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500 focus:border-transparent">
+                    <p class="text-xs text-slate-400 mt-1">URL Callback tempat server SSO mengirimkan OAuth authorization code.</p>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">Deskripsi Aplikasi</label>
+                    <textarea name="description" rows="2"
+                        class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500 focus:border-transparent resize-none"
+                        placeholder="Deskripsi singkat modul/fitur aplikasi ini..."></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">Role Lokal yang Didukung (Pisahkan dengan koma)</label>
+                    <input type="text" name="supported_roles" placeholder="Contoh: Admin, Supervisor, Operator"
+                        class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500 focus:border-transparent">
+                    <p class="text-xs text-slate-400 mt-1">Role spesifik aplikasi yang bisa dipilih Admin saat pemetaan peran pengguna.</p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">Urutan Tampil</label>
+                        <input type="number" name="display_order" value="0" min="0"
+                            class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">Tampil di Dashboard</label>
+                        <select name="is_visible"
+                            class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500">
+                            <option value="1">Ya (Tampil)</option>
+                            <option value="0">Tidak (Sembunyikan)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">Logo Aplikasi (Opsional)</label>
+                    <input type="file" name="logo" accept="image/png,image/jpeg,image/jpg,image/svg+xml"
+                        class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-slate-100 file:text-slate-700 file:font-semibold hover:file:bg-slate-200 cursor-pointer">
+                    <p class="text-xs text-slate-400 mt-1">Format: PNG, JPG, SVG. Maks. 2MB.</p>
+                </div>
+
+                <div class="flex gap-3 pt-2">
+                    <button type="button" onclick="closeCreateModal()"
+                        class="flex-1 py-2.5 border border-slate-300 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
+                        Batal
+                    </button>
+                    <button type="submit"
+                        class="flex-1 py-2.5 bg-kpi-700 text-white rounded-xl text-sm font-semibold hover:bg-kpi-800 transition-colors shadow-sm">
+                        Simpan & Buat Aplikasi
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Edit Application Modal -->
     <div id="editModal" class="modal fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4" aria-modal="true">
         <div class="fixed inset-0 bg-slate-900/60" onclick="closeEditModal()"></div>
@@ -325,6 +411,14 @@
     </div>
 
     <script>
+        function openCreateModal() {
+            document.getElementById('createModal').classList.add('active');
+        }
+
+        function closeCreateModal() {
+            document.getElementById('createModal').classList.remove('active');
+        }
+
         function openEditModal(id, name, description, maintenanceMsg, displayOrder, isVisible) {
             document.getElementById('editForm').action = '/admin/applications/' + id;
             document.getElementById('edit-name').value = name;

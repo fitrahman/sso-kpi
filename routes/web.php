@@ -48,6 +48,7 @@ Route::middleware('auth:web')->group(function () {
 
         // Application Management Routes
         Route::get('/admin/applications', [DashboardController::class, 'clients'])->name('admin.clients');
+        Route::post('/admin/applications', [DashboardController::class, 'storeClient'])->name('admin.clients.store');
         Route::get('/admin/applications/{id}/users', [DashboardController::class, 'clientUsers'])->name('admin.clients.users');
         Route::put('/admin/applications/{id}/users/{userId}', [DashboardController::class, 'updateClientUser'])->name('admin.clients.users.update');
         Route::put('/admin/applications/{id}', [DashboardController::class, 'updateClient'])->name('admin.clients.update');

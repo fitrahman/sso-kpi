@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use App\Mail\UserApprovedMail;
 use App\Mail\UserRejectedMail;
 use Laravel\Passport\Client;
@@ -372,6 +374,80 @@ class DashboardController extends Controller
             ]);
         } catch (\Exception $e) {
             return back()->withErrors(['error' => 'Gagal memuat manajemen aplikasi: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Store a newly created application (Admin only)
+     */
+    public function storeClient(Request $request)
+    {
+        try {
+            $admin = Auth::user();
+
+            $validated = $request->validate([
+                'name'                => 'required|string|max:255',
+                'redirect'            => 'required|url|max:500',
+                'description'         => 'nullable|string|max:500',
+                'supported_roles'     => 'nullable|string|max:500',
+                'display_order'       => 'nullable|integer|min:0',
+                'is_visible'          => 'nullable|boolean',
+                'logo'                => 'nullable|image|mimes:png,jpg,jpeg,svg|max:2048',
+            ]);
+
+            $secret = Str::random(40);
+
+            $rolesArray = [];
+            if (!empty($validated['supported_roles'])) {
+                $rolesArray = array_map('trim', explode(',', $validated['supported_roles']));
+                $rolesArray = array_values(array_filter($rolesArray));
+            }
+            if (empty($rolesArray)) {
+                $rolesArray = ['Admin', 'Staff'];
+            }
+
+            $logoPath = null;
+            if ($request->hasFile('logo')) {
+                $logoPath = $request->file('logo')->store('app-logos', 'public');
+            }
+
+            $client = Client::create([
+                'name'                   => $validated['name'],
+                'secret'                 => $secret,
+                'redirect'               => $validated['redirect'],
+                'personal_access_client' => 0,
+                'password_client'        => 0,
+                'revoked'                => 0,
+                'is_maintenance'         => 0,
+                'is_visible'             => $request->boolean('is_visible', true),
+                'description'            => $validated['description'] ?? null,
+                'display_order'          => $validated['display_order'] ?? 0,
+                'supported_roles'        => json_encode($rolesArray),
+                'logo_path'              => $logoPath,
+            ]);
+
+            // Auto-grant access to all approved users
+            $approvedUsers = User::where('status', 'approved')->get();
+            foreach ($approvedUsers as $u) {
+                DB::table('client_user_access')->insert([
+                    'user_id'    => $u->id,
+                    'client_id'  => $client->id,
+                    'status'     => 'approved',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+
+            ApplicationActivityLog::create([
+                'oauth_client_id' => $client->id,
+                'admin_id'        => $admin->id,
+                'action'          => 'created',
+                'description'     => "Aplikasi baru '{$client->name}' berhasil ditambahkan (Client ID: {$client->id}).",
+            ]);
+
+            return back()->with('success', "Aplikasi '{$client->name}' berhasil ditambahkan! Client ID: {$client->id} | Client Secret: {$secret}");
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Gagal menambahkan aplikasi: ' . $e->getMessage()]);
         }
     }
 
