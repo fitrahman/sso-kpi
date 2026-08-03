@@ -187,7 +187,6 @@
                                 <th class="px-6 py-3.5">Role Global</th>
                                 <th class="px-6 py-3.5">Akses Portal</th>
                                 <th class="px-6 py-3.5">Role Lokal ({{ $client->name }})</th>
-                                <th class="px-6 py-3.5 text-right">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
@@ -232,7 +231,7 @@
                                         </span>
                                     </td>
 
-                                    <!-- Update Access & Role Form per Row -->
+                                    <!-- Update Access & Role Form per Row (Auto-submits on change) -->
                                     <form action="{{ route('admin.clients.users.update', ['id' => $client->id, 'userId' => $u->id]) }}" method="POST">
                                         @csrf
                                         @method('PUT')
@@ -241,17 +240,18 @@
                                         <td class="px-6 py-4">
                                             <label class="inline-flex items-center gap-2 cursor-pointer select-none">
                                                 <input type="checkbox" name="has_access" value="1" {{ $currentAccess === 'approved' ? 'checked' : '' }}
+                                                    onchange="this.form.submit()"
                                                     class="h-4 w-4 rounded border-slate-300 text-kpi-600 focus:ring-kpi-500 cursor-pointer">
                                                 <span class="text-xs font-semibold {{ $currentAccess === 'approved' ? 'text-emerald-700' : 'text-slate-400' }}">
-                                                    {{ $currentAccess === 'approved' ? 'Berakses (Aktif)' : 'Tidak Berakses' }}
+                                                    {{ $currentAccess === 'approved' ? 'Memiliki akses' : 'Tidak memiliki akses' }}
                                                 </span>
                                             </label>
                                         </td>
 
                                         <!-- Local Role Dropdown -->
                                         <td class="px-6 py-4">
-                                            <select name="local_role" class="w-48 border border-slate-300 rounded-lg px-3 py-1.5 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500 font-medium bg-white">
-                                                <option value="">-- Tanpa Role Spesifik --</option>
+                                            <select name="local_role" onchange="this.form.submit()" class="w-48 border border-slate-300 rounded-lg px-3 py-1.5 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500 font-medium bg-white cursor-pointer">
+                                                <option value="">Tidak memiliki role</option>
                                                 @foreach ($roleOptions as $rOpt)
                                                     <option value="{{ $rOpt }}" {{ $currentLocalRole === $rOpt ? 'selected' : '' }}>
                                                         {{ ucfirst($rOpt) }}
@@ -259,19 +259,11 @@
                                                 @endforeach
                                             </select>
                                         </td>
-
-                                        <!-- Submit Action -->
-                                        <td class="px-6 py-4 text-right">
-                                            <button type="submit" class="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold transition-colors shadow-sm">
-                                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                                                Simpan
-                                            </button>
-                                        </td>
                                     </form>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="5" class="px-6 py-8 text-center text-slate-400 text-sm">Tidak ada pengguna ditemukan.</td>
+                                    <td colspan="4" class="px-6 py-8 text-center text-slate-400 text-sm">Tidak ada pengguna ditemukan.</td>
                                 </tr>
                             @endforelse
                         </tbody>
