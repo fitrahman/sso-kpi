@@ -185,16 +185,31 @@
                             <tr>
                                 <th class="px-6 py-3.5">Pengguna</th>
                                 <th class="px-6 py-3.5">Role Global</th>
-                                <th class="px-6 py-3.5">Status Akses Portal</th>
+                                <th class="px-6 py-3.5">Akses Portal</th>
                                 <th class="px-6 py-3.5">Role Lokal ({{ $client->name }})</th>
                                 <th class="px-6 py-3.5 text-right">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
+                            @php
+                                $supportedRoles = [];
+                                if (!empty($client->supported_roles)) {
+                                    $supportedRoles = json_decode($client->supported_roles, true);
+                                }
+                                if (empty($supportedRoles) || !is_array($supportedRoles)) {
+                                    $supportedRoles = ['pengguna', 'admin', 'editor', 'superadmin', 'atasan', 'pegawai', 'view'];
+                                }
+                            @endphp
                             @forelse ($users as $u)
                                 @php
                                     $currentAccess = $accessMap[$u->id] ?? 'none';
                                     $currentLocalRole = $localRolesMap[$u->id] ?? '';
+
+                                    // Build role list including current role if custom
+                                    $roleOptions = $supportedRoles;
+                                    if (!empty($currentLocalRole) && !in_array($currentLocalRole, $roleOptions)) {
+                                        $roleOptions[] = $currentLocalRole;
+                                    }
                                 @endphp
                                 <tr class="hover:bg-slate-50/80 transition-colors">
                                     <!-- User Info -->
@@ -222,20 +237,27 @@
                                         @csrf
                                         @method('PUT')
 
-                                        <!-- Access Status -->
+                                        <!-- Access Checkbox -->
                                         <td class="px-6 py-4">
-                                            <select name="access_status" class="border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500 font-medium">
-                                                <option value="approved" {{ $currentAccess === 'approved' ? 'selected' : '' }}>Disetujui (Approved)</option>
-                                                <option value="pending" {{ $currentAccess === 'pending' ? 'selected' : '' }}>Menunggu (Pending)</option>
-                                                <option value="rejected" {{ $currentAccess === 'rejected' ? 'selected' : '' }}>Ditolak (Rejected)</option>
-                                                <option value="none" {{ $currentAccess === 'none' ? 'selected' : '' }}>Belum Berakses (None)</option>
-                                            </select>
+                                            <label class="inline-flex items-center gap-2 cursor-pointer select-none">
+                                                <input type="checkbox" name="has_access" value="1" {{ $currentAccess === 'approved' ? 'checked' : '' }}
+                                                    class="h-4 w-4 rounded border-slate-300 text-kpi-600 focus:ring-kpi-500 cursor-pointer">
+                                                <span class="text-xs font-semibold {{ $currentAccess === 'approved' ? 'text-emerald-700' : 'text-slate-400' }}">
+                                                    {{ $currentAccess === 'approved' ? 'Berakses (Aktif)' : 'Tidak Berakses' }}
+                                                </span>
+                                            </label>
                                         </td>
 
-                                        <!-- Local Role -->
+                                        <!-- Local Role Dropdown -->
                                         <td class="px-6 py-4">
-                                            <input type="text" name="local_role" value="{{ $currentLocalRole }}" placeholder="Contoh: pengguna, editor, admin..."
-                                                class="w-48 border border-slate-300 rounded-lg px-3 py-1.5 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500 font-medium">
+                                            <select name="local_role" class="w-48 border border-slate-300 rounded-lg px-3 py-1.5 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500 font-medium bg-white">
+                                                <option value="">-- Tanpa Role Spesifik --</option>
+                                                @foreach ($roleOptions as $rOpt)
+                                                    <option value="{{ $rOpt }}" {{ $currentLocalRole === $rOpt ? 'selected' : '' }}>
+                                                        {{ ucfirst($rOpt) }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
                                         </td>
 
                                         <!-- Submit Action -->

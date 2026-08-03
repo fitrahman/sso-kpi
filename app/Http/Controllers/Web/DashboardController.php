@@ -539,11 +539,18 @@ class DashboardController extends Controller
             $user   = User::findOrFail($userId);
 
             $validated = $request->validate([
-                'access_status' => 'required|in:approved,pending,rejected,none',
+                'access_status' => 'nullable|in:approved,pending,rejected,none',
+                'has_access'    => 'nullable|boolean',
                 'local_role'    => 'nullable|string|max:50',
             ]);
 
-            $status    = $validated['access_status'];
+            // Determine status: if has_access input exists (checkbox submitted), use boolean to set approved/none
+            if ($request->has('has_access')) {
+                $status = $request->boolean('has_access') ? 'approved' : 'none';
+            } else {
+                $status = $validated['access_status'] ?? 'none';
+            }
+
             $localRole = trim($validated['local_role'] ?? '');
 
             // Update client_user_access pivot table
