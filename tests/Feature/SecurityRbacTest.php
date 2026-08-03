@@ -1,0 +1,171 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\User;
+use App\Models\UserClientRole;
+use Laravel\Passport\Client;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Tests\TestCase;
+
+class SecurityRbacTest extends TestCase
+{
+    use RefreshDatabase;
+
+    protected function createClient(array $attributes = [])
+    {
+        $id = $attributes['id'] ?? 2;
+        DB::table('oauth_clients')->insert(array_merge([
+            'id'                     => $id,
+            'name'                   => 'Sistem Test ' . $id,
+            'secret'                 => 'secret_key_' . $id,
+            'redirect'               => 'http://localhost:' . (8000 + $id) . '/callback',
+            'personal_access_client' => 0,
+            'password_client'        => 0,
+            'revoked'                => 0,
+            'is_maintenance'         => 0,
+            'is_visible'             => 1,
+            'created_at'             => now(),
+            'updated_at'             => now(),
+        ], $attributes));
+
+        return Client::find($id);
+    }
+
+    /** @test */
+    public function non_admin_cannot_access_admin_routes()
+    {
+        $user = User::factory()->create([
+            'role'   => 'pengguna',
+            'status' => 'approved',
+        ]);
+
+        $this->actingAs($user);
+
+        $response = $this->get('/admin/users');
+        $response->assertStatus(403);
+
+        $responseApps = $this->get('/admin/applications');
+        $responseApps->assertStatus(403);
+    }
+
+    /** @test */
+    public function admin_can_access_admin_routes()
+    {
+        $admin = User::factory()->create([
+            'role'   => 'admin',
+            'status' => 'approved',
+        ]);
+
+        $this->actingAs($admin);
+
+        $response = $this->get('/admin/users');
+        $response->assertStatus(200);
+
+        $responseApps = $this->get('/admin/applications');
+        $responseApps->assertStatus(200);
+    }
+
+    /** @test */
+    public function user_without_approved_client_access_is_blocked_on_gateway()
+    {
+        $user = User::factory()->create([
+            'role'   => 'pengguna',
+            'status' => 'approved',
+        ]);
+
+        $client = $this->createClient(['id' => 2, 'name' => 'Sistem 1']);
+
+        $this->actingAs($user);
+
+        // Gateway access without approved status in pivot client_user_access
+        $response = $this->get('/sso/gateway?appName=Sistem 1');
+        $response->assertStatus(200);
+        $response->assertViewIs('auth.app-denied');
+    }
+
+    /** @test */
+    public function user_with_approved_client_access_can_proceed_to_login()
+    {
+        $user = User::factory()->create([
+            'role'   => 'pengguna',
+            'status' => 'approved',
+        ]);
+
+        $client = $this->createClient(['id' => 2, 'name' => 'Sistem 1', 'redirect' => 'http://localhost:8001/callback']);
+
+        // Attach approved access
+        $user->accessedClients()->attach($client->id, ['status' => 'approved']);
+
+        $this->actingAs($user);
+
+        $response = $this->get('/sso/gateway?appName=Sistem 1');
+        $response->assertRedirect('http://localhost:8001/login');
+    }
+
+    /** @test */
+    public function application_maintenance_mode_blocks_regular_user()
+    {
+        $user = User::factory()->create([
+            'role'   => 'pengguna',
+            'status' => 'approved',
+        ]);
+
+        $client = $this->createClient([
+            'id'                  => 2,
+            'name'                => 'Sistem 1',
+            'is_maintenance'      => 1,
+            'maintenance_message' => 'Sedang pemeliharaan server.',
+        ]);
+
+        $user->accessedClients()->attach($client->id, ['status' => 'approved']);
+
+        $this->actingAs($user);
+
+        // Check maintenance check on authorize route middleware
+        $response = $this->get('/oauth/authorize?client_id=2&response_type=code');
+        $response->assertRedirect(route('app.maintenance', [
+            'appName' => 'Sistem 1',
+            'message' => 'Sedang pemeliharaan server.',
+        ]));
+    }
+
+    /** @test */
+    public function admin_can_bypass_maintenance_mode()
+    {
+        $admin = User::factory()->create([
+            'role'   => 'admin',
+            'status' => 'approved',
+        ]);
+
+        $client = $this->createClient([
+            'id'             => 2,
+            'name'           => 'Sistem 1',
+            'is_maintenance' => 1,
+            'redirect'       => 'http://localhost:8001/callback',
+        ]);
+
+        $this->actingAs($admin);
+
+        $response = $this->get('/sso/gateway?appName=Sistem 1');
+        $response->assertRedirect('http://localhost:8001/login');
+    }
+
+    /** @test */
+    public function admin_cannot_delete_self_or_other_main_admin()
+    {
+        $admin1 = User::factory()->create(['role' => 'admin', 'status' => 'approved']);
+        $admin2 = User::factory()->create(['role' => 'admin', 'status' => 'approved']);
+
+        $this->actingAs($admin1);
+
+        // Cannot delete self
+        $responseSelf = $this->delete('/admin/users/' . $admin1->id);
+        $responseSelf->assertSessionHasErrors();
+
+        // Cannot delete other admin
+        $responseOther = $this->delete('/admin/users/' . $admin2->id);
+        $responseOther->assertSessionHasErrors();
+    }
+}
