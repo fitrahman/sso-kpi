@@ -304,6 +304,14 @@ class DashboardController extends Controller
 
         $user = Auth::user();
         
+        // Cek maintenance mode (kecuali untuk admin)
+        if ($client->is_maintenance && $user->role !== 'admin') {
+            return redirect()->route('app.maintenance', [
+                'appName' => $client->name,
+                'message' => $client->maintenance_message,
+            ]);
+        }
+
         // Admin has direct access to all portals
         if ($user->role === 'admin') {
             $parsedUrl = parse_url($client->redirect);
