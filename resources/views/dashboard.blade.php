@@ -133,70 +133,226 @@
         @endif
 
 
-        <!-- Applications Grid -->
+        <!-- Applications Carousel -->
         @php
-            $colorPalette = [
-                ['bg' => 'bg-blue-50',    'text' => 'text-blue-600',    'hover' => 'group-hover:text-blue-700'],
-                ['bg' => 'bg-emerald-50', 'text' => 'text-emerald-600', 'hover' => 'group-hover:text-emerald-700'],
-                ['bg' => 'bg-purple-50',  'text' => 'text-purple-600',  'hover' => 'group-hover:text-purple-700'],
-                ['bg' => 'bg-amber-50',   'text' => 'text-amber-600',   'hover' => 'group-hover:text-amber-700'],
-                ['bg' => 'bg-rose-50',    'text' => 'text-rose-600',    'hover' => 'group-hover:text-rose-700'],
-                ['bg' => 'bg-indigo-50',  'text' => 'text-indigo-600',  'hover' => 'group-hover:text-indigo-700'],
+            $gradients = [
+                ['from' => '#1e3a5f', 'to' => '#2563eb'],
+                ['from' => '#064e3b', 'to' => '#059669'],
+                ['from' => '#3b0764', 'to' => '#7c3aed'],
+                ['from' => '#78350f', 'to' => '#d97706'],
+                ['from' => '#881337', 'to' => '#e11d48'],
+                ['from' => '#1e1b4b', 'to' => '#4f46e5'],
             ];
+            $visibleClients = $allClients->filter(fn($c) => $c->is_visible)->values();
+            $totalVisible   = $visibleClients->count();
         @endphp
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            @foreach ($allClients as $i => $client)
-                @if (!$client->is_visible) @continue @endif
-                @php $c = $colorPalette[$i % count($colorPalette)]; @endphp
 
-                @if ($client->is_maintenance && auth()->user()->role !== 'admin')
-                    {{-- Maintenance card (non-clickable) --}}
-                    <div class="group block bg-white rounded-2xl border border-amber-200 p-6 shadow-sm relative overflow-hidden opacity-70 cursor-not-allowed select-none">
-                        <div class="absolute top-0 right-0 p-4 opacity-10">
-                            <svg class="w-24 h-24 text-amber-400 transform rotate-12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                        </div>
-                        <div class="w-14 h-14 bg-amber-50 text-amber-400 rounded-xl flex items-center justify-center mb-4 shadow-sm overflow-hidden">
-                            @if ($client->logo_path)
-                                <img src="{{ Storage::url($client->logo_path) }}" alt="{{ $client->name }}" class="w-14 h-14 object-cover grayscale">
-                            @else
-                                <svg class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                            @endif
-                        </div>
-                        <div class="flex items-center gap-2 mb-1">
-                            <h3 class="text-xl font-bold text-slate-400">{{ $client->name }}</h3>
-                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-200">
-                                <span class="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse"></span> Maintenance
-                            </span>
-                        </div>
-                        <p class="text-sm text-slate-400 font-medium">Sedang dalam pemeliharaan sistem.</p>
-                    </div>
-                @else
-                    {{-- Normal clickable card --}}
-                    <a href="{{ route('app.gateway', ['appName' => $client->name]) }}" class="group block bg-white rounded-2xl border border-slate-200 p-6 shadow-sm transition-all duration-300 app-card-hover relative overflow-hidden">
-                        <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                            <svg class="w-24 h-24 {{ $c['text'] }} transform rotate-12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
-                        </div>
-                        <div class="w-14 h-14 {{ $c['bg'] }} {{ $c['text'] }} rounded-xl flex items-center justify-center mb-6 shadow-sm group-hover:scale-110 transition-transform duration-300 overflow-hidden">
-                            @if ($client->logo_path)
-                                <img src="{{ Storage::url($client->logo_path) }}" alt="{{ $client->name }}" class="w-14 h-14 object-cover">
-                            @else
-                                <svg class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
-                            @endif
-                        </div>
-                        @if ($client->is_maintenance && auth()->user()->role === 'admin')
-                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-200 mb-2">
-                                <span class="w-1.5 h-1.5 bg-amber-500 rounded-full"></span> Maintenance (Admin View)
-                            </span>
-                        @endif
-                        <h3 class="text-xl font-bold text-slate-900 mb-2 {{ $c['hover'] }} transition-colors">{{ $client->name }}</h3>
-                        <p class="text-sm text-slate-500 font-medium">{{ $client->description ?: 'Klik untuk mengakses aplikasi.' }}</p>
-                        <div class="mt-6 flex items-center text-sm font-bold {{ $c['text'] }} opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
-                            Buka Aplikasi <svg class="w-4 h-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
-                        </div>
-                    </a>
-                @endif
-            @endforeach
-        </div>
+        <div id="appCarousel" class="relative">
+
+            {{-- ── Carousel track ─────────────────────────────────────── --}}
+            <div id="carouselViewport" class="overflow-hidden">
+                <div id="carouselTrack"
+                     class="flex gap-6 transition-transform duration-500 ease-in-out"
+                     style="width: max-content;">
+
+                    @foreach ($visibleClients as $idx => $client)
+                        @php
+                            $g              = $gradients[$idx % count($gradients)];
+                            $isMaintenance  = $client->is_maintenance && auth()->user()->role !== 'admin';
+                            $isAdminMaint   = $client->is_maintenance && auth()->user()->role === 'admin';
+                        @endphp
+
+                        {{-- ── Single card ── --}}
+                        <div class="carousel-card flex-shrink-0 w-72 sm:w-80 flex flex-col rounded-2xl overflow-hidden
+                                    bg-white border border-slate-200 shadow-md
+                                    transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl
+                                    {{ $isMaintenance ? 'opacity-75' : '' }}">
+
+                            {{-- ▌TOP: visual header ▐ --}}
+                            <div class="relative h-48 overflow-hidden select-none"
+                                 style="background: linear-gradient(135deg, {{ $g['from'] }} 0%, {{ $g['to'] }} 100%);">
+
+                                {{-- dot-pattern overlay --}}
+                                <div class="absolute inset-0 opacity-[0.08]"
+                                     style="background-image: radial-gradient(white 1.5px, transparent 1.5px);
+                                            background-size: 28px 28px;"></div>
+
+                                {{-- large decorative circle --}}
+                                <div class="absolute -right-10 -top-10 w-40 h-40 rounded-full opacity-10 bg-white"></div>
+                                <div class="absolute -left-6 -bottom-6 w-28 h-28 rounded-full opacity-10 bg-white"></div>
+
+                                {{-- Badge — top-left --}}
+                                <div class="absolute top-3 left-3 z-10">
+                                    @if ($isMaintenance)
+                                        <span class="inline-flex items-center gap-1.5 bg-black/40 backdrop-blur-sm
+                                                     text-amber-300 text-[11px] font-semibold
+                                                     px-2.5 py-1 rounded-full border border-amber-400/40">
+                                            <span class="w-1.5 h-1.5 bg-amber-400 rounded-full animate-pulse"></span>
+                                            Maintenance
+                                        </span>
+                                    @elseif ($isAdminMaint)
+                                        <span class="inline-flex items-center gap-1.5 bg-black/40 backdrop-blur-sm
+                                                     text-amber-300 text-[11px] font-semibold
+                                                     px-2.5 py-1 rounded-full border border-amber-400/40">
+                                            <span class="w-1.5 h-1.5 bg-amber-400 rounded-full animate-pulse"></span>
+                                            Maintenance
+                                        </span>
+                                    @else
+                                        <span class="bg-black/25 backdrop-blur-sm text-white/90
+                                                     text-[11px] font-semibold px-2.5 py-1 rounded-full">
+                                            Aplikasi
+                                        </span>
+                                    @endif
+                                </div>
+
+                                {{-- Logo — bottom-left --}}
+                                <div class="absolute bottom-3 left-4 z-10">
+                                    @if ($client->logo_path)
+                                        <img src="{{ Storage::url($client->logo_path) }}"
+                                             alt="{{ $client->name }}"
+                                             class="h-8 w-auto object-contain drop-shadow
+                                                    {{ $isMaintenance ? 'grayscale opacity-50' : '' }}">
+                                    @else
+                                        <div class="flex items-center gap-1.5 text-white/70">
+                                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                      d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6z
+                                                         M14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6z
+                                                         M4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2z
+                                                         M14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+                                            </svg>
+                                            <span class="text-[11px] font-bold">KPI SSO</span>
+                                        </div>
+                                    @endif
+                                </div>
+
+                                {{-- App name — centred --}}
+                                <div class="absolute inset-0 flex items-center justify-center px-6 z-10">
+                                    <h3 class="text-xl font-extrabold text-white text-center
+                                               drop-shadow-lg leading-snug tracking-tight
+                                               {{ $isMaintenance ? 'opacity-50' : '' }}">
+                                        {{ $client->name }}
+                                    </h3>
+                                </div>
+                            </div>
+
+                            {{-- ▌BOTTOM: content ▐ --}}
+                            <div class="flex flex-col flex-grow p-5">
+                                <p class="text-sm text-slate-500 leading-relaxed flex-grow mb-5 line-clamp-3">
+                                    @if ($isMaintenance)
+                                        Aplikasi sedang dalam pemeliharaan dan tidak dapat diakses sementara.
+                                    @else
+                                        {{ $client->description ?: 'Portal akses terintegrasi melalui KPI SSO.' }}
+                                    @endif
+                                </p>
+
+                                @if ($isMaintenance)
+                                    <button disabled
+                                            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg
+                                                   border border-slate-200 bg-slate-50
+                                                   text-sm font-semibold text-slate-400 cursor-not-allowed w-fit">
+                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                        </svg>
+                                        Tidak Tersedia
+                                    </button>
+                                @else
+                                    <a href="{{ route('app.gateway', ['appName' => $client->name]) }}"
+                                       class="inline-flex items-center gap-2 px-4 py-2 rounded-lg
+                                              border border-slate-300 bg-white
+                                              text-sm font-semibold text-slate-700
+                                              hover:bg-slate-50 hover:border-slate-400
+                                              transition-all duration-200 w-fit group/btn">
+                                        @if ($isAdminMaint)
+                                            <span class="w-1.5 h-1.5 bg-amber-500 rounded-full"></span>
+                                        @endif
+                                        Buka Aplikasi
+                                        <svg class="w-4 h-4 group-hover/btn:translate-x-1 transition-transform duration-200"
+                                             fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+                                        </svg>
+                                    </a>
+                                @endif
+                            </div>
+                        </div>{{-- /.carousel-card --}}
+                    @endforeach
+
+                </div>{{-- /#carouselTrack --}}
+            </div>{{-- /#carouselViewport --}}
+
+            {{-- ── Prev / Next (only when > 3 visible apps) ──────────── --}}
+            @if ($totalVisible > 3)
+                <div class="flex items-center gap-3 mt-6">
+                    <p id="carouselInfo" class="text-sm text-slate-400 flex-grow"></p>
+
+                    <button id="carouselPrevBtn" onclick="appCarousel.prev()"
+                            class="w-9 h-9 flex items-center justify-center rounded-full
+                                   border border-slate-300 bg-white shadow-sm
+                                   text-slate-600 hover:bg-slate-100 hover:border-slate-400
+                                   transition-all duration-200
+                                   disabled:opacity-30 disabled:cursor-not-allowed">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+                        </svg>
+                    </button>
+
+                    <button id="carouselNextBtn" onclick="appCarousel.next()"
+                            class="w-9 h-9 flex items-center justify-center rounded-full
+                                   border border-slate-300 bg-white shadow-sm
+                                   text-slate-600 hover:bg-slate-100 hover:border-slate-400
+                                   transition-all duration-200
+                                   disabled:opacity-30 disabled:cursor-not-allowed">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                        </svg>
+                    </button>
+                </div>
+            @endif
+
+        </div>{{-- /#appCarousel --}}
+
+        {{-- ── Carousel JS ──────────────────────────────────────────── --}}
+        <script>
+        (function () {
+            const PER_PAGE   = 3;
+            const total      = {{ $totalVisible }};
+            const totalPages = Math.ceil(total / PER_PAGE);
+            let   page       = 0;
+
+            const track   = document.getElementById('carouselTrack');
+            const prevBtn = document.getElementById('carouselPrevBtn');
+            const nextBtn = document.getElementById('carouselNextBtn');
+            const info    = document.getElementById('carouselInfo');
+
+            function cardSlotWidth() {
+                const card = document.querySelector('.carousel-card');
+                if (!card) return 344; // 320px + 24px gap
+                return card.getBoundingClientRect().width + 24;
+            }
+
+            function render() {
+                if (!track) return;
+                track.style.transform = `translateX(-${page * PER_PAGE * cardSlotWidth()}px)`;
+                if (prevBtn) prevBtn.disabled = page === 0;
+                if (nextBtn) nextBtn.disabled = page >= totalPages - 1;
+                if (info)    info.textContent = total > PER_PAGE
+                    ? `Halaman ${page + 1} dari ${totalPages}`
+                    : '';
+            }
+
+            window.appCarousel = {
+                prev() { if (page > 0) { page--; render(); } },
+                next() { if (page < totalPages - 1) { page++; render(); } },
+            };
+
+            // Re-render on resize so card widths stay accurate
+            window.addEventListener('resize', () => render(), { passive: true });
+
+            render(); // initial
+        })();
+        </script>
+
 
 
     </main>
