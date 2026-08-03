@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('oauth_clients', function (Blueprint $table) {
-            $table->boolean('is_maintenance')->default(false)->after('supported_roles');
+            $table->boolean('is_maintenance')->default(false)->after('revoked');
             $table->text('maintenance_message')->nullable()->after('is_maintenance');
             $table->string('description')->nullable()->after('maintenance_message');
             $table->integer('display_order')->default(0)->after('description');

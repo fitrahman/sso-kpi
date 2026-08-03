@@ -12,7 +12,7 @@ class User extends Authenticatable
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, HasApiTokens;
 
-    const ROLES = ['Humas', 'Manajerial', 'Kepegawaian', 'Hukum', 'Visualisasi Data', 'Pengawasan Siaran'];
+    const ROLES = ['pengguna', 'Humas', 'Manajerial', 'Kepegawaian', 'Hukum', 'Visualisasi Data', 'Pengawasan Siaran'];
 
     /**
      * The attributes that are mass assignable.

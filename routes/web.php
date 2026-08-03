@@ -5,11 +5,6 @@ use App\Http\Controllers\Web\DashboardController;
 use Illuminate\Support\Facades\Route;
 
 // Public routes
-// Route::get('/', function () {
-//     return view('welcome');
-// })->name('home');
-
-// Public routes
 Route::get('/', [AuthController::class, 'showLoginForm'])->name('login');
 Route::get('/login', function () {
     return redirect('/');
