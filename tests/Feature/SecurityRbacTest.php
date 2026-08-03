@@ -168,4 +168,51 @@ class SecurityRbacTest extends TestCase
         $responseOther = $this->delete('/admin/users/' . $admin2->id);
         $responseOther->assertSessionHasErrors();
     }
+
+    /** @test */
+    public function role_change_in_sso_server_reflects_immediately_in_api_user_claims()
+    {
+        $user = User::factory()->create(['status' => 'approved']);
+        $client = $this->createClient(['id' => 2, 'name' => 'Aplikasi Kepegawaian']);
+
+        // Initial local role: Staff
+        UserClientRole::create([
+            'user_id'         => $user->id,
+            'oauth_client_id' => 2,
+            'role'            => 'staff',
+        ]);
+
+        \Laravel\Passport\Passport::actingAs($user);
+
+        // First check: role is staff
+        $res1 = $this->getJson('/api/user?client_id=2');
+        $res1->assertStatus(200)->assertJson(['role' => 'staff']);
+
+        // Update role in SSO to Manager (Promotion)
+        UserClientRole::where('user_id', $user->id)->where('oauth_client_id', 2)->update(['role' => 'manager']);
+
+        // Real-time check: role is now manager
+        $res2 = $this->getJson('/api/user?client_id=2');
+        $res2->assertStatus(200)->assertJson(['role' => 'manager']);
+    }
+
+    /** @test */
+    public function deactivating_user_in_sso_revokes_tokens()
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'status' => 'approved']);
+        $user  = User::factory()->create(['role' => 'Kepegawaian', 'status' => 'approved']);
+
+        $this->actingAs($admin);
+
+        // Deactivate user
+        $response = $this->put('/admin/users/' . $user->id, [
+            'name'   => $user->name,
+            'email'  => $user->email,
+            'role'   => 'Kepegawaian',
+            'status' => 'inactive',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $this->assertEquals('inactive', $user->fresh()->status);
+    }
 }
