@@ -56,6 +56,5 @@ Route::middleware('auth:web')->group(function () {
         Route::put('/admin/applications/{id}', [DashboardController::class, 'updateClient'])->name('admin.clients.update');
         Route::post('/admin/applications/{id}/toggle-maintenance', [DashboardController::class, 'toggleMaintenance'])->name('admin.clients.maintenance');
         Route::post('/admin/applications/{id}/toggle-visibility', [DashboardController::class, 'toggleVisibility'])->name('admin.clients.visibility');
-        Route::delete('/admin/applications/{id}/logo', [DashboardController::class, 'deleteClientLogo'])->name('admin.clients.logo.delete');
     });
 });

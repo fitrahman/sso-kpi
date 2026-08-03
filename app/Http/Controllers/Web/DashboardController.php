@@ -477,32 +477,6 @@ class DashboardController extends Controller
         }
     }
 
-    public function deleteClientLogo($id)
-    {
-        try {
-            $client = Client::findOrFail($id);
-
-            if (!$client->logo_path) {
-                return back()->withErrors(['error' => 'Aplikasi ini tidak memiliki gambar.']);
-            }
-
-            Storage::disk('public')->delete($client->logo_path);
-            $client->logo_path = null;
-            $client->save();
-
-            ApplicationActivityLog::create([
-                'oauth_client_id' => $client->id,
-                'admin_id'        => Auth::id(),
-                'action'          => 'logo_deleted',
-                'description'     => "Gambar kartu aplikasi '{$client->name}' dihapus.",
-            ]);
-
-            return back()->with('success', "Gambar aplikasi '{$client->name}' berhasil dihapus.");
-        } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Gagal menghapus gambar: ' . $e->getMessage()]);
-        }
-    }
-
     /**
      * Delete user account (Admin only)
      */
