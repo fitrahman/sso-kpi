@@ -15,7 +15,7 @@ class CheckOAuthAccess
     public function handle(Request $request, Closure $next)
     {
         // Hanya proses rute /oauth/authorize (menggunakan GET karena redirect dari klien)
-        if (($request->is('oauth/authorize*') || $request->path() === 'oauth/authorize') && $request->isMethod('get') && Auth::check()) {
+        if ($request->is('oauth/authorize') && $request->isMethod('get') && Auth::check()) {
             $clientId = $request->query('client_id');
             
             if ($clientId) {
