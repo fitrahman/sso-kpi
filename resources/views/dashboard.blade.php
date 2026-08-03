@@ -149,48 +149,50 @@
 
         <div id="appCarousel" class="relative">
 
-            {{-- ── Carousel track ─────────────────────────────────────── --}}
-            <div id="carouselViewport" class="overflow-hidden">
+            {{-- py-4 gives room for the card hover lift so it's not clipped --}}
+            <div id="carouselViewport" class="overflow-hidden py-4 -my-4">
                 <div id="carouselTrack"
                      class="flex gap-6 transition-transform duration-500 ease-in-out"
                      style="width: max-content;">
 
                     @foreach ($visibleClients as $idx => $client)
                         @php
-                            $g              = $gradients[$idx % count($gradients)];
-                            $isMaintenance  = $client->is_maintenance && auth()->user()->role !== 'admin';
-                            $isAdminMaint   = $client->is_maintenance && auth()->user()->role === 'admin';
+                            $g             = $gradients[$idx % count($gradients)];
+                            $isMaintenance = $client->is_maintenance && auth()->user()->role !== 'admin';
+                            $isAdminMaint  = $client->is_maintenance && auth()->user()->role === 'admin';
                         @endphp
 
                         {{-- ── Single card ── --}}
                         <div class="carousel-card flex-shrink-0 w-72 sm:w-80 flex flex-col rounded-2xl overflow-hidden
                                     bg-white border border-slate-200 shadow-md
-                                    transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl
-                                    {{ $isMaintenance ? 'opacity-75' : '' }}">
+                                    transition-all duration-300 hover:-translate-y-2 hover:shadow-xl
+                                    {{ $isMaintenance ? 'opacity-70' : '' }}">
 
-                            {{-- ▌TOP: visual header ▐ --}}
+                            {{-- ▌ TOP: visual header ▐ --}}
                             <div class="relative h-48 overflow-hidden select-none"
                                  style="background: linear-gradient(135deg, {{ $g['from'] }} 0%, {{ $g['to'] }} 100%);">
 
-                                {{-- dot-pattern overlay --}}
-                                <div class="absolute inset-0 opacity-[0.08]"
-                                     style="background-image: radial-gradient(white 1.5px, transparent 1.5px);
-                                            background-size: 28px 28px;"></div>
-
-                                {{-- large decorative circle --}}
-                                <div class="absolute -right-10 -top-10 w-40 h-40 rounded-full opacity-10 bg-white"></div>
-                                <div class="absolute -left-6 -bottom-6 w-28 h-28 rounded-full opacity-10 bg-white"></div>
+                                {{-- Background image (customisable by admin via logo_path) --}}
+                                @if ($client->logo_path)
+                                    <img src="{{ Storage::url($client->logo_path) }}"
+                                         alt=""
+                                         class="absolute inset-0 w-full h-full object-cover
+                                                {{ $isMaintenance ? 'grayscale opacity-60' : 'opacity-90' }}">
+                                    {{-- dark scrim so text stays readable over any photo --}}
+                                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-black/10"></div>
+                                @else
+                                    {{-- dot-pattern overlay on solid gradient --}}
+                                    <div class="absolute inset-0 opacity-[0.08]"
+                                         style="background-image: radial-gradient(white 1.5px, transparent 1.5px);
+                                                background-size: 28px 28px;"></div>
+                                    {{-- decorative circles --}}
+                                    <div class="absolute -right-10 -top-10 w-40 h-40 rounded-full opacity-10 bg-white"></div>
+                                    <div class="absolute -left-6 -bottom-6 w-28 h-28 rounded-full opacity-10 bg-white"></div>
+                                @endif
 
                                 {{-- Badge — top-left --}}
                                 <div class="absolute top-3 left-3 z-10">
-                                    @if ($isMaintenance)
-                                        <span class="inline-flex items-center gap-1.5 bg-black/40 backdrop-blur-sm
-                                                     text-amber-300 text-[11px] font-semibold
-                                                     px-2.5 py-1 rounded-full border border-amber-400/40">
-                                            <span class="w-1.5 h-1.5 bg-amber-400 rounded-full animate-pulse"></span>
-                                            Maintenance
-                                        </span>
-                                    @elseif ($isAdminMaint)
+                                    @if ($isMaintenance || $isAdminMaint)
                                         <span class="inline-flex items-center gap-1.5 bg-black/40 backdrop-blur-sm
                                                      text-amber-300 text-[11px] font-semibold
                                                      px-2.5 py-1 rounded-full border border-amber-400/40">
@@ -205,25 +207,12 @@
                                     @endif
                                 </div>
 
-                                {{-- Logo — bottom-left --}}
+                                {{-- KPI Logo — always shown bottom-left --}}
                                 <div class="absolute bottom-3 left-4 z-10">
-                                    @if ($client->logo_path)
-                                        <img src="{{ Storage::url($client->logo_path) }}"
-                                             alt="{{ $client->name }}"
-                                             class="h-8 w-auto object-contain drop-shadow
-                                                    {{ $isMaintenance ? 'grayscale opacity-50' : '' }}">
-                                    @else
-                                        <div class="flex items-center gap-1.5 text-white/70">
-                                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                <path stroke-linecap="round" stroke-linejoin="round"
-                                                      d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6z
-                                                         M14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6z
-                                                         M4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2z
-                                                         M14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
-                                            </svg>
-                                            <span class="text-[11px] font-bold">KPI SSO</span>
-                                        </div>
-                                    @endif
+                                    <img src="{{ asset('logoKPI.png') }}"
+                                         alt="KPI SSO"
+                                         class="h-7 w-auto object-contain drop-shadow
+                                                {{ $isMaintenance ? 'opacity-40' : 'opacity-90' }}">
                                 </div>
 
                                 {{-- App name — centred --}}
@@ -236,7 +225,7 @@
                                 </div>
                             </div>
 
-                            {{-- ▌BOTTOM: content ▐ --}}
+                            {{-- ▌ BOTTOM: content ▐ --}}
                             <div class="flex flex-col flex-grow p-5">
                                 <p class="text-sm text-slate-500 leading-relaxed flex-grow mb-5 line-clamp-3">
                                     @if ($isMaintenance)
@@ -281,78 +270,102 @@
                 </div>{{-- /#carouselTrack --}}
             </div>{{-- /#carouselViewport --}}
 
-            {{-- ── Prev / Next (only when > 3 visible apps) ──────────── --}}
+            {{-- ── Dot indicators (only when > 3 apps) ─────────────── --}}
             @if ($totalVisible > 3)
-                <div class="flex items-center gap-3 mt-6">
-                    <p id="carouselInfo" class="text-sm text-slate-400 flex-grow"></p>
-
-                    <button id="carouselPrevBtn" onclick="appCarousel.prev()"
-                            class="w-9 h-9 flex items-center justify-center rounded-full
-                                   border border-slate-300 bg-white shadow-sm
-                                   text-slate-600 hover:bg-slate-100 hover:border-slate-400
-                                   transition-all duration-200
-                                   disabled:opacity-30 disabled:cursor-not-allowed">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
-                        </svg>
-                    </button>
-
-                    <button id="carouselNextBtn" onclick="appCarousel.next()"
-                            class="w-9 h-9 flex items-center justify-center rounded-full
-                                   border border-slate-300 bg-white shadow-sm
-                                   text-slate-600 hover:bg-slate-100 hover:border-slate-400
-                                   transition-all duration-200
-                                   disabled:opacity-30 disabled:cursor-not-allowed">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
-                        </svg>
-                    </button>
+                <div id="carouselDots" class="flex justify-center gap-2 mt-5">
+                    @php $totalPages = (int) ceil($totalVisible / 3); @endphp
+                    @for ($d = 0; $d < $totalPages; $d++)
+                        <button data-dot="{{ $d }}"
+                                onclick="appCarousel.goTo({{ $d }})"
+                                class="carousel-dot w-2 h-2 rounded-full transition-all duration-300
+                                       {{ $d === 0 ? 'bg-slate-700 w-5' : 'bg-slate-300' }}">
+                        </button>
+                    @endfor
                 </div>
             @endif
 
         </div>{{-- /#appCarousel --}}
 
-        {{-- ── Carousel JS ──────────────────────────────────────────── --}}
+        {{-- ── Carousel JS (auto-slide, dot indicators) ─────────────── --}}
         <script>
         (function () {
             const PER_PAGE   = 3;
             const total      = {{ $totalVisible }};
             const totalPages = Math.ceil(total / PER_PAGE);
             let   page       = 0;
+            let   autoTimer  = null;
 
-            const track   = document.getElementById('carouselTrack');
-            const prevBtn = document.getElementById('carouselPrevBtn');
-            const nextBtn = document.getElementById('carouselNextBtn');
-            const info    = document.getElementById('carouselInfo');
+            const track = document.getElementById('carouselTrack');
+            const dots  = document.querySelectorAll('.carousel-dot');
 
             function cardSlotWidth() {
                 const card = document.querySelector('.carousel-card');
-                if (!card) return 344; // 320px + 24px gap
-                return card.getBoundingClientRect().width + 24;
+                return card ? card.getBoundingClientRect().width + 24 : 344;
             }
 
             function render() {
                 if (!track) return;
                 track.style.transform = `translateX(-${page * PER_PAGE * cardSlotWidth()}px)`;
-                if (prevBtn) prevBtn.disabled = page === 0;
-                if (nextBtn) nextBtn.disabled = page >= totalPages - 1;
-                if (info)    info.textContent = total > PER_PAGE
-                    ? `Halaman ${page + 1} dari ${totalPages}`
-                    : '';
+
+                dots.forEach((dot, i) => {
+                    if (i === page) {
+                        dot.classList.add('bg-slate-700', 'w-5');
+                        dot.classList.remove('bg-slate-300', 'w-2');
+                    } else {
+                        dot.classList.add('bg-slate-300', 'w-2');
+                        dot.classList.remove('bg-slate-700', 'w-5');
+                    }
+                });
+            }
+
+            function next() {
+                page = (page + 1) % totalPages;
+                render();
+            }
+
+            function startAuto() {
+                if (total <= PER_PAGE) return;          // no auto-slide if ≤3
+                autoTimer = setInterval(next, 4000);    // advance every 4 s
+            }
+
+            function stopAuto() {
+                clearInterval(autoTimer);
             }
 
             window.appCarousel = {
-                prev() { if (page > 0) { page--; render(); } },
-                next() { if (page < totalPages - 1) { page++; render(); } },
+                goTo(p) { stopAuto(); page = p; render(); startAuto(); },
             };
 
-            // Re-render on resize so card widths stay accurate
-            window.addEventListener('resize', () => render(), { passive: true });
+            // Pause on hover
+            const viewport = document.getElementById('carouselViewport');
+            if (viewport) {
+                viewport.addEventListener('mouseenter', stopAuto);
+                viewport.addEventListener('mouseleave', startAuto);
+            }
 
-            render(); // initial
+            // Touch/swipe support
+            let touchStartX = 0;
+            if (viewport) {
+                viewport.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+                viewport.addEventListener('touchend', e => {
+                    const dx = e.changedTouches[0].clientX - touchStartX;
+                    if (Math.abs(dx) > 40) {
+                        stopAuto();
+                        page = dx < 0
+                            ? Math.min(page + 1, totalPages - 1)
+                            : Math.max(page - 1, 0);
+                        render();
+                        startAuto();
+                    }
+                }, { passive: true });
+            }
+
+            window.addEventListener('resize', render, { passive: true });
+
+            render();
+            startAuto();
         })();
         </script>
-
 
 
     </main>
