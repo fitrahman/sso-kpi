@@ -100,24 +100,7 @@
 
         <div class="p-6 max-w-7xl w-full mx-auto space-y-6">
 
-            <!-- Alerts -->
-            @if (session('success'))
-                <div class="bg-emerald-50 border border-emerald-200 p-4 rounded-2xl flex items-start gap-3 text-emerald-800 shadow-sm">
-                    <svg class="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                    <span class="text-sm font-semibold">{{ session('success') }}</span>
-                </div>
-            @endif
 
-            @if ($errors->any())
-                <div class="bg-rose-50 border border-rose-200 p-4 rounded-2xl flex items-start gap-3 text-rose-800 shadow-sm">
-                    <svg class="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                    <div class="text-sm font-semibold">
-                        @foreach ($errors->all() as $err)
-                            <p>{{ $err }}</p>
-                        @endforeach
-                    </div>
-                </div>
-            @endif
 
             <!-- Application Banner / Overview Card -->
             <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
