@@ -53,8 +53,11 @@ Route::middleware('auth:web')->group(function () {
 
         // Application Management Routes
         Route::get('/admin/applications', [DashboardController::class, 'clients'])->name('admin.clients');
+        Route::get('/admin/applications/{id}/users', [DashboardController::class, 'clientUsers'])->name('admin.clients.users');
+        Route::put('/admin/applications/{id}/users/{userId}', [DashboardController::class, 'updateClientUser'])->name('admin.clients.users.update');
         Route::put('/admin/applications/{id}', [DashboardController::class, 'updateClient'])->name('admin.clients.update');
         Route::post('/admin/applications/{id}/toggle-maintenance', [DashboardController::class, 'toggleMaintenance'])->name('admin.clients.maintenance');
         Route::post('/admin/applications/{id}/toggle-visibility', [DashboardController::class, 'toggleVisibility'])->name('admin.clients.visibility');
+        Route::delete('/admin/applications/{id}/logo', [DashboardController::class, 'deleteClientLogo'])->name('admin.clients.logo.delete');
     });
 });

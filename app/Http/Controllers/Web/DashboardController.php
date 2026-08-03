@@ -478,6 +478,149 @@ class DashboardController extends Controller
     }
 
     /**
+     * Show detail of an application along with all users and their local roles (Admin only)
+     */
+    public function clientUsers(Request $request, $id)
+    {
+        try {
+            $client = Client::findOrFail($id);
+            $search = $request->get('search');
+
+            $usersQuery = User::query();
+
+            if (!empty($search)) {
+                $usersQuery->where(function ($q) use ($search) {
+                    $q->where('name', 'like', '%' . $search . '%')
+                      ->orWhere('email', 'like', '%' . $search . '%');
+                });
+            }
+
+            $users = $usersQuery->orderBy('name')->paginate(15)->withQueryString();
+
+            // Fetch client access mapping for this client [user_id => status]
+            $accessMap = \DB::table('client_user_access')
+                ->where('client_id', $client->id)
+                ->pluck('status', 'user_id')
+                ->toArray();
+
+            // Fetch local roles mapping for this client [user_id => role]
+            $localRolesMap = UserClientRole::where('oauth_client_id', $client->id)
+                ->pluck('role', 'user_id')
+                ->toArray();
+
+            // Activity logs for this client
+            $logs = ApplicationActivityLog::where('oauth_client_id', $client->id)
+                ->with('admin')
+                ->orderBy('created_at', 'desc')
+                ->take(20)
+                ->get();
+
+            return view('admin.client_users', [
+                'client'        => $client,
+                'users'         => $users,
+                'accessMap'     => $accessMap,
+                'localRolesMap' => $localRolesMap,
+                'logs'          => $logs,
+                'search'        => $search,
+            ]);
+        } catch (\Exception $e) {
+            return redirect()->route('admin.clients')
+                ->withErrors(['error' => 'Gagal memuat detail pengguna aplikasi: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Update a user's access status and local role for a specific application (Admin only)
+     */
+    public function updateClientUser(Request $request, $clientId, $userId)
+    {
+        try {
+            $client = Client::findOrFail($clientId);
+            $user   = User::findOrFail($userId);
+
+            $validated = $request->validate([
+                'access_status' => 'required|in:approved,pending,rejected,none',
+                'local_role'    => 'nullable|string|max:50',
+            ]);
+
+            $status    = $validated['access_status'];
+            $localRole = trim($validated['local_role'] ?? '');
+
+            // Update client_user_access pivot table
+            if ($status === 'none') {
+                $user->accessedClients()->detach($client->id);
+            } else {
+                $exists = \DB::table('client_user_access')
+                    ->where('user_id', $user->id)
+                    ->where('client_id', $client->id)
+                    ->exists();
+
+                if ($exists) {
+                    \DB::table('client_user_access')
+                        ->where('user_id', $user->id)
+                        ->where('client_id', $client->id)
+                        ->update(['status' => $status, 'updated_at' => now()]);
+                } else {
+                    $user->accessedClients()->attach($client->id, ['status' => $status]);
+                }
+            }
+
+            // Update user_client_roles
+            if (!empty($localRole)) {
+                UserClientRole::updateOrCreate(
+                    ['user_id' => $user->id, 'oauth_client_id' => $client->id],
+                    ['role' => $localRole]
+                );
+            } else {
+                UserClientRole::where('user_id', $user->id)
+                    ->where('oauth_client_id', $client->id)
+                    ->delete();
+            }
+
+            // Log activity
+            ApplicationActivityLog::create([
+                'oauth_client_id' => $client->id,
+                'admin_id'        => Auth::id(),
+                'action'          => 'user_access_updated',
+                'description'     => "Akses '{$user->name}' diubah (Status: {$status}, Role: " . ($localRole ?: 'default/none') . ")",
+            ]);
+
+            return back()->with('success', "Akses & role lokal '{$user->name}' untuk {$client->name} berhasil diperbarui.");
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Gagal memperbarui akses pengguna: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Delete application logo image (Admin only)
+     */
+    public function deleteClientLogo($id)
+    {
+        try {
+            $client = Client::findOrFail($id);
+
+            if (!$client->logo_path) {
+                return back()->withErrors(['error' => 'Aplikasi ini tidak memiliki gambar.']);
+            }
+
+            Storage::disk('public')->delete($client->logo_path);
+            $client->logo_path = null;
+            $client->save();
+
+            ApplicationActivityLog::create([
+                'oauth_client_id' => $client->id,
+                'admin_id'        => Auth::id(),
+                'action'          => 'logo_deleted',
+                'description'     => "Gambar kartu aplikasi '{$client->name}' dihapus.",
+            ]);
+
+            return back()->with('success', "Gambar aplikasi '{$client->name}' berhasil dihapus.");
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Gagal menghapus gambar: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
      * Delete user account (Admin only)
      */
     public function deleteUser($id)

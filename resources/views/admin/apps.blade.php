@@ -121,10 +121,10 @@
             <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-5 mb-10">
                 @foreach ($clients as $client)
                     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col {{ $client->is_maintenance ? 'border-amber-200' : '' }} {{ !$client->is_visible ? 'opacity-60' : '' }}">
-                        <!-- Card Header -->
-                        <div class="p-5 flex items-start gap-4 border-b border-slate-100">
+                        <!-- Card Header (Clickable to detail users) -->
+                        <a href="{{ route('admin.clients.users', $client->id) }}" class="p-5 flex items-start gap-4 border-b border-slate-100 group hover:bg-slate-50/80 transition-colors">
                             <!-- Logo -->
-                            <div class="w-14 h-14 rounded-xl bg-slate-100 flex items-center justify-center shrink-0 overflow-hidden">
+                            <div class="w-14 h-14 rounded-xl bg-slate-100 flex items-center justify-center shrink-0 overflow-hidden group-hover:scale-105 transition-transform">
                                 @if ($client->logo_path)
                                     <img src="{{ Storage::url($client->logo_path) }}" alt="{{ $client->name }}" class="w-14 h-14 object-cover">
                                 @else
@@ -133,7 +133,7 @@
                             </div>
                             <div class="flex-1 min-w-0">
                                 <div class="flex items-center gap-2 flex-wrap">
-                                    <h3 class="font-bold text-slate-900 text-base truncate">{{ $client->name }}</h3>
+                                    <h3 class="font-bold text-slate-900 text-base truncate group-hover:text-kpi-700 transition-colors">{{ $client->name }}</h3>
                                     @if ($client->is_maintenance)
                                         <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">
                                             <span class="w-1.5 h-1.5 bg-amber-500 rounded-full"></span> Maintenance
@@ -147,7 +147,7 @@
                                 </div>
                                 <p class="text-sm text-slate-500 mt-0.5 truncate">{{ $client->description ?: 'Tidak ada deskripsi' }}</p>
                             </div>
-                        </div>
+                        </a>
                         
                         <!-- Stats -->
                         <div class="px-5 py-3 grid grid-cols-2 gap-3 border-b border-slate-100">
@@ -163,9 +163,16 @@
 
                         <!-- Actions -->
                         <div class="p-4 flex items-center gap-2 flex-wrap mt-auto">
+                            <!-- Detail Users & Roles Button -->
+                            <a href="{{ route('admin.clients.users', $client->id) }}"
+                                class="flex-1 inline-flex justify-center items-center gap-1.5 px-3 py-2 bg-slate-900 text-white rounded-lg text-xs font-semibold hover:bg-slate-800 transition-colors shadow-sm">
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                                Pengguna & Role
+                            </a>
+
                             <!-- Edit Button -->
                             <button onclick="openEditModal({{ $client->id }}, '{{ addslashes($client->name) }}', '{{ addslashes($client->description ?? '') }}', '{{ addslashes($client->maintenance_message ?? '') }}', {{ $client->display_order }}, {{ $client->is_visible ? 1 : 0 }})"
-                                class="flex-1 inline-flex justify-center items-center gap-1.5 px-3 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg text-xs font-semibold hover:bg-slate-50 transition-colors">
+                                class="inline-flex justify-center items-center gap-1.5 px-3 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg text-xs font-semibold hover:bg-slate-50 transition-colors">
                                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                 Edit
                             </button>
