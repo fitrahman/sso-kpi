@@ -149,20 +149,8 @@
 
         <div id="appCarousel" class="relative">
 
-            @if ($totalVisible > 3)
-                <!-- Navigation Arrows -->
-                <button id="carouselPrevBtn" onclick="appCarousel.prev()"
-                        class="absolute -left-5 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white/95 border border-slate-200 shadow-lg text-slate-700 hover:text-kpi-700 hover:scale-110 flex items-center justify-center transition-all duration-200 focus:outline-none">
-                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
-                </button>
-                <button id="carouselNextBtn" onclick="appCarousel.next()"
-                        class="absolute -right-5 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white/95 border border-slate-200 shadow-lg text-slate-700 hover:text-kpi-700 hover:scale-110 flex items-center justify-center transition-all duration-200 focus:outline-none">
-                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
-                </button>
-            @endif
-
             {{-- py-4 gives room for the card hover lift so it's not clipped --}}
-            <div id="carouselViewport" class="overflow-hidden py-4 -my-4 cursor-grab select-none">
+            <div id="carouselViewport" class="overflow-hidden py-4 -my-4">
                 <div id="carouselTrack"
                      class="flex gap-6 transition-transform duration-500 ease-in-out"
                      style="width: max-content;">
@@ -176,9 +164,9 @@
 
                         {{-- ── Single card ── --}}
                         <div class="carousel-card flex-shrink-0 w-72 sm:w-80 flex flex-col rounded-2xl overflow-hidden
-                                     bg-white border border-slate-200 shadow-md
-                                     transition-all duration-300 hover:-translate-y-2 hover:shadow-xl
-                                     {{ $isMaintenance ? 'opacity-70' : '' }}">
+                                    bg-white border border-slate-200 shadow-md
+                                    transition-all duration-300 hover:-translate-y-2 hover:shadow-xl
+                                    {{ $isMaintenance ? 'opacity-70' : '' }}">
 
                             {{-- ▌ TOP: visual header ▐ --}}
                             <div class="relative h-48 overflow-hidden select-none"
@@ -298,7 +286,7 @@
 
         </div>{{-- /#appCarousel --}}
 
-        {{-- ── Carousel JS (auto-slide, drag, dot indicators) ─────────────── --}}
+        {{-- ── Carousel JS (auto-slide, dot indicators) ─────────────── --}}
         <script>
         (function () {
             const PER_PAGE   = 3;
@@ -307,9 +295,8 @@
             let   page       = 0;
             let   autoTimer  = null;
 
-            const track    = document.getElementById('carouselTrack');
-            const dots     = document.querySelectorAll('.carousel-dot');
-            const viewport = document.getElementById('carouselViewport');
+            const track = document.getElementById('carouselTrack');
+            const dots  = document.querySelectorAll('.carousel-dot');
 
             function cardSlotWidth() {
                 const card = document.querySelector('.carousel-card');
@@ -318,7 +305,6 @@
 
             function render() {
                 if (!track) return;
-                track.style.transition = 'transform 500ms ease-in-out';
                 track.style.transform = `translateX(-${page * PER_PAGE * cardSlotWidth()}px)`;
 
                 dots.forEach((dot, i) => {
@@ -337,14 +323,9 @@
                 render();
             }
 
-            function prev() {
-                page = (page - 1 + totalPages) % totalPages;
-                render();
-            }
-
             function startAuto() {
-                if (total <= PER_PAGE) return;
-                autoTimer = setInterval(next, 4000);
+                if (total <= PER_PAGE) return;          // no auto-slide if ≤3
+                autoTimer = setInterval(next, 4000);    // advance every 4 s
             }
 
             function stopAuto() {
@@ -353,72 +334,16 @@
 
             window.appCarousel = {
                 goTo(p) { stopAuto(); page = p; render(); startAuto(); },
-                next() { stopAuto(); next(); startAuto(); },
-                prev() { stopAuto(); prev(); startAuto(); },
             };
 
             // Pause on hover
+            const viewport = document.getElementById('carouselViewport');
             if (viewport) {
                 viewport.addEventListener('mouseenter', stopAuto);
                 viewport.addEventListener('mouseleave', startAuto);
             }
 
-            // Mouse Cursor Dragging Support
-            let isMouseDown = false;
-            let startMouseX = 0;
-            let prevTranslate = 0;
-            let isDragging = false;
-
-            if (viewport) {
-                viewport.addEventListener('mousedown', e => {
-                    isMouseDown = true;
-                    isDragging = false;
-                    startMouseX = e.pageX;
-                    prevTranslate = -page * PER_PAGE * cardSlotWidth();
-                    viewport.classList.remove('cursor-grab');
-                    viewport.classList.add('cursor-grabbing');
-                    track.style.transition = 'none';
-                    stopAuto();
-                });
-
-                window.addEventListener('mousemove', e => {
-                    if (!isMouseDown) return;
-                    const diffX = e.pageX - startMouseX;
-                    if (Math.abs(diffX) > 5) {
-                        isDragging = true;
-                    }
-                    const currentTranslate = prevTranslate + diffX;
-                    track.style.transform = `translateX(${currentTranslate}px)`;
-                });
-
-                window.addEventListener('mouseup', e => {
-                    if (!isMouseDown) return;
-                    isMouseDown = false;
-                    viewport.classList.remove('cursor-grabbing');
-                    viewport.classList.add('cursor-grab');
-
-                    const diffX = e.pageX - startMouseX;
-                    if (Math.abs(diffX) > 40) {
-                        if (diffX < 0) {
-                            page = Math.min(page + 1, totalPages - 1);
-                        } else {
-                            page = Math.max(page - 1, 0);
-                        }
-                    }
-                    render();
-                    startAuto();
-                });
-
-                // Prevent click on links when user was dragging cards
-                viewport.addEventListener('click', e => {
-                    if (isDragging) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                    }
-                }, true);
-            }
-
-            // Touch/swipe support for mobile
+            // Touch/swipe support
             let touchStartX = 0;
             if (viewport) {
                 viewport.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
