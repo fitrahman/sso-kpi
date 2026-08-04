@@ -148,25 +148,42 @@
                 <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                     
                     <!-- Table Toolbar -->
-                    <div class="p-4 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-50/50">
-                        <h2 class="text-lg font-bold text-slate-800">
-                            Daftar Pengguna
-                        </h2>
-                        
-                        <div class="relative w-full sm:w-72">
-                            <input type="text" id="live-search" value="{{ request('search') }}" placeholder="Cari nama, email..." class="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-kpi-500 focus:border-kpi-500">
-                            <svg class="w-5 h-5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                            <form action="{{ route('admin.users') }}" method="GET" class="hidden" id="search-form">
-                                @if (request('sort'))
-                                    <input type="hidden" name="sort" value="{{ request('sort') }}">
-                                    <input type="hidden" name="direction" value="{{ request('direction') }}">
-                                @endif
-                                <input type="text" name="search" id="form-search-input">
-                            </form>
-                            @if (request('search') || request('sort'))
-                                <a href="{{ route('admin.users') }}" class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-red-500 font-medium">Reset</a>
-                            @endif
-                        </div>
+                    <div class="p-4 border-b border-slate-200 bg-slate-50/50">
+                        <form action="{{ route('admin.users') }}" method="GET" class="flex flex-col md:flex-row justify-between items-center gap-3">
+                            <h2 class="text-lg font-bold text-slate-800 self-start md:self-auto">
+                                Daftar Pengguna
+                            </h2>
+                            
+                            <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                                <!-- Filter Role -->
+                                <select name="role" onchange="this.form.submit()" class="border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-kpi-500 bg-white cursor-pointer">
+                                    <option value="">Semua Role / Divisi</option>
+                                    @foreach ($rolesList as $r)
+                                        <option value="{{ $r }}" {{ request('role') === $r ? 'selected' : '' }}>{{ ucfirst($r) }}</option>
+                                    @endforeach
+                                </select>
+
+                                <!-- Filter Status -->
+                                <select name="status" onchange="this.form.submit()" class="border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-kpi-500 bg-white cursor-pointer">
+                                    <option value="">Semua Status</option>
+                                    <option value="approved" {{ request('status') === 'approved' ? 'selected' : '' }}>Aktif (Approved)</option>
+                                    <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Menunggu (Pending)</option>
+                                    <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>Non-aktif (Inactive)</option>
+                                </select>
+
+                                <!-- Search Input -->
+                                <div class="relative flex-1 md:w-64">
+                                    <input type="text" id="live-search" name="search" value="{{ request('search') }}" placeholder="Cari nama, email..." class="w-full pl-9 pr-8 py-2 border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500">
+                                    <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                                    <button type="submit" class="hidden"></button>
+                                    @if (request('search') || request('role') || request('status'))
+                                        <a href="{{ route('admin.users') }}" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-red-500" title="Reset filter">
+                                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                        </a>
+                                    @endif
+                                </div>
+                            </div>
+                        </form>
                     </div>
 
                     <!-- Table -->
@@ -176,48 +193,9 @@
                                 <tr class="text-xs uppercase tracking-wider text-slate-500 font-semibold">
                                     <th class="w-12 px-4 py-4 bg-slate-50 text-center">No</th>
                                     <th class="px-6 py-4 bg-slate-50">Pengguna</th>
-                                    <th class="px-6 py-4 bg-slate-50">
-                                        <a href="{{ route('admin.users', ['sort' => 'role', 'direction' => request('sort') == 'role' && request('direction') == 'asc' ? 'desc' : 'asc', 'search' => request('search')]) }}" class="flex items-center gap-1 hover:text-slate-800 transition-colors">
-                                            Divisi / Role
-                                            @if (request('sort') == 'role')
-                                                @if (request('direction') == 'desc')
-                                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
-                                                @else
-                                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" /></svg>
-                                                @endif
-                                            @else
-                                                <svg class="w-3.5 h-3.5 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4" /></svg>
-                                            @endif
-                                        </a>
-                                    </th>
-                                    <th class="px-6 py-4 bg-slate-50">
-                                        <a href="{{ route('admin.users', ['sort' => 'status', 'direction' => request('sort') == 'status' && request('direction') == 'asc' ? 'desc' : 'asc', 'search' => request('search')]) }}" class="flex items-center gap-1 hover:text-slate-800 transition-colors">
-                                            Status
-                                            @if (request('sort') == 'status')
-                                                @if (request('direction') == 'desc')
-                                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
-                                                @else
-                                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" /></svg>
-                                                @endif
-                                            @else
-                                                <svg class="w-3.5 h-3.5 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4" /></svg>
-                                            @endif
-                                        </a>
-                                    </th>
-                                    <th class="px-6 py-4 bg-slate-50">
-                                        <a href="{{ route('admin.users', ['sort' => 'created_at', 'direction' => request('sort') == 'created_at' && request('direction') == 'asc' ? 'desc' : 'asc', 'search' => request('search')]) }}" class="flex items-center gap-1 hover:text-slate-800 transition-colors">
-                                            Bergabung
-                                            @if (request('sort') == 'created_at')
-                                                @if (request('direction') == 'desc')
-                                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
-                                                @else
-                                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" /></svg>
-                                                @endif
-                                            @else
-                                                <svg class="w-3.5 h-3.5 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4" /></svg>
-                                            @endif
-                                        </a>
-                                    </th>
+                                    <th class="px-6 py-4 bg-slate-50">Divisi / Role</th>
+                                    <th class="px-6 py-4 bg-slate-50">Status</th>
+                                    <th class="px-6 py-4 bg-slate-50">Bergabung</th>
                                     <th class="px-6 py-4 text-right bg-slate-50">Aksi</th>
                                 </tr>
                             </thead>
@@ -324,15 +302,15 @@
                             </div>
                             <div class="flex space-x-2">
                                 @if ($users->onFirstPage())
-                                    <span class="px-3 py-1.5 border border-slate-200 rounded text-sm text-slate-400 bg-slate-50 cursor-not-allowed">Seb</span>
+                                    <span class="px-3 py-1.5 border border-slate-200 rounded text-sm text-slate-400 bg-slate-50 cursor-not-allowed"><</span>
                                 @else
-                                    <a href="{{ $users->previousPageUrl() }}" class="px-3 py-1.5 border border-slate-300 rounded text-sm font-medium text-slate-700 bg-white hover:bg-slate-50">Seb</a>
+                                    <a href="{{ $users->previousPageUrl() }}" class="px-3 py-1.5 border border-slate-300 rounded text-sm font-medium text-slate-700 bg-white hover:bg-slate-50"><</a>
                                 @endif
                                 
                                 @if ($users->hasMorePages())
-                                    <a href="{{ $users->nextPageUrl() }}" class="px-3 py-1.5 border border-slate-300 rounded text-sm font-medium text-slate-700 bg-white hover:bg-slate-50">Lanjut</a>
+                                    <a href="{{ $users->nextPageUrl() }}" class="px-3 py-1.5 border border-slate-300 rounded text-sm font-medium text-slate-700 bg-white hover:bg-slate-50">></a>
                                 @else
-                                    <span class="px-3 py-1.5 border border-slate-200 rounded text-sm text-slate-400 bg-slate-50 cursor-not-allowed">Lanjut</span>
+                                    <span class="px-3 py-1.5 border border-slate-200 rounded text-sm text-slate-400 bg-slate-50 cursor-not-allowed">></span>
                                 @endif
                             </div>
                         </div>
@@ -404,21 +382,6 @@
             document.getElementById('detailModal').classList.remove('active');
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
-            const searchInput = document.getElementById('live-search');
-            const formSearchInput = document.getElementById('form-search-input');
-            const searchForm = document.getElementById('search-form');
-
-            if (searchInput) {
-                searchInput.addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        formSearchInput.value = searchInput.value;
-                        searchForm.submit();
-                    }
-                });
-            }
-        });
     </script>
 </body>
 </html>

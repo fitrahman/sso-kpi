@@ -57,12 +57,8 @@ class DashboardController extends Controller
     {
         try {
             $search = $request->get('search');
-            $sort = $request->get('sort');
-            $direction = $request->get('direction', 'asc');
-
-            if (!in_array(strtolower($direction), ['asc', 'desc'])) {
-                $direction = 'asc';
-            }
+            $roleFilter = $request->get('role');
+            $statusFilter = $request->get('status');
 
             $usersQuery = User::query();
 
@@ -74,33 +70,39 @@ class DashboardController extends Controller
                 });
             }
 
-            // Handle sorting
-            if ($sort === 'role') {
-                $usersQuery->orderBy('role', $direction);
-            } elseif ($sort === 'status') {
-                $usersQuery->orderBy('status', $direction);
-            } elseif ($sort === 'created_at') {
-                $usersQuery->orderBy('created_at', $direction);
-            } else {
-                // Default: pending (menunggu) first, then approved (aktif), then inactive (nonaktif)
-                $usersQuery->orderByRaw("CASE 
-                    WHEN status = 'pending' THEN 1 
-                    WHEN status = 'approved' THEN 2 
-                    WHEN status = 'inactive' THEN 3 
-                    ELSE 4 END ASC")
-                    ->orderBy('created_at', 'desc');
+            // Handle role filter
+            if (!empty($roleFilter)) {
+                $usersQuery->where('role', $roleFilter);
             }
+
+            // Handle status filter
+            if (!empty($statusFilter)) {
+                $usersQuery->where('status', $statusFilter);
+            }
+
+            // Default order: pending first, then approved, then inactive
+            $usersQuery->orderByRaw("CASE 
+                WHEN status = 'pending' THEN 1 
+                WHEN status = 'approved' THEN 2 
+                WHEN status = 'inactive' THEN 3 
+                ELSE 4 END ASC")
+                ->orderBy('created_at', 'desc');
 
             $users = $usersQuery->paginate(10)->withQueryString();
             $totalCount = User::count();
             $pendingCount = User::where('status', 'pending')->count();
             $inactiveCount = User::where('status', 'inactive')->count();
- 
+            $rolesList = array_merge(['admin'], User::ROLES);
+
             return view('admin.users', [
                 'users'         => $users,
                 'totalCount'    => $totalCount,
                 'pendingCount'  => $pendingCount,
                 'inactiveCount' => $inactiveCount,
+                'search'        => $search,
+                'roleFilter'    => $roleFilter,
+                'statusFilter'  => $statusFilter,
+                'rolesList'     => $rolesList,
             ]);
 
         } catch (\Exception $e) {
@@ -595,6 +597,9 @@ class DashboardController extends Controller
         try {
             $client = Client::findOrFail($id);
             $search = $request->get('search');
+            $roleFilter = $request->get('role');
+            $accessFilter = $request->get('access');
+            $localRoleFilter = $request->get('local_role');
 
             $usersQuery = User::query();
 
@@ -606,10 +611,45 @@ class DashboardController extends Controller
                 });
             }
 
+            if (!empty($roleFilter)) {
+                $usersQuery->where('role', $roleFilter);
+            }
+
+            if (!empty($accessFilter)) {
+                if ($accessFilter === 'approved') {
+                    $userIdsWithAccess = DB::table('client_user_access')
+                        ->where('client_id', $client->id)
+                        ->where('status', 'approved')
+                        ->pluck('user_id');
+                    $usersQuery->whereIn('id', $userIdsWithAccess);
+                } elseif ($accessFilter === 'no_access') {
+                    $userIdsWithAccess = DB::table('client_user_access')
+                        ->where('client_id', $client->id)
+                        ->where('status', 'approved')
+                        ->pluck('user_id');
+                    $usersQuery->whereNotIn('id', $userIdsWithAccess);
+                }
+            }
+
+            if (!empty($localRoleFilter)) {
+                if ($localRoleFilter === 'none') {
+                    $userIdsWithRole = UserClientRole::where('oauth_client_id', $client->id)
+                        ->whereNotNull('role')
+                        ->where('role', '!=', '')
+                        ->pluck('user_id');
+                    $usersQuery->whereNotIn('id', $userIdsWithRole);
+                } else {
+                    $userIdsWithRole = UserClientRole::where('oauth_client_id', $client->id)
+                        ->where('role', $localRoleFilter)
+                        ->pluck('user_id');
+                    $usersQuery->whereIn('id', $userIdsWithRole);
+                }
+            }
+
             $users = $usersQuery->orderBy('name')->paginate(10)->withQueryString();
 
             // Fetch client access mapping for this client [user_id => status]
-            $accessMap = \DB::table('client_user_access')
+            $accessMap = DB::table('client_user_access')
                 ->where('client_id', $client->id)
                 ->pluck('status', 'user_id')
                 ->toArray();
@@ -626,13 +666,19 @@ class DashboardController extends Controller
                 ->take(30)
                 ->get();
 
+            $rolesList = array_merge(['admin'], User::ROLES);
+
             return view('admin.client_users', [
-                'client'        => $client,
-                'users'         => $users,
-                'accessMap'     => $accessMap,
-                'localRolesMap' => $localRolesMap,
-                'logs'          => $logs,
-                'search'        => $search,
+                'client'           => $client,
+                'users'            => $users,
+                'accessMap'        => $accessMap,
+                'localRolesMap'    => $localRolesMap,
+                'logs'             => $logs,
+                'search'           => $search,
+                'roleFilter'       => $roleFilter,
+                'accessFilter'     => $accessFilter,
+                'localRoleFilter'  => $localRoleFilter,
+                'rolesList'        => $rolesList,
             ]);
         } catch (\Exception $e) {
             return redirect()->route('admin.clients')
