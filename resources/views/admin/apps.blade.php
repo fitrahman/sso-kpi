@@ -221,7 +221,6 @@
             <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                 <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
                     <h2 class="font-bold text-slate-900">Log Aktivitas</h2>
-                    <span class="text-xs text-slate-400 font-medium">Scroll untuk melihat riwayat</span>
                 </div>
                 @if ($activityLogs->isEmpty())
                     <div class="px-6 py-10 text-center text-slate-400 text-sm">Belum ada aktivitas tercatat.</div>
@@ -269,14 +268,14 @@
     <div id="createModal" class="modal fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4" aria-modal="true">
         <div class="fixed inset-0 bg-slate-900/60" onclick="closeCreateModal()"></div>
         <div class="modal-content bg-white rounded-2xl shadow-2xl w-full max-w-lg relative z-10">
-            <div class="flex justify-between items-center px-6 py-5 border-b border-slate-100">
+            <div class="flex justify-between items-center px-6 py-4 border-b border-slate-100">
                 <h3 class="text-lg font-bold text-slate-900">Tambah Aplikasi</h3>
                 <button onclick="closeCreateModal()" class="text-slate-400 hover:text-slate-600">
                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
             </div>
 
-            <form action="{{ route('admin.clients.store') }}" method="POST" enctype="multipart/form-data" class="p-6 space-y-5">
+            <form action="{{ route('admin.clients.store') }}" method="POST" enctype="multipart/form-data" class="p-6 pt-4 space-y-4">
                 @csrf
 
                 <div>
@@ -347,14 +346,14 @@
     <div id="editModal" class="modal fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4" aria-modal="true">
         <div class="fixed inset-0 bg-slate-900/60" onclick="closeEditModal()"></div>
         <div class="modal-content bg-white rounded-2xl shadow-2xl w-full max-w-lg relative z-10">
-            <div class="flex justify-between items-center px-6 py-5 border-b border-slate-100">
+            <div class="flex justify-between items-center px-6 py-4 border-b border-slate-100">
                 <h3 class="text-lg font-bold text-slate-900">Edit Aplikasi</h3>
                 <button onclick="closeEditModal()" class="text-slate-400 hover:text-slate-600">
-                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 18 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
             </div>
 
-            <form id="editForm" method="POST" enctype="multipart/form-data" class="p-6 space-y-5">
+            <form id="editForm" method="POST" enctype="multipart/form-data" class="p-6 pt-4 space-y-4">
                 @csrf
                 @method('PUT')
 
