@@ -165,6 +165,63 @@ class AuthController extends Controller
     }
 
     /**
+     * Get supported roles for a client application
+     */
+    public function getClientRoles(Request $request)
+    {
+        $clientId = $request->query('client_id');
+        if (!$clientId) {
+            return response()->json(['success' => false, 'message' => 'client_id parameter is required'], 400);
+        }
+
+        $client = \Laravel\Passport\Client::find($clientId);
+        if (!$client) {
+            return response()->json(['success' => false, 'message' => 'Client application not found'], 404);
+        }
+
+        $supportedRoles = json_decode($client->supported_roles, true) ?? [];
+
+        return response()->json([
+            'success'         => true,
+            'client_id'       => $client->id,
+            'client_name'     => $client->name,
+            'supported_roles' => $supportedRoles,
+        ]);
+    }
+
+    /**
+     * Sync/Update supported roles for a client application via API
+     */
+    public function syncClientRoles(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'client_id' => 'required|integer',
+            'roles'     => 'required|array',
+            'roles.*'   => 'string|max:100',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
+        }
+
+        $client = \Laravel\Passport\Client::find($request->client_id);
+        if (!$client) {
+            return response()->json(['success' => false, 'message' => 'Client application not found'], 404);
+        }
+
+        $rolesArray = array_values(array_unique(array_map('trim', $request->roles)));
+        $client->supported_roles = json_encode($rolesArray);
+        $client->save();
+
+        return response()->json([
+            'success'         => true,
+            'message'         => "Roles for '{$client->name}' synchronized successfully.",
+            'client_id'       => $client->id,
+            'supported_roles' => $rolesArray,
+        ]);
+    }
+
+    /**
      * Logout user (Revoke token)
      */
     public function logout(Request $request)
