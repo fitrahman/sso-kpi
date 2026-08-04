@@ -170,9 +170,9 @@
                     </div>
 
                     <!-- Table -->
-                    <div class="overflow-x-auto max-h-[580px] overflow-y-auto">
+                    <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse" id="users-table">
-                            <thead class="sticky top-0 bg-slate-50 z-10 border-b border-slate-200">
+                            <thead class="bg-slate-50 border-b border-slate-200">
                                 <tr class="text-xs uppercase tracking-wider text-slate-500 font-semibold">
                                     <th class="w-12 px-4 py-4 bg-slate-50 text-center">No</th>
                                     <th class="px-6 py-4 bg-slate-50">Pengguna</th>

@@ -143,7 +143,7 @@
                 <div class="p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
                         <h2 class="text-lg font-bold text-slate-900">Daftar Pengguna & Role Lokal</h2>
-                        <p class="text-xs text-slate-500 mt-0.5">Kelola status akses dan role khusus pengguna di aplikasi {{ $client->name }}. (Menampilkan max. 10 baris di layar, scroll ke bawah untuk melihat selengkapnya)</p>
+                        <p class="text-xs text-slate-500 mt-0.5">Kelola status akses dan role khusus pengguna di aplikasi {{ $client->name }}.</p>
                     </div>
 
                     <form id="searchAppUsersForm" method="GET" action="{{ route('admin.clients.users', $client->id) }}" class="flex items-center gap-2">
@@ -163,10 +163,10 @@
                     </form>
                 </div>
 
-                <!-- Users Table (Scrollable Container ~10 rows height) -->
-                <div class="overflow-x-auto max-h-[580px] overflow-y-auto">
+                <!-- Users Table -->
+                <div class="overflow-x-auto">
                     <table class="w-full text-sm text-left">
-                        <thead class="bg-slate-50 text-xs uppercase tracking-wider text-slate-500 font-semibold sticky top-0 z-10 border-b border-slate-100">
+                        <thead class="bg-slate-50 text-xs uppercase tracking-wider text-slate-500 font-semibold border-b border-slate-100">
                             <tr>
                                 <th class="w-12 px-4 py-3.5 bg-slate-50 text-center">No</th>
                                 <th class="px-6 py-3.5 bg-slate-50">Pengguna</th>
