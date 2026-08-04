@@ -422,20 +422,6 @@
             document.getElementById('editModal').classList.remove('active');
         }
 
-        // Global Database Live Search for Application Users
-        document.addEventListener('DOMContentLoaded', function () {
-            const searchInput = document.getElementById('app-user-search');
-            let searchTimeout = null;
-
-            if (searchInput) {
-                searchInput.addEventListener('input', function () {
-                    clearTimeout(searchTimeout);
-                    searchTimeout = setTimeout(() => {
-                        document.getElementById('searchAppUsersForm').submit();
-                    }, 400);
-                });
-            }
-        });
     </script>
 </body>
 </html>

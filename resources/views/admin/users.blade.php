@@ -408,21 +408,11 @@
             const searchInput = document.getElementById('live-search');
             const formSearchInput = document.getElementById('form-search-input');
             const searchForm = document.getElementById('search-form');
-            let searchTimeout = null;
 
             if (searchInput) {
-                searchInput.addEventListener('input', function(e) {
-                    clearTimeout(searchTimeout);
-                    searchTimeout = setTimeout(() => {
-                        formSearchInput.value = searchInput.value;
-                        searchForm.submit();
-                    }, 400);
-                });
-
                 searchInput.addEventListener('keypress', function(e) {
                     if (e.key === 'Enter') {
                         e.preventDefault();
-                        clearTimeout(searchTimeout);
                         formSearchInput.value = searchInput.value;
                         searchForm.submit();
                     }
