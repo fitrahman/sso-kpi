@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
     {
         // 1. Run User Seeder
         $this->call(AdminUserSeeder::class);
+        $this->call(PegawaiSSOUserSeeder::class);
 
         $users = User::all();
     }
