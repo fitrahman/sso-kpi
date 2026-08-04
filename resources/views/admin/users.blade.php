@@ -170,12 +170,12 @@
                     </div>
 
                     <!-- Table -->
-                    <div class="overflow-x-auto">
+                    <div class="overflow-x-auto max-h-[580px] overflow-y-auto">
                         <table class="w-full text-left border-collapse" id="users-table">
-                            <thead>
-                                <tr class="bg-slate-50 border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500 font-semibold">
-                                    <th class="px-6 py-4">Pengguna</th>
-                                    <th class="px-6 py-4">
+                            <thead class="sticky top-0 bg-slate-50 z-10 border-b border-slate-200">
+                                <tr class="text-xs uppercase tracking-wider text-slate-500 font-semibold">
+                                    <th class="px-6 py-4 bg-slate-50">Pengguna</th>
+                                    <th class="px-6 py-4 bg-slate-50">
                                         <a href="{{ route('admin.users', ['sort' => 'role', 'direction' => request('sort') == 'role' && request('direction') == 'asc' ? 'desc' : 'asc', 'search' => request('search')]) }}" class="flex items-center gap-1 hover:text-slate-800 transition-colors">
                                             Divisi / Role
                                             @if (request('sort') == 'role')
@@ -189,7 +189,7 @@
                                             @endif
                                         </a>
                                     </th>
-                                    <th class="px-6 py-4">
+                                    <th class="px-6 py-4 bg-slate-50">
                                         <a href="{{ route('admin.users', ['sort' => 'status', 'direction' => request('sort') == 'status' && request('direction') == 'asc' ? 'desc' : 'asc', 'search' => request('search')]) }}" class="flex items-center gap-1 hover:text-slate-800 transition-colors">
                                             Status
                                             @if (request('sort') == 'status')
@@ -203,7 +203,7 @@
                                             @endif
                                         </a>
                                     </th>
-                                    <th class="px-6 py-4">
+                                    <th class="px-6 py-4 bg-slate-50">
                                         <a href="{{ route('admin.users', ['sort' => 'created_at', 'direction' => request('sort') == 'created_at' && request('direction') == 'asc' ? 'desc' : 'asc', 'search' => request('search')]) }}" class="flex items-center gap-1 hover:text-slate-800 transition-colors">
                                             Bergabung
                                             @if (request('sort') == 'created_at')
@@ -217,7 +217,7 @@
                                             @endif
                                         </a>
                                     </th>
-                                    <th class="px-6 py-4 text-right">Aksi</th>
+                                    <th class="px-6 py-4 text-right bg-slate-50">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-200">
