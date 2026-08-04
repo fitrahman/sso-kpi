@@ -97,26 +97,7 @@
         <!-- Scrollable content -->
         <div class="flex-1 overflow-y-auto p-6 lg:p-8">
 
-            @if (session('success'))
-                <div id="toastSuccess" class="fixed top-5 right-5 z-50 flex items-center gap-3 bg-slate-900/95 text-white px-4 py-3 rounded-2xl shadow-2xl border border-slate-700/60 backdrop-blur-md transition-all duration-500 transform translate-y-0 opacity-100 max-w-md">
-                    <div class="w-7 h-7 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
-                    </div>
-                    <span class="text-xs font-semibold text-slate-100 flex-grow">{{ session('success') }}</span>
-                    <button onclick="document.getElementById('toastSuccess').remove()" class="text-slate-400 hover:text-white transition-colors p-1">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                    </button>
-                </div>
-                <script>
-                    setTimeout(() => {
-                        const toast = document.getElementById('toastSuccess');
-                        if (toast) {
-                            toast.classList.add('opacity-0', '-translate-y-2');
-                            setTimeout(() => toast.remove(), 500);
-                        }
-                    }, 3000);
-                </script>
-            @endif
+
 
             @if ($errors->any())
                 <div class="bg-red-50 border border-red-200 p-4 mb-6 rounded-xl flex items-start gap-3 shadow-sm">
