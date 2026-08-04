@@ -679,6 +679,27 @@ class DashboardController extends Controller
                 'description'     => "Akses '{$user->name}' diubah (Status: {$status}, Role: " . ($localRole ?: 'default/none') . ")",
             ]);
 
+            // Dispatch Real-time Webhook to Client Application
+            if ($client->redirect) {
+                $webhookUrl = str_replace('/auth/sso/callback', '/api/sso/webhook', $client->redirect);
+                try {
+                    \Illuminate\Support\Facades\Http::timeout(2)->post($webhookUrl, [
+                        'event'     => 'user.role_updated',
+                        'timestamp' => now()->timestamp,
+                        'data'      => [
+                            'email'         => $user->email,
+                            'name'          => $user->name,
+                            'access_status' => $status,
+                            'role'          => $localRole ?: 'none',
+                            'client_id'     => (int) $client->id,
+                        ],
+                        'signature' => hash_hmac('sha256', $user->email . ':' . ($localRole ?: 'none'), $client->secret),
+                    ]);
+                } catch (\Exception $e) {
+                    // Log silent if client app webhook endpoint is unavailable
+                }
+            }
+
             return back()->with('success', "Akses & role lokal '{$user->name}' untuk {$client->name} berhasil diperbarui.");
         } catch (\Exception $e) {
             return back()->withErrors(['error' => 'Gagal memperbarui akses pengguna: ' . $e->getMessage()]);
