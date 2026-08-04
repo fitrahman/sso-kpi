@@ -160,82 +160,58 @@
                             $g             = $gradients[$idx % count($gradients)];
                             $isMaintenance = $client->is_maintenance && auth()->user()->role !== 'admin';
                             $isAdminMaint  = $client->is_maintenance && auth()->user()->role === 'admin';
+                            $appGatewayUrl = route('app.gateway', ['appName' => $client->name]);
                         @endphp
 
-                        {{-- ── Single card ── --}}
-                        <div class="carousel-card flex-shrink-0 w-72 sm:w-80 flex flex-col rounded-2xl overflow-hidden
-                                    bg-white border border-slate-200 shadow-md
-                                    transition-all duration-300 hover:-translate-y-2 hover:shadow-xl
-                                    {{ $isMaintenance ? 'opacity-70' : '' }}">
+                        @if ($isMaintenance)
+                            {{-- ── Maintenance Card (Disabled Click) ── --}}
+                            <div class="carousel-card flex-shrink-0 w-72 sm:w-80 flex flex-col rounded-2xl overflow-hidden
+                                        bg-white border border-slate-200 shadow-md opacity-70 cursor-not-allowed">
 
-                            {{-- ▌ TOP: visual header ▐ --}}
-                            <div class="relative h-48 overflow-hidden select-none"
-                                 style="background: linear-gradient(135deg, {{ $g['from'] }} 0%, {{ $g['to'] }} 100%);">
+                                {{-- TOP: visual header --}}
+                                <div class="relative h-48 overflow-hidden select-none"
+                                     style="background: linear-gradient(135deg, {{ $g['from'] }} 0%, {{ $g['to'] }} 100%);">
 
-                                {{-- Background image (customisable by admin via logo_path) --}}
-                                @if ($client->logo_path)
-                                    <img src="{{ Storage::url($client->logo_path) }}"
-                                         alt=""
-                                         class="absolute inset-0 w-full h-full object-cover
-                                                {{ $isMaintenance ? 'grayscale opacity-60' : 'opacity-90' }}">
-                                    {{-- dark scrim so text stays readable over any photo --}}
-                                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-black/10"></div>
-                                @else
-                                    {{-- dot-pattern overlay on solid gradient --}}
-                                    <div class="absolute inset-0 opacity-[0.08]"
-                                         style="background-image: radial-gradient(white 1.5px, transparent 1.5px);
-                                                background-size: 28px 28px;"></div>
-                                    {{-- decorative circles --}}
-                                    <div class="absolute -right-10 -top-10 w-40 h-40 rounded-full opacity-10 bg-white"></div>
-                                    <div class="absolute -left-6 -bottom-6 w-28 h-28 rounded-full opacity-10 bg-white"></div>
-                                @endif
+                                    @if ($client->logo_path)
+                                        <img src="{{ Storage::url($client->logo_path) }}"
+                                             alt=""
+                                             class="absolute inset-0 w-full h-full object-cover grayscale opacity-60">
+                                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-black/10"></div>
+                                    @else
+                                        <div class="absolute inset-0 opacity-[0.08]"
+                                             style="background-image: radial-gradient(white 1.5px, transparent 1.5px); background-size: 28px 28px;"></div>
+                                        <div class="absolute -right-10 -top-10 w-40 h-40 rounded-full opacity-10 bg-white"></div>
+                                        <div class="absolute -left-6 -bottom-6 w-28 h-28 rounded-full opacity-10 bg-white"></div>
+                                    @endif
 
-                                {{-- Badge — top-left --}}
-                                <div class="absolute top-3 left-3 z-10">
-                                    @if ($isMaintenance || $isAdminMaint)
+                                    <div class="absolute top-3 left-3 z-10">
                                         <span class="inline-flex items-center gap-1.5 bg-black/40 backdrop-blur-sm
                                                      text-amber-300 text-[11px] font-semibold
                                                      px-2.5 py-1 rounded-full border border-amber-400/40">
                                             <span class="w-1.5 h-1.5 bg-amber-400 rounded-full animate-pulse"></span>
                                             Maintenance
                                         </span>
-                                    @else
-                                        <span class="bg-black/25 backdrop-blur-sm text-white/90
-                                                     text-[11px] font-semibold px-2.5 py-1 rounded-full">
-                                            Aplikasi
-                                        </span>
-                                    @endif
+                                    </div>
+
+                                    <div class="absolute bottom-3 left-4 z-10">
+                                        <img src="{{ asset('logoKPI.png') }}"
+                                             alt="KPI SSO"
+                                             class="h-7 w-auto object-contain drop-shadow opacity-40">
+                                    </div>
+
+                                    <div class="absolute inset-0 flex items-center justify-center px-6 z-10">
+                                        <h3 class="text-xl font-extrabold text-white text-center drop-shadow-lg leading-snug tracking-tight opacity-50">
+                                            {{ $client->name }}
+                                        </h3>
+                                    </div>
                                 </div>
 
-                                {{-- KPI Logo — always shown bottom-left --}}
-                                <div class="absolute bottom-3 left-4 z-10">
-                                    <img src="{{ asset('logoKPI.png') }}"
-                                         alt="KPI SSO"
-                                         class="h-7 w-auto object-contain drop-shadow
-                                                {{ $isMaintenance ? 'opacity-40' : 'opacity-90' }}">
-                                </div>
-
-                                {{-- App name — centred --}}
-                                <div class="absolute inset-0 flex items-center justify-center px-6 z-10">
-                                    <h3 class="text-xl font-extrabold text-white text-center
-                                               drop-shadow-lg leading-snug tracking-tight
-                                               {{ $isMaintenance ? 'opacity-50' : '' }}">
-                                        {{ $client->name }}
-                                    </h3>
-                                </div>
-                            </div>
-
-                            {{-- ▌ BOTTOM: content ▐ --}}
-                            <div class="flex flex-col flex-grow p-5">
-                                <p class="text-sm text-slate-500 leading-relaxed flex-grow mb-5 line-clamp-3">
-                                    @if ($isMaintenance)
+                                {{-- BOTTOM: content --}}
+                                <div class="flex flex-col flex-grow p-5">
+                                    <p class="text-sm text-slate-500 leading-relaxed flex-grow mb-5 line-clamp-3">
                                         Aplikasi sedang dalam pemeliharaan dan tidak dapat diakses sementara.
-                                    @else
-                                        {{ $client->description ?: 'Portal akses terintegrasi melalui KPI SSO.' }}
-                                    @endif
-                                </p>
+                                    </p>
 
-                                @if ($isMaintenance)
                                     <button disabled
                                             class="inline-flex items-center gap-2 px-4 py-2 rounded-lg
                                                    border border-slate-200 bg-slate-50
@@ -246,25 +222,83 @@
                                         </svg>
                                         Tidak Tersedia
                                     </button>
-                                @else
-                                    <a href="{{ route('app.gateway', ['appName' => $client->name]) }}"
-                                       class="inline-flex items-center gap-2 px-4 py-2 rounded-lg
-                                              border border-slate-300 bg-white
-                                              text-sm font-semibold text-slate-700
-                                              hover:bg-slate-50 hover:border-slate-400
-                                              transition-all duration-200 w-fit group/btn">
+                                </div>
+                            </div>
+                        @else
+                            {{-- ── Active Application Card (Clickable Entire Card) ── --}}
+                            <a href="{{ $appGatewayUrl }}"
+                               class="carousel-card group flex-shrink-0 w-72 sm:w-80 flex flex-col rounded-2xl overflow-hidden
+                                      bg-white border border-slate-200 shadow-md cursor-pointer
+                                      transition-all duration-300 hover:-translate-y-2 hover:shadow-xl hover:border-kpi-300">
+
+                                {{-- TOP: visual header --}}
+                                <div class="relative h-48 overflow-hidden select-none"
+                                     style="background: linear-gradient(135deg, {{ $g['from'] }} 0%, {{ $g['to'] }} 100%);">
+
+                                    @if ($client->logo_path)
+                                        <img src="{{ Storage::url($client->logo_path) }}"
+                                             alt=""
+                                             class="absolute inset-0 w-full h-full object-cover opacity-90 group-hover:scale-105 transition-transform duration-500">
+                                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-black/10"></div>
+                                    @else
+                                        <div class="absolute inset-0 opacity-[0.08]"
+                                             style="background-image: radial-gradient(white 1.5px, transparent 1.5px); background-size: 28px 28px;"></div>
+                                        <div class="absolute -right-10 -top-10 w-40 h-40 rounded-full opacity-10 bg-white group-hover:scale-110 transition-transform duration-500"></div>
+                                        <div class="absolute -left-6 -bottom-6 w-28 h-28 rounded-full opacity-10 bg-white"></div>
+                                    @endif
+
+                                    <div class="absolute top-3 left-3 z-10">
+                                        @if ($isAdminMaint)
+                                            <span class="inline-flex items-center gap-1.5 bg-black/40 backdrop-blur-sm
+                                                         text-amber-300 text-[11px] font-semibold
+                                                         px-2.5 py-1 rounded-full border border-amber-400/40">
+                                                <span class="w-1.5 h-1.5 bg-amber-400 rounded-full animate-pulse"></span>
+                                                Maintenance (Admin)
+                                            </span>
+                                        @else
+                                            <span class="bg-black/25 backdrop-blur-sm text-white/90
+                                                         text-[11px] font-semibold px-2.5 py-1 rounded-full">
+                                                Aplikasi
+                                            </span>
+                                        @endif
+                                    </div>
+
+                                    <div class="absolute bottom-3 left-4 z-10">
+                                        <img src="{{ asset('logoKPI.png') }}"
+                                             alt="KPI SSO"
+                                             class="h-7 w-auto object-contain drop-shadow opacity-90">
+                                    </div>
+
+                                    <div class="absolute inset-0 flex items-center justify-center px-6 z-10">
+                                        <h3 class="text-xl font-extrabold text-white text-center drop-shadow-lg leading-snug tracking-tight group-hover:scale-105 transition-transform duration-300">
+                                            {{ $client->name }}
+                                        </h3>
+                                    </div>
+                                </div>
+
+                                {{-- BOTTOM: content --}}
+                                <div class="flex flex-col flex-grow p-5">
+                                    <p class="text-sm text-slate-500 leading-relaxed flex-grow mb-5 line-clamp-3">
+                                        {{ $client->description ?: 'Portal akses terintegrasi melalui KPI SSO.' }}
+                                    </p>
+
+                                    <div class="inline-flex items-center gap-2 px-4 py-2 rounded-lg
+                                                border border-slate-300 bg-white
+                                                text-sm font-semibold text-slate-700
+                                                group-hover:bg-kpi-700 group-hover:text-white group-hover:border-kpi-700
+                                                transition-all duration-200 w-fit">
                                         @if ($isAdminMaint)
                                             <span class="w-1.5 h-1.5 bg-amber-500 rounded-full"></span>
                                         @endif
                                         Buka Aplikasi
-                                        <svg class="w-4 h-4 group-hover/btn:translate-x-1 transition-transform duration-200"
+                                        <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform duration-200"
                                              fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
                                         </svg>
-                                    </a>
-                                @endif
-                            </div>
-                        </div>{{-- /.carousel-card --}}
+                                    </div>
+                                </div>
+                            </a>
+                        @endif
                     @endforeach
 
                 </div>{{-- /#carouselTrack --}}
