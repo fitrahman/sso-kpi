@@ -263,20 +263,21 @@
 
             <!-- Application Activity Log -->
             <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                <div class="px-6 py-4 border-b border-slate-100">
+                <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
                     <h2 class="font-bold text-slate-900 text-sm">Riwayat Aktivitas Aplikasi {{ $client->name }}</h2>
+                    <span class="text-xs text-slate-400 font-medium">Scroll untuk melihat riwayat</span>
                 </div>
                 @if ($logs->isEmpty())
                     <div class="px-6 py-8 text-center text-slate-400 text-xs">Belum ada riwayat aktivitas untuk aplikasi ini.</div>
                 @else
-                    <div class="overflow-x-auto">
+                    <div class="overflow-x-auto max-h-[250px] overflow-y-auto">
                         <table class="w-full text-xs text-left">
-                            <thead class="bg-slate-50 border-b border-slate-100 uppercase tracking-wider text-slate-400 font-semibold">
+                            <thead class="bg-slate-50 border-b border-slate-100 uppercase tracking-wider text-slate-400 font-semibold sticky top-0 z-10">
                                 <tr>
-                                    <th class="px-6 py-3">Admin</th>
-                                    <th class="px-6 py-3">Aksi</th>
-                                    <th class="px-6 py-3">Deskripsi</th>
-                                    <th class="px-6 py-3">Waktu</th>
+                                    <th class="px-6 py-3 bg-slate-50">Admin</th>
+                                    <th class="px-6 py-3 bg-slate-50">Aksi</th>
+                                    <th class="px-6 py-3 bg-slate-50">Deskripsi</th>
+                                    <th class="px-6 py-3 bg-slate-50">Waktu</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-100">

@@ -219,20 +219,21 @@
 
             <!-- Activity Log -->
             <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                <div class="px-6 py-4 border-b border-slate-100">
-                    <h2 class="font-bold text-slate-900">Log Aktivitas (5 Terakhir)</h2>
+                <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                    <h2 class="font-bold text-slate-900">Log Aktivitas</h2>
+                    <span class="text-xs text-slate-400 font-medium">Scroll untuk melihat riwayat</span>
                 </div>
                 @if ($activityLogs->isEmpty())
                     <div class="px-6 py-10 text-center text-slate-400 text-sm">Belum ada aktivitas tercatat.</div>
                 @else
-                    <div class="overflow-x-auto">
+                    <div class="overflow-x-auto max-h-[250px] overflow-y-auto">
                         <table class="w-full text-sm">
-                            <thead class="bg-slate-50 border-b border-slate-100 text-xs uppercase tracking-wider text-slate-500 font-semibold">
+                            <thead class="bg-slate-50 border-b border-slate-100 text-xs uppercase tracking-wider text-slate-500 font-semibold sticky top-0 z-10">
                                 <tr>
-                                    <th class="px-6 py-3 text-left">Admin</th>
-                                    <th class="px-6 py-3 text-left">Aksi</th>
-                                    <th class="px-6 py-3 text-left">Detail</th>
-                                    <th class="px-6 py-3 text-left">Waktu</th>
+                                    <th class="px-6 py-3 text-left bg-slate-50">Admin</th>
+                                    <th class="px-6 py-3 text-left bg-slate-50">Aksi</th>
+                                    <th class="px-6 py-3 text-left bg-slate-50">Detail</th>
+                                    <th class="px-6 py-3 text-left bg-slate-50">Waktu</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-100">
