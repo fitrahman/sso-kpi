@@ -212,6 +212,16 @@
                                     @endif
                                 </button>
                             </form>
+
+                            <!-- Delete Application -->
+                            <form action="{{ route('admin.clients.delete', $client->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus aplikasi \'{{ addslashes($client->name) }}\' secara permanen?');">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="inline-flex justify-center items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-white border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 transition-colors" title="Hapus Aplikasi">
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                    Hapus
+                                </button>
+                            </form>
                         </div>
                     </div>
                 @endforeach
@@ -407,21 +417,30 @@
                     <p class="text-xs text-slate-400 mt-1">Format: PNG, JPG, SVG. Maks. 2MB.</p>
                 </div>
 
-                <div class="flex gap-3 pt-2">
-                    <button type="button" onclick="closeEditModal()"
-                        class="flex-1 py-2.5 border border-slate-300 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
-                        Batal
+                <div class="flex items-center justify-between gap-3 pt-3 border-t border-slate-100">
+                    <button type="button" onclick="deleteCurrentEditApp()"
+                        class="px-3.5 py-2.5 bg-white border border-red-200 text-red-600 rounded-xl text-xs font-semibold hover:bg-red-50 transition-colors">
+                        Hapus Aplikasi
                     </button>
-                    <button type="submit"
-                        class="flex-1 py-2.5 bg-kpi-600 text-white rounded-xl text-sm font-semibold hover:bg-kpi-700 transition-colors shadow-sm">
-                        Simpan Perubahan
-                    </button>
+                    <div class="flex gap-2">
+                        <button type="button" onclick="closeEditModal()"
+                            class="px-4 py-2.5 border border-slate-300 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
+                            Batal
+                        </button>
+                        <button type="submit"
+                            class="px-4 py-2.5 bg-kpi-600 text-white rounded-xl text-xs font-semibold hover:bg-kpi-700 transition-colors shadow-sm">
+                            Simpan Perubahan
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>
     </div>
 
     <script>
+        let currentEditAppId = null;
+        let currentEditAppName = '';
+
         function openCreateModal() {
             document.getElementById('createModal').classList.add('active');
         }
@@ -431,6 +450,8 @@
         }
 
         function openEditModal(id, name, description, supportedRoles, maintenanceMsg, displayOrder, isVisible) {
+            currentEditAppId = id;
+            currentEditAppName = name;
             document.getElementById('editForm').action = '/admin/applications/' + id;
             document.getElementById('edit-name').value = name;
             document.getElementById('edit-description').value = description;
@@ -439,6 +460,18 @@
             document.getElementById('edit-display-order').value = displayOrder;
             document.getElementById('edit-is-visible').value = isVisible;
             document.getElementById('editModal').classList.add('active');
+        }
+
+        function deleteCurrentEditApp() {
+            if (!currentEditAppId) return;
+            if (confirm('Apakah Anda yakin ingin menghapus aplikasi \'' + currentEditAppName + '\' secara permanen?')) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '/admin/applications/' + currentEditAppId;
+                form.innerHTML = '<input type="hidden" name="_token" value="{{ csrf_token() }}"><input type="hidden" name="_method" value="DELETE">';
+                document.body.appendChild(form);
+                form.submit();
+            }
         }
 
         function closeEditModal() {

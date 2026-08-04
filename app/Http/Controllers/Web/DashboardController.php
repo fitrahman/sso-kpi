@@ -564,6 +564,29 @@ class DashboardController extends Controller
         }
     }
 
+    public function deleteClient($id)
+    {
+        try {
+            $client = Client::findOrFail($id);
+            $clientName = $client->name;
+
+            if ($client->logo_path) {
+                Storage::disk('public')->delete($client->logo_path);
+            }
+
+            // Clean up related DB records
+            DB::table('client_user_access')->where('client_id', $client->id)->delete();
+            DB::table('user_client_roles')->where('oauth_client_id', $client->id)->delete();
+            DB::table('application_activity_logs')->where('oauth_client_id', $client->id)->delete();
+
+            $client->delete();
+
+            return redirect()->route('admin.clients')->with('success', "Aplikasi '{$clientName}' berhasil dihapus secara permanen.");
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Gagal menghapus aplikasi: ' . $e->getMessage()]);
+        }
+    }
+
     /**
      * Show detail of an application along with all users and their local roles (Admin only)
      */
