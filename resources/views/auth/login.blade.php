@@ -163,6 +163,11 @@
                             Ingat saya
                         </label>
                     </div>
+                    <div class="text-sm">
+                        <a href="{{ route('password.request') }}" class="font-semibold text-kpi-600 hover:text-kpi-800 transition-colors">
+                            Lupa kata sandi?
+                        </a>
+                    </div>
                 </div>
 
                 <!-- Submit Button -->
