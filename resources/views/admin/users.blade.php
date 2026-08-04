@@ -144,47 +144,63 @@
                     </div>
                 </div>
 
-                <!-- Main Data Table Area -->
-                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                    
-                    <!-- Table Toolbar -->
-                    <div class="p-4 border-b border-slate-200 bg-slate-50/50">
-                        <form action="{{ route('admin.users') }}" method="GET" class="flex flex-col md:flex-row justify-between items-center gap-3">
-                            <h2 class="text-lg font-bold text-slate-800 self-start md:self-auto">
-                                Daftar Pengguna
-                            </h2>
-                            
-                            <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
-                                <!-- Filter Role -->
-                                <select name="role" onchange="this.form.submit()" class="border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-kpi-500 bg-white cursor-pointer">
-                                    <option value="">Semua Role / Divisi</option>
-                                    @foreach ($rolesList as $r)
-                                        <option value="{{ $r }}" {{ request('role') === $r ? 'selected' : '' }}>{{ ucfirst($r) }}</option>
-                                    @endforeach
-                                </select>
+                <!-- Filter & Search Card Panel -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 pb-4 border-b border-slate-100">
+                        <div>
+                            <h2 class="text-lg font-bold text-slate-900">Daftar Pengguna</h2>
+                            <p class="text-xs text-slate-500 mt-0.5">Kelola seluruh pengguna terdaftar, perizinan role, dan status keaktifan akun.</p>
+                        </div>
 
-                                <!-- Filter Status -->
-                                <select name="status" onchange="this.form.submit()" class="border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-kpi-500 bg-white cursor-pointer">
-                                    <option value="">Semua Status</option>
-                                    <option value="approved" {{ request('status') === 'approved' ? 'selected' : '' }}>Aktif (Approved)</option>
-                                    <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Menunggu (Pending)</option>
-                                    <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>Non-aktif (Inactive)</option>
-                                </select>
-
-                                <!-- Search Input -->
-                                <div class="relative flex-1 md:w-64">
-                                    <input type="text" id="live-search" name="search" value="{{ request('search') }}" placeholder="Cari nama, email..." class="w-full pl-9 pr-8 py-2 border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500">
-                                    <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                                    <button type="submit" class="hidden"></button>
-                                    @if (request('search') || request('role') || request('status'))
-                                        <a href="{{ route('admin.users') }}" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-red-500" title="Reset filter">
-                                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                                        </a>
-                                    @endif
-                                </div>
-                            </div>
-                        </form>
+                        @if (request('search') || request('role') || request('status'))
+                            <a href="{{ route('admin.users') }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition-colors self-start md:self-auto">
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                Reset Filter
+                            </a>
+                        @endif
                     </div>
+
+                    <form action="{{ route('admin.users') }}" method="GET" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                        <!-- Filter Role -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1.5">Divisi / Role Global</label>
+                            <select name="role" onchange="this.form.submit()" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-kpi-500 bg-slate-50/50 cursor-pointer">
+                                <option value="">Semua Role / Divisi</option>
+                                @foreach ($rolesList as $r)
+                                    <option value="{{ $r }}" {{ request('role') === $r ? 'selected' : '' }}>{{ ucfirst($r) }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <!-- Filter Status -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1.5">Status Akun</label>
+                            <select name="status" onchange="this.form.submit()" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-kpi-500 bg-slate-50/50 cursor-pointer">
+                                <option value="">Semua Status</option>
+                                <option value="approved" {{ request('status') === 'approved' ? 'selected' : '' }}>Aktif (Approved)</option>
+                                <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Menunggu (Pending)</option>
+                                <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>Non-aktif (Inactive)</option>
+                            </select>
+                        </div>
+
+                        <!-- Search Input & Button -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1.5">Cari Nama / Email</label>
+                            <div class="flex gap-2">
+                                <div class="relative flex-1">
+                                    <input type="text" id="live-search" name="search" value="{{ request('search') }}" placeholder="Kata kunci..." class="w-full border border-slate-300 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500 bg-slate-50/50">
+                                    <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                                </div>
+                                <button type="submit" class="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-semibold hover:bg-slate-800 transition-colors shadow-sm">
+                                    Cari
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Main Data Table Area -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
 
                     <!-- Table -->
                     <div class="overflow-x-auto">
