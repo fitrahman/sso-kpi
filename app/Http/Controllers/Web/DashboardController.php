@@ -91,7 +91,7 @@ class DashboardController extends Controller
                     ->orderBy('created_at', 'desc');
             }
 
-            $users = $usersQuery->paginate(50)->withQueryString();
+            $users = $usersQuery->paginate(10)->withQueryString();
             $totalCount = User::count();
             $pendingCount = User::where('status', 'pending')->count();
             $inactiveCount = User::where('status', 'inactive')->count();
@@ -606,7 +606,7 @@ class DashboardController extends Controller
                 });
             }
 
-            $users = $usersQuery->orderBy('name')->paginate(50)->withQueryString();
+            $users = $usersQuery->orderBy('name')->paginate(10)->withQueryString();
 
             // Fetch client access mapping for this client [user_id => status]
             $accessMap = \DB::table('client_user_access')

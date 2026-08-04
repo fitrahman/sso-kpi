@@ -174,6 +174,7 @@
                         <table class="w-full text-left border-collapse" id="users-table">
                             <thead class="sticky top-0 bg-slate-50 z-10 border-b border-slate-200">
                                 <tr class="text-xs uppercase tracking-wider text-slate-500 font-semibold">
+                                    <th class="w-12 px-4 py-4 bg-slate-50 text-center">No</th>
                                     <th class="px-6 py-4 bg-slate-50">Pengguna</th>
                                     <th class="px-6 py-4 bg-slate-50">
                                         <a href="{{ route('admin.users', ['sort' => 'role', 'direction' => request('sort') == 'role' && request('direction') == 'asc' ? 'desc' : 'asc', 'search' => request('search')]) }}" class="flex items-center gap-1 hover:text-slate-800 transition-colors">
@@ -224,6 +225,9 @@
                                 @forelse($users as $user)
                                     <tr class="user-row hover:bg-slate-100/80 transition-colors cursor-pointer"
                                         onclick="if (!event.target.closest('button, form, a, input, select')) { window.location.href = '{{ route('admin.users.edit', $user->id) }}'; }">
+                                        <td class="px-4 py-4 text-center text-xs font-semibold text-slate-400 whitespace-nowrap">
+                                            {{ $users->firstItem() + $loop->index }}
+                                        </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="flex items-center">
                                                 <div class="flex-shrink-0 h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600 border border-slate-200">
@@ -303,7 +307,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="5" class="px-6 py-10 text-center text-slate-500 font-medium">
+                                        <td colspan="6" class="px-6 py-10 text-center text-slate-500 font-medium">
                                             Tidak ada data pengguna yang ditemukan.
                                         </td>
                                     </tr>

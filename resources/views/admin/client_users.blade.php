@@ -168,6 +168,7 @@
                     <table class="w-full text-sm text-left">
                         <thead class="bg-slate-50 text-xs uppercase tracking-wider text-slate-500 font-semibold sticky top-0 z-10 border-b border-slate-100">
                             <tr>
+                                <th class="w-12 px-4 py-3.5 bg-slate-50 text-center">No</th>
                                 <th class="px-6 py-3.5 bg-slate-50">Pengguna</th>
                                 <th class="px-6 py-3.5 bg-slate-50">Role Global</th>
                                 <th class="px-6 py-3.5 bg-slate-50">Akses Portal</th>
@@ -196,6 +197,11 @@
                                     }
                                 @endphp
                                 <tr class="user-app-row hover:bg-slate-50/80 transition-colors">
+                                    <!-- No -->
+                                    <td class="px-4 py-4 text-center text-xs font-semibold text-slate-400 whitespace-nowrap">
+                                        {{ $users->firstItem() + $loop->index }}
+                                    </td>
+
                                     <!-- User Info -->
                                     <td class="px-6 py-4">
                                         <div class="flex items-center gap-3">
@@ -256,7 +262,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="4" class="px-6 py-8 text-center text-slate-400 text-sm">Tidak ada pengguna ditemukan.</td>
+                                    <td colspan="5" class="px-6 py-8 text-center text-slate-400 text-sm">Tidak ada pengguna ditemukan.</td>
                                 </tr>
                             @endforelse
                         </tbody>
