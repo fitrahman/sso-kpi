@@ -1,381 +1,152 @@
 <!DOCTYPE html>
 <html lang="id">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Lupa Kata Sandi - KPI</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Lupa Kata Sandi - KPI SSO Portal</title>
     <link rel="icon" type="image/png" href="{{ asset('logoKPI.png') }}">
-    <!-- Load Google Fonts -->
+    
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Malayalam:wght@600&family=Open+Sans:wght@600;700&family=Poppins:wght@700&display=swap" rel="stylesheet">
-
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        kpi: {
+                            50: '#fef2f2', 100: '#fee2e2', 500: '#ef4444', 600: '#dc2626',
+                            700: '#b91c1c', 800: '#991b1b', 900: '#7f1d1d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        /* Reset default styles */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+        .bg-pattern {
+            background-color: #f8fafc;
+            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+            background-size: 32px 32px;
         }
-
-        body {
-            position: relative;
-            min-height: 100vh;
-            background: #8E8E93;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow-x: hidden;
-            font-family: 'Open Sans', sans-serif;
-        }
-
-        /* Background image styled and positioned */
-        .bg-container {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            top: 0;
-            left: 0;
-            overflow: hidden;
-            z-index: 1;
-            pointer-events: none;
-        }
-
-        .bg-image {
-            position: absolute;
-            width: 3083px;
-            height: 1067px;
-            left: calc(50% - 2195px);
-            top: -43px;
-            background: url('/profilkpi.png') no-repeat;
-            background-size: cover;
-            transform: matrix(-1, 0, 0, 1, 0, 0);
-            opacity: 0.85;
-            filter: blur(5px);
-        }
-
-        .bg-overlay {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            left: 0;
-            top: 0;
-            background: linear-gradient(180deg, rgba(192, 39, 45, 0.1) 25.03%, rgba(190, 18, 7, 0.5) 85.63%);
-            z-index: 2;
-        }
-
-        /* Content layout wrapper */
-        .page-content {
-            position: relative;
-            z-index: 5;
-            width: 100%;
-            max-width: 1440px;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 40px 20px;
-        }
-
-        /* Card Section (Center) */
-        .card-container {
-            width: 513px;
-            min-height: 672px;
-            background: #FFFFFF;
-            border-radius: 30px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 45px 30px;
-            position: relative;
-            transition: all 0.4s ease;
-        }
-
-        .card-container:hover {
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.35);
-        }
-
-        /* Title */
-        .card-title {
-            font-family: 'Noto Serif Malayalam', serif;
-            font-style: normal;
-            font-weight: 600;
-            font-size: 35px;
-            line-height: 48px;
-            color: #E0070B;
-            margin-bottom: 15px;
-            text-align: center;
-        }
-
-        .card-subtitle {
-            font-family: 'Open Sans', sans-serif;
-            font-weight: 600;
-            font-size: 14px;
-            color: #2C3D4F;
-            text-align: center;
-            margin-bottom: 30px;
-            width: 80%;
-        }
-
-        /* logoKPI */
-        .logo-kpi {
-            width: 120px;
-            height: 120px;
-            background: url('/logoKPI.png') no-repeat center;
-            background-size: contain;
-            margin-bottom: 20px;
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.06));
-        }
-
-        .logo-kpi:hover {
-            transform: scale(1.05);
-        }
-
-        /* Notification Messages */
-        .message-wrapper {
-            width: 400px;
-            margin-bottom: 20px;
-        }
-
-        .success-message {
-            background: rgba(234, 253, 241, 0.8);
-            border: 1px solid rgba(46, 204, 113, 0.3);
-            color: #27AE60;
-            padding: 14px 18px;
-            border-radius: 16px;
-            font-size: 13px;
-            font-weight: 600;
-            box-shadow: 0 4px 12px rgba(46, 204, 113, 0.04);
-            width: 100%;
-        }
-
-        .error-message {
-            background: rgba(253, 243, 243, 0.8);
-            border: 1px solid rgba(231, 76, 60, 0.3);
-            color: #C0392B;
-            padding: 14px 18px;
-            border-radius: 16px;
-            font-size: 13px;
-            font-weight: 600;
-            box-shadow: 0 4px 12px rgba(231, 76, 60, 0.04);
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            width: 100%;
-        }
-
-        /* Forms Layout */
-        .form-wrapper {
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 24px;
-            width: 400px;
-            justify-items: center;
-            margin: 0 auto;
-        }
-
-        /* Input styling */
-        .input-wrapper {
-            display: flex;
-            flex-direction: column;
-            width: 400px;
-        }
-
-        .form-group {
-            position: relative;
-            width: 100%;
-            height: 48px;
-        }
-
-        .form-group input {
-            width: 100%;
-            height: 100%;
-            background: #EF8A83;
-            border: 2px solid transparent;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-            border-radius: 12px;
-            padding: 0 16px;
-            padding-right: 48px;
-            color: #2C3D4F;
-            font-family: 'Open Sans', sans-serif;
-            font-weight: 600;
-            font-size: 15px;
-            outline: none;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .form-group input:hover {
-            opacity: 0.95;
-            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.2);
-        }
-
-        .form-group input:focus {
-            border-color: #EF8A83;
-            background: #FFFFFF;
-            color: #1A202C;
-            box-shadow: 0 0 0 4px rgba(239, 138, 131, 0.25);
-        }
-
-        .form-group label {
-            position: absolute;
-            left: 16px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-family: 'Open Sans', sans-serif;
-            font-weight: 600;
-            font-size: 15px;
-            color: #FFFFFF;
-            pointer-events: none;
-            transition: all 0.25s ease;
-        }
-
-        .form-group input:focus ~ label,
-        .form-group input:not(:placeholder-shown) ~ label {
-            top: -10px;
-            left: 12px;
-            transform: translateY(-50%) scale(0.85);
-            color: #E0070B;
-            font-weight: 700;
-            background: #FFFFFF;
-            padding: 0 4px;
-        }
-
-        .input-error {
-            color: #E74C3C;
-            font-size: 12px;
-            font-weight: 700;
-            margin-top: 4px;
-            align-self: flex-start;
-            padding-left: 12px;
-        }
-
-        /* Submit Button */
-        .btn-submit {
-            width: 294px;
-            height: 54px;
-            background: linear-gradient(180deg, #FF1C20 0%, #E0070B 100%);
-            border-radius: 30px;
-            border: none;
-            color: #FFFFFF;
-            font-family: 'Open Sans', sans-serif;
-            font-weight: 600;
-            font-size: 18px;
-            line-height: 27px;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 4px 15px rgba(224, 7, 11, 0.2);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .btn-submit:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(224, 7, 11, 0.4);
-            background: linear-gradient(180deg, #FF3D40 0%, #E0070B 100%);
-        }
-
-        .btn-submit:active {
-            transform: translateY(0);
-        }
-
-        /* Back Link */
-        .back-link {
-            font-family: 'Open Sans', sans-serif;
-            font-weight: 600;
-            font-size: 14px;
-            color: rgba(186, 0, 0, 0.58);
-            text-decoration: none;
-            margin-top: 25px;
-            transition: color 0.3s ease;
-        }
-
-        .back-link:hover {
-            color: rgba(186, 0, 0, 0.9);
-            text-decoration: underline;
-        }
-
-        @media (max-width: 580px) {
-            .card-container {
-                width: 100%;
-                max-width: 480px;
-                padding: 30px 16px;
-            }
-            .form-grid {
-                width: 100% !important;
-            }
-            .input-wrapper {
-                width: 100% !important;
-            }
+        .peer:focus ~ .peer-focus\:scale-75,
+        .peer:not(:placeholder-shown) ~ .peer-focus\:scale-75 {
+            transform: scale(0.75) translateY(-1.5rem);
+            color: #b91c1c;
         }
     </style>
 </head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex items-center justify-center p-4">
 
-<body>
-    <div class="bg-container">
-        <div class="bg-image"></div>
-        <div class="bg-overlay"></div>
-    </div>
+    <div class="max-w-5xl w-full bg-white rounded-3xl shadow-xl overflow-hidden flex flex-col md:flex-row">
+        
+        <!-- Left: Illustration Panel -->
+        <div class="hidden md:flex md:w-1/2 bg-kpi-700 bg-pattern flex-col justify-center items-center p-12 relative overflow-hidden text-white text-center">
+            <div class="absolute inset-0 bg-kpi-800/90 mix-blend-multiply"></div>
+            <div class="relative z-10 w-full max-w-sm flex flex-col items-center">
+                <img src="{{ asset('logoKPI.png') }}" alt="KPI Logo" class="h-24 w-auto mb-8">
+                <h2 class="text-3xl font-bold mb-4 tracking-tight">Atur Ulang Kata Sandi</h2>
+                <p class="text-kpi-100 text-base leading-relaxed">
+                    Kami akan membantu memulihkan akses akun SSO Anda secara aman dan cepat.
+                </p>
+            </div>
+            
+            <!-- Decorative circles -->
+            <div class="absolute -bottom-24 -left-24 w-64 h-64 border-4 border-white/10 rounded-full"></div>
+            <div class="absolute -top-24 -right-24 w-80 h-80 border-4 border-white/10 rounded-full"></div>
+        </div>
 
-    <div class="page-content">
-        <div class="card-container">
-            <div class="form-wrapper">
-                <div class="logo-kpi"></div>
-                <h2 class="card-title">Lupa Kata Sandi</h2>
-                <p class="card-subtitle">Masukkan alamat email anda yang terdaftar, kami akan mengirimkan tautan untuk mengatur ulang kata sandi.</p>
+        <!-- Right: Forgot Password Form -->
+        <div class="w-full md:w-1/2 p-8 sm:p-12 lg:p-16 flex flex-col justify-center">
+            
+            <div class="mb-8 text-center md:text-left">
+                <a href="{{ url('/') }}" class="inline-flex items-center justify-center h-12 mb-6 md:hidden">
+                    <img src="{{ asset('logoKPI.png') }}" alt="KPI Logo" class="h-12 w-auto">
+                </a>
+                <h1 class="text-3xl font-extrabold text-slate-900 mb-2">Lupa Kata Sandi?</h1>
+                <p class="text-slate-500 font-medium">Masukkan email terdaftar Anda, kami akan mengirimkan tautan untuk mengatur ulang kata sandi.</p>
+            </div>
 
-                @if (session('status'))
-                    <div class="message-wrapper">
-                        <div class="success-message">
-                            {{ session('status') }}
-                        </div>
+            <!-- Alerts -->
+            @if ($errors->any())
+                <div class="bg-red-50/80 border border-red-200/60 p-4 mb-6 rounded-2xl flex items-start gap-3 shadow-sm">
+                    <div class="flex-shrink-0 mt-0.5">
+                        <svg class="h-5 w-5 text-red-600" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                        </svg>
                     </div>
-                @endif
-
-                @if ($errors->any())
-                    <div class="message-wrapper">
-                        <div class="error-message">
-                            @foreach ($errors->all() as $error)
-                                <div>{{ $error }}</div>
-                            @endforeach
-                        </div>
+                    <div class="flex-grow text-xs text-red-700 font-medium">
+                        @foreach ($errors->all() as $error)
+                            <div>{{ $error }}</div>
+                        @endforeach
                     </div>
-                @endif
+                </div>
+            @endif
 
-                <form action="{{ route('password.email') }}" method="POST" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
-                    @csrf
-                    <div class="form-grid">
-                        <div class="input-wrapper">
-                            <div class="form-group">
-                                <input type="email" id="email" name="email" value="{{ old('email') }}"
-                                    class="{{ $errors->has('email') ? 'error' : '' }}" placeholder=" " required autofocus>
-                                <label for="email">Alamat Email</label>
-                            </div>
-                            @error('email')
-                                <span class="input-error">{{ $message }}</span>
-                            @enderror
-                        </div>
-
-                        <button type="submit" class="btn-submit">Kirim Link Reset</button>
+            @if (session('status'))
+                <div class="bg-green-50/80 border border-green-200/60 p-4 mb-6 rounded-2xl flex items-start gap-3 shadow-sm">
+                    <div class="flex-shrink-0 mt-0.5">
+                        <svg class="h-5 w-5 text-green-600" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                        </svg>
                     </div>
-                </form>
+                    <div class="flex-grow">
+                        <h3 class="text-sm font-bold text-green-900 leading-tight">Link Berhasil Dikirim</h3>
+                        <p class="mt-1 text-xs text-green-700 font-medium leading-relaxed">{{ session('status') }}</p>
+                    </div>
+                </div>
+            @endif
 
-                <a href="{{ route('login') }}" class="back-link">Kembali ke halaman Masuk</a>
+            <!-- Form -->
+            <form method="POST" action="{{ route('password.email') }}" class="space-y-6" id="forgotForm">
+                @csrf
+
+                <!-- Email Input -->
+                <div class="relative">
+                    <input type="email" id="email" name="email" value="{{ old('email') }}" required autofocus placeholder=" "
+                        class="block px-4 pb-2.5 pt-6 w-full text-base text-slate-900 bg-transparent rounded-xl border-2 border-slate-200 appearance-none focus:outline-none focus:ring-0 focus:border-kpi-600 peer transition-colors" />
+                    <label for="email" 
+                        class="absolute text-base text-slate-500 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] left-4 peer-focus:text-kpi-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 bg-white px-1">
+                        Alamat Email
+                    </label>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" id="submitBtn" class="w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl shadow-sm text-sm font-semibold text-white bg-kpi-700 hover:bg-kpi-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-kpi-600 transition-all transform hover:-translate-y-0.5">
+                    <span id="btnText">Kirim Link Reset Password</span>
+                    <svg id="btnSpinner" class="hidden animate-spin ml-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </button>
+            </form>
+
+            <div class="mt-8 text-center text-sm text-slate-500 font-medium">
+                Ingat kata sandi Anda? 
+                <a href="{{ route('login') }}" class="font-bold text-kpi-600 hover:text-kpi-800 transition-colors">Kembali ke Halaman Masuk</a>
             </div>
         </div>
     </div>
-</body>
 
+    <!-- Script -->
+    <script>
+        const form = document.getElementById('forgotForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const btnText = document.getElementById('btnText');
+        const btnSpinner = document.getElementById('btnSpinner');
+
+        form.addEventListener('submit', function() {
+            submitBtn.disabled = true;
+            submitBtn.classList.add('opacity-75', 'cursor-not-allowed');
+            btnText.textContent = 'Mengirimkan...';
+            btnSpinner.classList.remove('hidden');
+        });
+    </script>
+</body>
 </html>
