@@ -222,7 +222,8 @@
                             </thead>
                             <tbody class="divide-y divide-slate-200">
                                 @forelse($users as $user)
-                                    <tr class="user-row hover:bg-slate-50/80 transition-colors">
+                                    <tr class="user-row hover:bg-slate-100/80 transition-colors cursor-pointer"
+                                        onclick="if (!event.target.closest('button, form, a, input, select')) { window.location.href = '{{ route('admin.users.edit', $user->id) }}'; }">
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="flex items-center">
                                                 <div class="flex-shrink-0 h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600 border border-slate-200">
