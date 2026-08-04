@@ -13,7 +13,7 @@ Tambahkan 4 variabel konfigurasi SSO pada file `.env` di project aplikasi lokal 
 SSO_HOST="http://sso-kpi.test"
 SSO_CLIENT_ID="4"                                        # Dapatkan dari SSO Admin Portal
 SSO_CLIENT_SECRET="SimpegKpiSecretKey998877665544332211" # Dapatkan dari SSO Admin Portal
-SSO_REDIRECT_URI="http://simpeg-kpi-web-main.test/auth/sso/callback"
+SSO_REDIRECT_URI="http://namaproject.test/auth/sso/callback" # Masukkan http dari project yang ingin dimasukan
 ```
 
 ---
