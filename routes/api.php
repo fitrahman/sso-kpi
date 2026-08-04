@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Route;
 // Public routes
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/client-roles/sync', [AuthController::class, 'syncClientRoles']);
 
 // Protected routes
 Route::middleware('auth:api')->group(function () {
@@ -15,7 +16,6 @@ Route::middleware('auth:api')->group(function () {
 
     // Role Synchronization API
     Route::get('/client-roles', [AuthController::class, 'getClientRoles']);
-    Route::post('/client-roles/sync', [AuthController::class, 'syncClientRoles']);
 
     // User routes
     Route::get('/users', [UserController::class, 'index']);

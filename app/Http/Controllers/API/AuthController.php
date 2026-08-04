@@ -122,15 +122,18 @@ class AuthController extends Controller
             $clientId = $request->query('client_id');
             
             $role = 'none';
-            if ($user->role === 'admin') {
-                $role = 'admin';
-            } elseif ($clientId) {
+            if ($clientId) {
                 $clientRole = \App\Models\UserClientRole::where('user_id', $user->id)
                     ->where('oauth_client_id', $clientId)
                     ->first();
-                if ($clientRole) {
+
+                if ($clientRole && !empty($clientRole->role)) {
                     $role = $clientRole->role;
+                } else {
+                    $role = $user->role ?? 'none';
                 }
+            } else {
+                $role = $user->role ?? 'none';
             }
 
             // Target response format requested by the user
@@ -195,9 +198,10 @@ class AuthController extends Controller
     public function syncClientRoles(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'client_id' => 'required|integer',
-            'roles'     => 'required|array',
-            'roles.*'   => 'string|max:100',
+            'client_id'     => 'required|integer',
+            'client_secret' => 'nullable|string',
+            'roles'         => 'required|array',
+            'roles.*'       => 'string|max:100',
         ]);
 
         if ($validator->fails()) {
@@ -207,6 +211,11 @@ class AuthController extends Controller
         $client = \Laravel\Passport\Client::find($request->client_id);
         if (!$client) {
             return response()->json(['success' => false, 'message' => 'Client application not found'], 404);
+        }
+
+        // If client_secret is provided, verify it matches
+        if ($request->filled('client_secret') && $client->secret !== $request->client_secret) {
+            return response()->json(['success' => false, 'message' => 'Invalid client secret'], 401);
         }
 
         $rolesArray = array_values(array_unique(array_map('trim', $request->roles)));

@@ -24,7 +24,7 @@ class UserApiTest extends TestCase
     /** @test */
     public function it_returns_role_none_when_client_role_not_found()
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => 'pengguna']);
         
         Passport::actingAs($user);
 
@@ -32,10 +32,10 @@ class UserApiTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJson([
-                'id' => $user->id,
-                'name' => $user->name,
+                'id'    => $user->id,
+                'name'  => $user->name,
                 'email' => $user->email,
-                'role' => 'none',
+                'role'  => 'pengguna',
             ]);
     }
 
@@ -94,6 +94,84 @@ class UserApiTest extends TestCase
                 'name' => $admin->name,
                 'email' => $admin->email,
                 'role' => 'admin',
+            ]);
+    }
+
+    /** @test */
+    public function global_admin_user_with_assigned_local_role_returns_assigned_local_role()
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        DB::table('oauth_clients')->insert([
+            'id'                     => 4,
+            'name'                   => 'SIMPEG KPI',
+            'secret'                 => 'secret',
+            'redirect'               => 'http://localhost',
+            'personal_access_client' => 0,
+            'password_client'        => 0,
+            'revoked'                => 0,
+            'created_at'             => now(),
+            'updated_at'             => now(),
+        ]);
+
+        UserClientRole::create([
+            'user_id'         => $admin->id,
+            'oauth_client_id' => 4,
+            'role'            => 'atasan',
+        ]);
+
+        Passport::actingAs($admin);
+
+        $response = $this->getJson('/api/user?client_id=4');
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'id'    => $admin->id,
+                'name'  => $admin->name,
+                'email' => $admin->email,
+                'role'  => 'atasan',
+            ]);
+    }
+
+    /** @test */
+    public function authenticated_user_can_get_and_sync_client_supported_roles()
+    {
+        $user = User::factory()->create();
+        Passport::actingAs($user);
+
+        DB::table('oauth_clients')->insert([
+            'id'                     => 10,
+            'name'                   => 'Testing App',
+            'secret'                 => 'secret',
+            'redirect'               => 'http://localhost',
+            'personal_access_client' => 0,
+            'password_client'        => 0,
+            'revoked'                => 0,
+            'supported_roles'        => json_encode(['Admin', 'Staff']),
+            'created_at'             => now(),
+            'updated_at'             => now(),
+        ]);
+
+        // Test GET /api/client-roles
+        $getRes = $this->getJson('/api/client-roles?client_id=10');
+        $getRes->assertStatus(200)
+            ->assertJson([
+                'success'         => true,
+                'client_id'       => 10,
+                'supported_roles' => ['Admin', 'Staff'],
+            ]);
+
+        // Test POST /api/client-roles/sync
+        $postRes = $this->postJson('/api/client-roles/sync', [
+            'client_id' => 10,
+            'roles'     => ['Admin', 'Supervisor', 'Operator', 'Staff'],
+        ]);
+
+        $postRes->assertStatus(200)
+            ->assertJson([
+                'success'         => true,
+                'client_id'       => 10,
+                'supported_roles' => ['Admin', 'Supervisor', 'Operator', 'Staff'],
             ]);
     }
 }
