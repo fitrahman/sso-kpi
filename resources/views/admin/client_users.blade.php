@@ -422,31 +422,17 @@
             document.getElementById('editModal').classList.remove('active');
         }
 
-        // Instant Live Search for Application Users
+        // Global Database Live Search for Application Users
         document.addEventListener('DOMContentLoaded', function () {
             const searchInput = document.getElementById('app-user-search');
-            const rows = document.querySelectorAll('.user-app-row');
             let searchTimeout = null;
 
             if (searchInput) {
                 searchInput.addEventListener('input', function () {
-                    const query = this.value.toLowerCase().trim();
-                    
-                    // Instant Client-side Filter
-                    rows.forEach(row => {
-                        const text = row.textContent.toLowerCase();
-                        if (text.includes(query)) {
-                            row.style.display = '';
-                        } else {
-                            row.style.display = 'none';
-                        }
-                    });
-
-                    // Auto submit form to query database if user pauses typing
                     clearTimeout(searchTimeout);
                     searchTimeout = setTimeout(() => {
                         document.getElementById('searchAppUsersForm').submit();
-                    }, 600);
+                    }, 400);
                 });
             }
         });

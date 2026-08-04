@@ -408,31 +408,26 @@
             const searchInput = document.getElementById('live-search');
             const formSearchInput = document.getElementById('form-search-input');
             const searchForm = document.getElementById('search-form');
-            const rows = document.querySelectorAll('.user-row');
+            let searchTimeout = null;
 
-            // Client side quick search
-            searchInput.addEventListener('input', function(e) {
-                const term = e.target.value.toLowerCase().trim();
-                
-                rows.forEach(row => {
-                    const name = row.querySelector('.user-name').textContent.toLowerCase();
-                    const email = row.querySelector('.user-email-cell').textContent.toLowerCase();
-                    if (name.includes(term) || email.includes(term)) {
-                        row.style.display = '';
-                    } else {
-                        row.style.display = 'none';
+            if (searchInput) {
+                searchInput.addEventListener('input', function(e) {
+                    clearTimeout(searchTimeout);
+                    searchTimeout = setTimeout(() => {
+                        formSearchInput.value = searchInput.value;
+                        searchForm.submit();
+                    }, 400);
+                });
+
+                searchInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        clearTimeout(searchTimeout);
+                        formSearchInput.value = searchInput.value;
+                        searchForm.submit();
                     }
                 });
-            });
-
-            // Server-side fallback on press Enter
-            searchInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    formSearchInput.value = searchInput.value;
-                    searchForm.submit();
-                }
-            });
+            }
         });
     </script>
 </body>
