@@ -220,7 +220,7 @@
             <!-- Activity Log -->
             <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                 <div class="px-6 py-4 border-b border-slate-100">
-                    <h2 class="font-bold text-slate-900">Log Aktivitas (30 Terakhir)</h2>
+                    <h2 class="font-bold text-slate-900">Log Aktivitas (5 Terakhir)</h2>
                 </div>
                 @if ($activityLogs->isEmpty())
                     <div class="px-6 py-10 text-center text-slate-400 text-sm">Belum ada aktivitas tercatat.</div>

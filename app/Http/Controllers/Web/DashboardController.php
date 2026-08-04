@@ -365,7 +365,7 @@ class DashboardController extends Controller
 
             $activityLogs = ApplicationActivityLog::with('admin')
                 ->orderByDesc('created_at')
-                ->limit(30)
+                ->limit(5)
                 ->get();
 
             return view('admin.apps', [
@@ -599,7 +599,7 @@ class DashboardController extends Controller
             $logs = ApplicationActivityLog::where('oauth_client_id', $client->id)
                 ->with('admin')
                 ->orderBy('created_at', 'desc')
-                ->take(20)
+                ->take(5)
                 ->get();
 
             return view('admin.client_users', [
