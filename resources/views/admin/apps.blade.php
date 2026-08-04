@@ -121,7 +121,7 @@
                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
                     </svg>
-                    Tambah Aplikasi Baru
+                    Tambah Aplikasi
                 </button>
             </div>
 
@@ -179,7 +179,16 @@
                             </a>
 
                             <!-- Edit Button -->
-                            <button onclick="openEditModal({{ $client->id }}, '{{ addslashes($client->name) }}', '{{ addslashes($client->description ?? '') }}', '{{ addslashes($client->maintenance_message ?? '') }}', {{ $client->display_order }}, {{ $client->is_visible ? 1 : 0 }})"
+                            @php
+                                $rolesStr = '';
+                                if (!empty($client->supported_roles)) {
+                                    $rArr = json_decode($client->supported_roles, true);
+                                    if (is_array($rArr)) {
+                                        $rolesStr = implode(', ', $rArr);
+                                    }
+                                }
+                            @endphp
+                            <button onclick="openEditModal({{ $client->id }}, '{{ addslashes($client->name) }}', '{{ addslashes($client->description ?? '') }}', '{{ addslashes($rolesStr) }}', '{{ addslashes($client->maintenance_message ?? '') }}', {{ $client->display_order }}, {{ $client->is_visible ? 1 : 0 }})"
                                 class="inline-flex justify-center items-center gap-1.5 px-3 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg text-xs font-semibold hover:bg-slate-50 transition-colors">
                                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                 Edit
@@ -265,7 +274,7 @@
         <div class="fixed inset-0 bg-slate-900/60" onclick="closeCreateModal()"></div>
         <div class="modal-content bg-white rounded-2xl shadow-2xl w-full max-w-lg relative z-10">
             <div class="flex justify-between items-center px-6 py-5 border-b border-slate-100">
-                <h3 class="text-lg font-bold text-slate-900">Tambah Aplikasi Baru</h3>
+                <h3 class="text-lg font-bold text-slate-900">Tambah Aplikasi</h3>
                 <button onclick="closeCreateModal()" class="text-slate-400 hover:text-slate-600">
                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
@@ -276,13 +285,13 @@
 
                 <div>
                     <label class="block text-sm font-semibold text-slate-700 mb-1.5">Nama Aplikasi <span class="text-red-500">*</span></label>
-                    <input type="text" name="name" required placeholder="Contoh: Sistem Kepegawaian 3"
+                    <input type="text" name="name" required placeholder="Contoh: Sistem Absensi"
                         class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500 focus:border-transparent">
                 </div>
 
                 <div>
                     <label class="block text-sm font-semibold text-slate-700 mb-1.5">Redirect URI / Callback URL <span class="text-red-500">*</span></label>
-                    <input type="url" name="redirect" required placeholder="Contoh: http://sistem3.test/auth/sso/callback"
+                    <input type="url" name="redirect" required placeholder="Contoh: http://nama-aplikasi.com/auth/sso/callback"
                         class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500 focus:border-transparent">
                     <p class="text-xs text-slate-400 mt-1">URL Callback tempat server SSO mengirimkan OAuth authorization code.</p>
                 </div>
@@ -367,6 +376,13 @@
                 </div>
 
                 <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">Role Lokal yang Didukung (Pisahkan dengan koma)</label>
+                    <input type="text" name="supported_roles" id="edit-supported-roles" placeholder="Contoh: Admin, Staff, pengguna"
+                        class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500 focus:border-transparent">
+                    <p class="text-xs text-slate-400 mt-1">Role spesifik aplikasi yang bisa dipilih Admin saat pemetaan peran pengguna.</p>
+                </div>
+
+                <div>
                     <label class="block text-sm font-semibold text-slate-700 mb-1.5">Pesan Maintenance (opsional)</label>
                     <textarea name="maintenance_message" id="edit-maintenance-message" rows="2"
                         class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500 focus:border-transparent resize-none"
@@ -419,10 +435,11 @@
             document.getElementById('createModal').classList.remove('active');
         }
 
-        function openEditModal(id, name, description, maintenanceMsg, displayOrder, isVisible) {
+        function openEditModal(id, name, description, supportedRoles, maintenanceMsg, displayOrder, isVisible) {
             document.getElementById('editForm').action = '/admin/applications/' + id;
             document.getElementById('edit-name').value = name;
             document.getElementById('edit-description').value = description;
+            document.getElementById('edit-supported-roles').value = supportedRoles;
             document.getElementById('edit-maintenance-message').value = maintenanceMsg;
             document.getElementById('edit-display-order').value = displayOrder;
             document.getElementById('edit-is-visible').value = isVisible;

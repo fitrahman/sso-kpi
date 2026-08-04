@@ -461,6 +461,7 @@ class DashboardController extends Controller
             $validated = $request->validate([
                 'name'                => 'required|string|max:255',
                 'description'         => 'nullable|string|max:500',
+                'supported_roles'     => 'nullable|string|max:500',
                 'maintenance_message' => 'nullable|string|max:500',
                 'display_order'       => 'nullable|integer|min:0',
                 'is_visible'          => 'nullable|boolean',
@@ -471,8 +472,18 @@ class DashboardController extends Controller
                 $changes[] = "Nama: '{$client->name}' → '{$validated['name']}'";
             }
 
+            $rolesArray = [];
+            if (!empty($validated['supported_roles'])) {
+                $rolesArray = array_map('trim', explode(',', $validated['supported_roles']));
+                $rolesArray = array_values(array_filter($rolesArray));
+            }
+            if (empty($rolesArray)) {
+                $rolesArray = ['Admin', 'Staff', 'pengguna'];
+            }
+
             $client->name                = $validated['name'];
             $client->description         = $validated['description'] ?? null;
+            $client->supported_roles     = json_encode($rolesArray);
             $client->maintenance_message = $validated['maintenance_message'] ?? null;
             $client->display_order       = $validated['display_order'] ?? 0;
             $client->is_visible          = $request->boolean('is_visible', true);

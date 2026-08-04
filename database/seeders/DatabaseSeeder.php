@@ -2,119 +2,144 @@
 
 namespace Database\Seeders;
 
+use App\Models\User;
+use App\Models\UserClientRole;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 class DatabaseSeeder extends Seeder
 {
     /**
-     * Seed the application's database.
+     * Seed the application's database cleanly.
      */
     public function run(): void
     {
-        // Nonaktifkan foreign key checks untuk melakukan truncate tabel
-        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
-        DB::table('oauth_clients')->truncate();
-        DB::table('client_user_access')->truncate();
-        DB::table('user_client_roles')->truncate();
-        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
-
-        // 1. Panggil seeder pengguna (Admin & Staff)
+        // 1. Run User Seeder
         $this->call(AdminUserSeeder::class);
 
-        // 2. Buat Client Sistem 1 (ID 2)
-        DB::table('oauth_clients')->insert([
-            'id' => 2,
-            'user_id' => null,
-            'name' => 'Sistem 1',
-            'secret' => 'FFkmMi3JaJ1UlHABGXGqxQZg0KKyHRT0oqrREFG2',
-            'provider' => null,
-            'redirect' => 'http://sistem1.test/auth/sso/callback',
-            'personal_access_client' => 0,
-            'password_client' => 0,
-            'revoked' => 0,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        // 3. Buat Client Sistem 2 (ID 3)
-        DB::table('oauth_clients')->insert([
-            'id' => 3,
-            'user_id' => null,
-            'name' => 'Sistem 2',
-            'secret' => 'sistem2_secret_key_123',
-            'provider' => null,
-            'redirect' => 'http://sistem2.test/auth/sso/callback',
-            'personal_access_client' => 0,
-            'password_client' => 0,
-            'revoked' => 0,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        // 4. Buat Client Sistem Go (ID 4)
-        DB::table('oauth_clients')->insert([
-            'id' => 4,
-            'user_id' => null,
-            'name' => 'Sistem Go',
-            'secret' => 'sistemgo_secret_key_123',
-            'provider' => null,
-            'redirect' => 'http://sistemgo.test/auth/sso/callback',
-            'personal_access_client' => 0,
-            'password_client' => 0,
-            'revoked' => 0,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        // 5. Buat Klien Sistem Kepegawaian / Sistem 3 (ID 5)
-        DB::table('oauth_clients')->insert([
-            'id' => 5,
-            'user_id' => null,
-            'name' => 'Sistem 3',
-            'secret' => 'sistem3_secret_key_123',
-            'provider' => null,
-            'redirect' => 'http://sistem3.test/auth/sso/callback',
-            'personal_access_client' => 0,
-            'password_client' => 0,
-            'revoked' => 0,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        // 6. Buat Data Dummy Hak Akses & Peran Klien
-        $humas = \App\Models\User::where('email', 'humas@kpi.com')->first();
-        $kepegawaian = \App\Models\User::where('email', 'kepegawaian@kpi.com')->first();
-        $manajerial = \App\Models\User::where('email', 'manajerial@kpi.com')->first();
-
-        // Humas: Akses ke Sistem 1 (Pengguna) & Sistem 2 (Pengguna)
-        if ($humas) {
-            $humas->accessedClients()->attach(2, ['status' => 'approved']);
-            \App\Models\UserClientRole::create(['user_id' => $humas->id, 'oauth_client_id' => 2, 'role' => 'pengguna']);
-            
-            $humas->accessedClients()->attach(3, ['status' => 'approved']);
-            \App\Models\UserClientRole::create(['user_id' => $humas->id, 'oauth_client_id' => 3, 'role' => 'pengguna']);
-        }
-
-        // Kepegawaian: Akses ke Sistem 1 (Pengguna), Sistem 2 (Pengguna), & Sistem 3 / Sistem Kepegawaian (Admin)
-        if ($kepegawaian) {
-            $kepegawaian->accessedClients()->attach(2, ['status' => 'approved']);
-            \App\Models\UserClientRole::create(['user_id' => $kepegawaian->id, 'oauth_client_id' => 2, 'role' => 'pengguna']);
-
-            $kepegawaian->accessedClients()->attach(3, ['status' => 'approved']);
-            \App\Models\UserClientRole::create(['user_id' => $kepegawaian->id, 'oauth_client_id' => 3, 'role' => 'pengguna']);
-
-            $kepegawaian->accessedClients()->attach(5, ['status' => 'approved']);
-            \App\Models\UserClientRole::create(['user_id' => $kepegawaian->id, 'oauth_client_id' => 5, 'role' => 'admin']);
-        }
-
-        // Manajerial: Akses ke semua Sistem (Pengguna)
-        if ($manajerial) {
-            foreach ([2, 3, 4, 5] as $cId) {
-                $manajerial->accessedClients()->attach($cId, ['status' => 'approved']);
-                \App\Models\UserClientRole::create(['user_id' => $manajerial->id, 'oauth_client_id' => $cId, 'role' => 'pengguna']);
-            }
-        }
+        $users = User::all();
     }
 }
+        // 2. Define Client Applications
+//         $clients = [
+//             [
+//                 'id'                      => 3,
+//                 'name'                    => 'Sistem 1',
+//                 'secret'                  => 'CpOjCpepT7NnLBKXgsnjvVXKCpNRyW2QO5nLbaDn',
+//                 'redirect'                => 'http://sistem1.test/auth/sso/callback',
+//                 'personal_access_client' => 0,
+//                 'password_client'        => 0,
+//                 'revoked'                => 0,
+//                 'is_maintenance'         => 0,
+//                 'is_visible'             => 1,
+//                 'description'            => 'Aplikasi Layanan Informasi & Internal Sistem 1',
+//                 'display_order'          => 1,
+//                 'supported_roles'        => json_encode(['Admin', 'Staff', 'pengguna']),
+//                 'created_at'             => now(),
+//                 'updated_at'             => now(),
+//             ],
+//             [
+//                 'id'                      => 4,
+//                 'name'                    => 'Sistem 2',
+//                 'secret'                  => 'Sistem2SecretKey998877665544332211',
+//                 'redirect'                => 'http://sistem2.test/auth/sso/callback',
+//                 'personal_access_client' => 0,
+//                 'password_client'        => 0,
+//                 'revoked'                => 0,
+//                 'is_maintenance'         => 0,
+//                 'is_visible'             => 1,
+//                 'description'            => 'Aplikasi Layanan Operasional Sistem 2',
+//                 'display_order'          => 2,
+//                 'supported_roles'        => json_encode(['Admin', 'Operator', 'pengguna']),
+//                 'created_at'             => now(),
+//                 'updated_at'             => now(),
+//             ],
+//             [
+//                 'id'                      => 5,
+//                 'name'                    => 'Sistem 3',
+//                 'secret'                  => 'Sistem3SecretKey112233445566778899',
+//                 'redirect'                => 'http://sistem3.test/auth/sso/callback',
+//                 'personal_access_client' => 0,
+//                 'password_client'        => 0,
+//                 'revoked'                => 0,
+//                 'is_maintenance'         => 0,
+//                 'is_visible'             => 1,
+//                 'description'            => 'Aplikasi Layanan Pengaduan & Informasi',
+//                 'display_order'          => 3,
+//                 'supported_roles'        => json_encode(['Admin', 'Supervisor', 'Operator']),
+//                 'created_at'             => now(),
+//                 'updated_at'             => now(),
+//             ],
+//             [
+//                 'id'                      => 6,
+//                 'name'                    => 'Go Login Web',
+//                 'secret'                  => 'Fe2YUzKlSzJZypUeMuryi6zJmzyOU8JNurYkCTyk',
+//                 'redirect'                => 'http://localhost:8080/callback',
+//                 'personal_access_client' => 0,
+//                 'password_client'        => 0,
+//                 'revoked'                => 0,
+//                 'is_maintenance'         => 0,
+//                 'is_visible'             => 1,
+//                 'description'            => 'Aplikasi Otentikasi Berbasis Golang',
+//                 'display_order'          => 4,
+//                 'supported_roles'        => json_encode(['Admin', 'User']),
+//                 'created_at'             => now(),
+//                 'updated_at'             => now(),
+//             ],
+//             [
+//                 'id'                      => 7,
+//                 'name'                    => 'SIMPEG KPI',
+//                 'secret'                  => 'SimpegKpiSecretKey998877665544332211',
+//                 'redirect'                => 'http://simpeg-kpi-web-main.test/auth/sso/callback',
+//                 'personal_access_client' => 0,
+//                 'password_client'        => 0,
+//                 'revoked'                => 0,
+//                 'is_maintenance'         => 0,
+//                 'is_visible'             => 1,
+//                 'description'            => 'Sistem Informasi Manajemen Kepegawaian KPI',
+//                 'display_order'          => 5,
+//                 'supported_roles'        => json_encode(['admin', 'atasan', 'pegawai']),
+//                 'created_at'             => now(),
+//                 'updated_at'             => now(),
+//             ],
+//         ];
+
+//         foreach ($clients as $clientData) {
+//             DB::table('oauth_clients')->updateOrInsert(
+//                 ['id' => $clientData['id']],
+//                 $clientData
+//             );
+//         }
+
+//         // 3. Grant Client Access to All Users & Assign Roles
+//         foreach ($users as $u) {
+//             foreach ([3, 4, 5, 6, 7] as $clientId) {
+//                 DB::table('client_user_access')->updateOrInsert(
+//                     ['user_id' => $u->id, 'client_id' => $clientId],
+//                     [
+//                         'status'     => 'approved',
+//                         'created_at' => now(),
+//                         'updated_at' => now(),
+//                     ]
+//                 );
+
+//                 // Assign Local Client Role
+//                 $role = 'pengguna';
+//                 if ($u->role === 'admin') {
+//                     $role = ($clientId === 7) ? 'admin' : 'Admin';
+//                 } elseif ($u->role === 'Kepegawaian') {
+//                     $role = ($clientId === 7) ? 'admin' : 'Admin';
+//                 } elseif ($u->role === 'Manajerial') {
+//                     $role = ($clientId === 7) ? 'atasan' : 'Supervisor';
+//                 }
+
+//                 UserClientRole::updateOrCreate(
+//                     ['user_id' => $u->id, 'oauth_client_id' => $clientId],
+//                     ['role' => $role]
+//                 );
+//             }
+//         }
+
+//         $this->command->info('✅ Clean Database Seeding Completed Successfully!');
+//     }
+// }

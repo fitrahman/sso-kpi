@@ -56,7 +56,7 @@ class AdminUserSeeder extends Seeder
                     ['email' => $u['email']],
                     [
                         'name'              => $u['name'],
-                        'password'          => Hash::make('password123'),
+                        'password'          => Hash::make('admin123'),
                         'role'              => $u['role'],
                         'status'            => 'approved',
                         'email_verified_at' => now(),
