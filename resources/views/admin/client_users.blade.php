@@ -231,7 +231,7 @@
                                 <th class="w-12 px-4 py-3.5 bg-slate-50 text-center">No</th>
                                 <th class="px-6 py-3.5 bg-slate-50">Pengguna</th>
                                 <th class="px-6 py-3.5 bg-slate-50">Role Global</th>
-                                <th class="px-6 py-3.5 bg-slate-50">Akses Portal</th>
+                                <th class="px-6 py-3.5 bg-slate-50 text-center">Akses Portal</th>
                                 <th class="px-6 py-3.5 bg-slate-50">Role Lokal ({{ $client->name }})</th>
                             </tr>
                         </thead>
@@ -283,20 +283,17 @@
                                     </td>
 
                                     <!-- Access Checkbox Form -->
-                                    <td class="px-6 py-4">
-                                        <form action="{{ route('admin.clients.users.update', ['id' => $client->id, 'userId' => $u->id]) }}" method="POST">
+                                    <td class="px-6 py-4 text-center">
+                                        <form action="{{ route('admin.clients.users.update', ['id' => $client->id, 'userId' => $u->id]) }}" method="POST" class="flex justify-center">
                                             @csrf
                                             @method('PUT')
                                             @if (!empty($currentLocalRole))
                                                 <input type="hidden" name="local_role" value="{{ $currentLocalRole }}">
                                             @endif
-                                            <label class="inline-flex items-center gap-2 cursor-pointer select-none">
+                                            <label class="inline-flex items-center justify-center cursor-pointer select-none">
                                                 <input type="checkbox" name="has_access" value="1" {{ $currentAccess === 'approved' ? 'checked' : '' }}
                                                     onchange="this.form.submit()"
                                                     class="h-4 w-4 rounded border-slate-300 text-kpi-600 focus:ring-kpi-500 cursor-pointer">
-                                                <span class="text-xs font-semibold {{ $currentAccess === 'approved' ? 'text-emerald-700' : 'text-slate-400' }}">
-                                                    {{ $currentAccess === 'approved' ? 'Memiliki akses' : 'Tidak memiliki akses' }}
-                                                </span>
                                             </label>
                                         </form>
                                     </td>
