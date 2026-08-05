@@ -179,9 +179,9 @@
             <!-- Charts Section -->
             <div class="mb-8">
                 <!-- Users Distribution Chart -->
-                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center">
-                    <h3 class="text-sm font-bold text-slate-800 tracking-wide mb-4 w-full text-left">Distribusi Penggunaan Aplikasi (Berdasarkan Login)</h3>
-                    <div class="relative w-full max-w-md h-72">
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
+                    <h3 class="text-sm font-bold text-slate-800 tracking-wide mb-4">Tren Aktivitas Login Aplikasi Klien (7 Hari Terakhir)</h3>
+                    <div class="relative w-full h-80">
                         <canvas id="appsDistributionChart"></canvas>
                     </div>
                 </div>
@@ -260,29 +260,40 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-            // Apps Distribution Chart
+            // Apps Distribution Line Chart
+            const chartDays = @json($chartDays);
             const appsData = @json($appsChartData);
-            const appLabels = appsData.map(item => item.name);
-            const appCounts = appsData.map(item => item.count);
+            
+            const lineColors = [
+                '#dc2626', // Merah KPI
+                '#3b82f6', // Biru
+                '#10b981', // Emerald
+                '#f59e0b', // Amber
+                '#8b5cf6', // Ungu
+                '#ec4899', // Pink
+                '#f97316'  // Orange
+            ];
+
+            const datasets = appsData.map((item, index) => {
+                const color = lineColors[index % lineColors.length];
+                return {
+                    label: item.name,
+                    data: item.data,
+                    borderColor: color,
+                    backgroundColor: 'transparent',
+                    borderWidth: 2.5,
+                    tension: 0.3,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: color
+                };
+            });
 
             new Chart(document.getElementById('appsDistributionChart'), {
-                type: 'pie',
+                type: 'line',
                 data: {
-                    labels: appLabels,
-                    datasets: [{
-                        data: appCounts,
-                        backgroundColor: [
-                            '#dc2626', // Merah KPI
-                            '#3b82f6', // Biru
-                            '#10b981', // Emerald
-                            '#f59e0b', // Amber
-                            '#8b5cf6', // Ungu
-                            '#ec4899', // Pink
-                            '#f97316'  // Orange
-                        ],
-                        borderWidth: 2,
-                        borderColor: '#ffffff'
-                    }]
+                    labels: chartDays,
+                    datasets: datasets
                 },
                 options: {
                     responsive: true,
@@ -290,7 +301,13 @@
                     plugins: {
                         legend: {
                             position: 'bottom',
-                            labels: { boxWidth: 12, font: { family: 'Inter' } }
+                            labels: { boxWidth: 12, font: { family: 'Inter', weight: '500' } }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { precision: 0 }
                         }
                     }
                 }

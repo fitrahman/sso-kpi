@@ -256,19 +256,33 @@ class DashboardController extends Controller
                 ->limit(30)
                 ->get();
 
-            // User distribution per application based on login tokens
-            $appsChartData = Client::where('personal_access_client', 0)
+            // Construct past 7 days dates and labels
+            $days = [];
+            $chartDays = [];
+            for ($i = 6; $i >= 0; $i--) {
+                $days[] = now()->subDays($i)->format('Y-m-d');
+                $chartDays[] = now()->subDays($i)->format('d M');
+            }
+
+            // Get clients and query daily token counts (logins)
+            $clients = Client::where('personal_access_client', 0)
                 ->where('password_client', 0)
-                ->get()
-                ->map(function($client) {
+                ->get();
+
+            $appsChartData = $clients->map(function($client) use ($days) {
+                $dataPoints = [];
+                foreach ($days as $date) {
                     $count = DB::table('oauth_access_tokens')
                         ->where('client_id', $client->id)
+                        ->whereDate('created_at', $date)
                         ->count();
-                    return [
-                        'name' => $client->name,
-                        'count' => $count
-                    ];
-                });
+                    $dataPoints[] = $count;
+                }
+                return [
+                    'name' => $client->name,
+                    'data' => $dataPoints
+                ];
+            });
 
             return view('admin.stats', [
                 'totalUsers'         => $totalUsers,
@@ -276,6 +290,7 @@ class DashboardController extends Controller
                 'activeClientsCount' => $activeClientsCount,
                 'todayLogins'        => $todayLogins,
                 'recentActivities'   => $recentActivities,
+                'chartDays'          => $chartDays,
                 'appsChartData'      => $appsChartData,
             ]);
         } catch (\Exception $e) {
