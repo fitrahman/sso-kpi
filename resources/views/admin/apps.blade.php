@@ -536,13 +536,51 @@
 
         function copyToClipboard(elementId, btn) {
             const text = document.getElementById(elementId).innerText.trim();
-            navigator.clipboard.writeText(text).then(() => {
+            
+            const animateSuccess = () => {
                 const originalSvg = btn.innerHTML;
                 btn.innerHTML = `<svg class="w-4 h-4 text-green-600 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>`;
                 setTimeout(() => {
                     btn.innerHTML = originalSvg;
                 }, 2000);
-            });
+            };
+
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text)
+                    .then(animateSuccess)
+                    .catch(err => {
+                        console.error('Failed to copy using navigator.clipboard: ', err);
+                        fallbackCopyToClipboard(text, animateSuccess);
+                    });
+            } else {
+                fallbackCopyToClipboard(text, animateSuccess);
+            }
+        }
+
+        function fallbackCopyToClipboard(text, callback) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.top = "0";
+            textArea.style.left = "0";
+            textArea.style.position = "fixed";
+            textArea.style.opacity = "0";
+
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    callback();
+                } else {
+                    console.error('Fallback copy command was unsuccessful');
+                }
+            } catch (err) {
+                console.error('Fallback copy failed: ', err);
+            }
+
+            document.body.removeChild(textArea);
         }
 
         function closeSecretModal() {
