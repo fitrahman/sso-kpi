@@ -1,62 +1,45 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Statistik & Audit - Admin SSO KPI</title>
+    <link rel="icon" type="image/png" href="{{ asset('logoKPI.png') }}">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Outfit', sans-serif;
-        }
-        .sidebar-scroll::-webkit-scrollbar {
-            width: 4px;
-        }
-        .sidebar-scroll::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        .sidebar-scroll::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 4px;
-        }
-    </style>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
                     colors: {
                         kpi: {
-                            50: '#f5f7ff',
-                            100: '#ebf0ff',
-                            200: '#d6e0ff',
-                            300: '#b3c7ff',
-                            400: '#85a3ff',
-                            500: '#5c7aff',
-                            600: '#3d52ff',
-                            700: '#2e3bff',
-                            800: '#1f26cc',
-                            900: '#1b20a3',
+                            50: '#fef2f2', 100: '#fee2e2', 500: '#ef4444', 600: '#dc2626',
+                            700: '#b91c1c', 800: '#991b1b', 900: '#7f1d1d',
                         }
-                    },
-                    fontSize: {
-                        'xxs': '0.65rem',
                     }
                 }
             }
         }
     </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+        .sidebar-scroll::-webkit-scrollbar { width: 6px; }
+        .sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
+        .sidebar-scroll::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 20px; }
+    </style>
 </head>
-<body class="bg-slate-50 text-slate-800 flex h-screen overflow-hidden">
+<body class="bg-slate-50 text-slate-800 h-screen flex overflow-hidden">
 
-    <!-- Sidebar Container -->
-    <aside class="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col h-screen shrink-0">
-        <!-- Brand/Logo Header -->
-        <div class="h-16 flex items-center px-6 border-b border-slate-100 shrink-0">
-            <div class="flex items-center gap-2.5">
-                <div class="w-7 h-7 rounded-lg bg-kpi-700 flex items-center justify-center text-white font-bold text-sm shadow-md shadow-kpi-200">K</div>
-                <span class="font-extrabold text-sm tracking-wide text-slate-900 uppercase">Admin Portal</span>
-            </div>
+    <!-- Sidebar -->
+    <aside class="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col flex-shrink-0">
+        <div class="h-16 flex items-center px-6 border-b border-slate-200">
+            <img src="{{ asset('logoKPI.png') }}" alt="KPI Logo" class="h-8 w-auto mr-3">
+            <span class="font-bold text-lg text-slate-900 tracking-tight">Admin Portal</span>
         </div>
         
         <div class="p-4 flex-grow sidebar-scroll overflow-y-auto">
@@ -108,7 +91,7 @@
         </div>
     </aside>
 
-    <!-- Main Content Area -->
+    <!-- Main Content -->
     <main class="flex-1 flex flex-col h-screen overflow-hidden bg-slate-50/50">
 
         <!-- Mobile Header -->
@@ -193,9 +176,28 @@
                 </div>
             </div>
 
+            <!-- Charts Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                <!-- Login Activity Chart -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
+                    <h3 class="text-sm font-bold text-slate-800 tracking-wide mb-4">Tren Aktivitas Login (7 Hari Terakhir)</h3>
+                    <div class="relative w-full h-64">
+                        <canvas id="loginActivityChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Users Distribution Chart -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
+                    <h3 class="text-sm font-bold text-slate-800 tracking-wide mb-4">Distribusi Pengguna per Aplikasi Klien</h3>
+                    <div class="relative w-full h-64">
+                        <canvas id="appsDistributionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
             <!-- User Activity Log -->
-            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
-                <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col mb-10">
+                <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/50">
                     <h2 class="font-bold text-slate-800 text-sm tracking-wide">Log Aktivitas Pengguna</h2>
                 </div>
                 @if ($recentActivities->isEmpty())
@@ -203,7 +205,7 @@
                 @else
                     <div class="overflow-x-auto">
                         <table class="w-full text-sm">
-                            <thead class="bg-slate-50 border-b border-slate-100 text-xs uppercase tracking-wider text-slate-500 font-semibold">
+                            <thead class="bg-slate-50 border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500 font-semibold">
                                 <tr>
                                     <th class="px-6 py-3.5 text-left bg-slate-50">Pengguna</th>
                                     <th class="px-6 py-3.5 text-left bg-slate-50">Aktivitas</th>
@@ -213,7 +215,7 @@
                                     <th class="px-6 py-3.5 text-left bg-slate-50">Waktu</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-slate-100 bg-white">
+                            <tbody class="divide-y divide-slate-200 bg-white">
                                 @foreach ($recentActivities as $log)
                                     <tr class="hover:bg-slate-50/50 transition-colors">
                                         <td class="px-6 py-4">
@@ -261,6 +263,95 @@
 
         </div>
     </main>
+
+    <!-- Chart JS and Logic -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // 1. Login Activity Chart
+            const loginHistory = @json($loginHistory);
+            const loginLabels = loginHistory.map(item => item.date);
+            const successData = loginHistory.map(item => item.success);
+            const failedData = loginHistory.map(item => item.failed);
+
+            new Chart(document.getElementById('loginActivityChart'), {
+                type: 'line',
+                data: {
+                    labels: loginLabels,
+                    datasets: [
+                        {
+                            label: 'Login Sukses',
+                            data: successData,
+                            borderColor: '#10b981', // green-500
+                            backgroundColor: 'rgba(16, 185, 129, 0.05)',
+                            fill: true,
+                            tension: 0.4,
+                            borderWidth: 2,
+                            pointBackgroundColor: '#10b981',
+                        },
+                        {
+                            label: 'Login Gagal',
+                            data: failedData,
+                            borderColor: '#ef4444', // red-500
+                            backgroundColor: 'rgba(239, 68, 68, 0.05)',
+                            fill: true,
+                            tension: 0.4,
+                            borderWidth: 2,
+                            pointBackgroundColor: '#ef4444',
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { boxWidth: 12, font: { family: 'Inter' } }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { precision: 0 }
+                        }
+                    }
+                }
+            });
+
+            // 2. Apps Distribution Chart
+            const appsData = @json($appsChartData);
+            const appLabels = appsData.map(item => item.name);
+            const appCounts = appsData.map(item => item.count);
+
+            new Chart(document.getElementById('appsDistributionChart'), {
+                type: 'bar',
+                data: {
+                    labels: appLabels,
+                    datasets: [{
+                        label: 'Jumlah Pengguna',
+                        data: appCounts,
+                        backgroundColor: '#dc2626', // red-600 (KPI theme color)
+                        borderRadius: 6,
+                        maxBarThickness: 40
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { precision: 0 }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
 
 </body>
 </html>
