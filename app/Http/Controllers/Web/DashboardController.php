@@ -308,6 +308,14 @@ class DashboardController extends Controller
 
         $user = Auth::user();
         
+        // Cek mode maintenance (Kecuali Admin)
+        if ($client->is_maintenance && $user->role !== 'admin') {
+            return redirect()->route('app.maintenance', [
+                'appName' => $client->name,
+                'message' => $client->maintenance_message ?? 'Aplikasi sedang dalam pemeliharaan sistem.'
+            ]);
+        }
+        
         // Admin has direct access to all portals
         if ($user->role === 'admin') {
             $parsedUrl = parse_url($client->redirect);
@@ -447,7 +455,11 @@ class DashboardController extends Controller
                 'description'     => "Aplikasi baru '{$client->name}' berhasil ditambahkan (Client ID: {$client->id}).",
             ]);
 
-            return back()->with('success', "Aplikasi '{$client->name}' berhasil ditambahkan! Client ID: {$client->id} | Client Secret: {$secret}");
+            return back()
+                ->with('success', "Aplikasi '{$client->name}' berhasil ditambahkan!")
+                ->with('new_client_name', $client->name)
+                ->with('new_client_id', $client->id)
+                ->with('new_client_secret', $secret);
         } catch (\Exception $e) {
             return back()->withErrors(['error' => 'Gagal menambahkan aplikasi: ' . $e->getMessage()]);
         }
@@ -462,6 +474,7 @@ class DashboardController extends Controller
 
             $validated = $request->validate([
                 'name'                => 'required|string|max:255',
+                'redirect'            => 'required|url|max:500',
                 'description'         => 'nullable|string|max:500',
                 'supported_roles'     => 'nullable|string|max:500',
                 'maintenance_message' => 'nullable|string|max:500',
@@ -474,6 +487,10 @@ class DashboardController extends Controller
                 $changes[] = "Nama: '{$client->name}' → '{$validated['name']}'";
             }
 
+            if ($client->redirect !== $validated['redirect']) {
+                $changes[] = "Redirect URL: '{$client->redirect}' → '{$validated['redirect']}'";
+            }
+
             $rolesArray = [];
             if (!empty($validated['supported_roles'])) {
                 $rolesArray = array_map('trim', explode(',', $validated['supported_roles']));
@@ -484,6 +501,7 @@ class DashboardController extends Controller
             }
 
             $client->name                = $validated['name'];
+            $client->redirect            = $validated['redirect'];
             $client->description         = $validated['description'] ?? null;
             $client->supported_roles     = json_encode($rolesArray);
             $client->maintenance_message = $validated['maintenance_message'] ?? null;

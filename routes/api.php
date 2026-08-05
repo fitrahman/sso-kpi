@@ -4,10 +4,12 @@ use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\UserController;
 use Illuminate\Support\Facades\Route;
 
-// Public routes
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
-Route::post('/client-roles/sync', [AuthController::class, 'syncClientRoles']);
+// Public routes with Rate Limiting (10 requests per minute)
+Route::middleware('throttle:10,1')->group(function () {
+    Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/client-roles/sync', [AuthController::class, 'syncClientRoles']);
+});
 
 // Protected routes
 Route::middleware('auth:api')->group(function () {

@@ -55,9 +55,15 @@
                     <svg class="w-5 h-5 mr-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
                     Dashboard SSO
                 </a>
+                @php
+                    $pendingBadgeCount = \App\Models\User::where('status', 'pending')->count();
+                @endphp
                 <a href="{{ route('admin.users') }}" class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:text-kpi-700 hover:bg-slate-50 transition-colors">
                     <svg class="w-5 h-5 mr-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-                    Manajemen Pengguna
+                    <span>Manajemen Pengguna</span>
+                    @if($pendingBadgeCount > 0)
+                        <span class="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{{ $pendingBadgeCount }}</span>
+                    @endif
                 </a>
                 <a href="{{ route('admin.clients') }}" class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg bg-kpi-50 text-kpi-700 transition-colors">
                     <svg class="w-5 h-5 mr-3 text-kpi-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
@@ -183,7 +189,7 @@
                                     }
                                 }
                             @endphp
-                            <button onclick="openEditModal({{ $client->id }}, '{{ addslashes($client->name) }}', '{{ addslashes($client->description ?? '') }}', '{{ addslashes($rolesStr) }}', '{{ addslashes($client->maintenance_message ?? '') }}', {{ $client->display_order }}, {{ $client->is_visible ? 1 : 0 }})"
+                            <button onclick="openEditModal({{ $client->id }}, '{{ addslashes($client->name) }}', '{{ addslashes($client->redirect) }}', '{{ addslashes($client->description ?? '') }}', '{{ addslashes($rolesStr) }}', '{{ addslashes($client->maintenance_message ?? '') }}', {{ $client->display_order }}, {{ $client->is_visible ? 1 : 0 }})"
                                 class="inline-flex justify-center items-center gap-1.5 px-3 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg text-xs font-semibold hover:bg-slate-50 transition-colors">
                                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                 Edit
@@ -371,6 +377,13 @@
                 </div>
 
                 <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">Redirect URI / Callback URL <span class="text-red-500">*</span></label>
+                    <input type="url" name="redirect" id="edit-redirect" required
+                        class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500 focus:border-transparent">
+                    <p class="text-xs text-slate-400 mt-1">URL Callback tempat server SSO mengirimkan OAuth authorization code.</p>
+                </div>
+
+                <div>
                     <label class="block text-sm font-semibold text-slate-700 mb-1.5">Deskripsi</label>
                     <textarea name="description" id="edit-description" rows="2"
                         class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500 focus:border-transparent resize-none"
@@ -464,9 +477,80 @@
         </div>
     </div>
 
+    @if(session('new_client_secret'))
+    <!-- Client Secret Display Modal -->
+    <div id="secretModal" class="modal fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 active" aria-modal="true">
+        <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeSecretModal()"></div>
+        <div class="modal-content bg-white rounded-2xl shadow-2xl w-full max-w-lg relative z-10 p-6">
+            <div class="w-14 h-14 rounded-2xl bg-green-50 border border-green-100 text-green-600 flex items-center justify-center mx-auto mb-4 shadow-sm">
+                <svg class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+            </div>
+            
+            <h3 class="text-xl font-bold text-slate-900 text-center mb-1">Aplikasi Baru Berhasil Dibuat!</h3>
+            <p class="text-xs text-slate-500 text-center mb-6 leading-relaxed">
+                Salin Client ID dan Client Secret di bawah ini untuk konfigurasi aplikasi <strong>{{ session('new_client_name') }}</strong>.
+                <span class="block text-red-500 font-bold mt-1">⚠️ Client Secret hanya akan ditampilkan sekali ini saja dan tidak dapat dipulihkan kembali!</span>
+            </p>
+
+            <div class="space-y-4 mb-6">
+                <!-- Client ID -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 mb-1">CLIENT ID</label>
+                    <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5">
+                        <code class="flex-1 text-xs font-semibold text-slate-800 break-all select-all font-mono" id="clientIdVal">{{ session('new_client_id') }}</code>
+                        <button onclick="copyToClipboard('clientIdVal', this)" class="text-slate-400 hover:text-kpi-700 transition-colors p-1" title="Salin Client ID">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m-5 5h6m-6 4h6m-6 4h5" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Client Secret -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 mb-1">CLIENT SECRET</label>
+                    <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5">
+                        <code class="flex-1 text-xs font-semibold text-slate-800 break-all select-all font-mono" id="clientSecretVal">{{ session('new_client_secret') }}</code>
+                        <button onclick="copyToClipboard('clientSecretVal', this)" class="text-slate-400 hover:text-kpi-700 transition-colors p-1" title="Salin Client Secret">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m-5 5h6m-6 4h6m-6 4h5" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <button type="button" onclick="closeSecretModal()"
+                class="w-full py-2.5 bg-slate-900 text-white rounded-xl text-xs font-semibold hover:bg-slate-800 transition-colors shadow-sm text-center">
+                Saya Sudah Menyimpan Kredensial Ini
+            </button>
+        </div>
+    </div>
+    @endif
+
     <script>
         let currentEditAppId = null;
         let currentEditAppName = '';
+
+        function copyToClipboard(elementId, btn) {
+            const text = document.getElementById(elementId).innerText.trim();
+            navigator.clipboard.writeText(text).then(() => {
+                const originalSvg = btn.innerHTML;
+                btn.innerHTML = `<svg class="w-4 h-4 text-green-600 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>`;
+                setTimeout(() => {
+                    btn.innerHTML = originalSvg;
+                }, 2000);
+            });
+        }
+
+        function closeSecretModal() {
+            const secretModal = document.getElementById('secretModal');
+            if (secretModal) {
+                secretModal.classList.remove('active');
+            }
+        }
 
         function openCreateModal() {
             document.getElementById('createModal').classList.add('active');
@@ -476,11 +560,12 @@
             document.getElementById('createModal').classList.remove('active');
         }
 
-        function openEditModal(id, name, description, supportedRoles, maintenanceMsg, displayOrder, isVisible) {
+        function openEditModal(id, name, redirect, description, supportedRoles, maintenanceMsg, displayOrder, isVisible) {
             currentEditAppId = id;
             currentEditAppName = name;
             document.getElementById('editForm').action = '/admin/applications/' + id;
             document.getElementById('edit-name').value = name;
+            document.getElementById('edit-redirect').value = redirect;
             document.getElementById('edit-description').value = description;
             document.getElementById('edit-supported-roles').value = supportedRoles;
             document.getElementById('edit-maintenance-message').value = maintenanceMsg;

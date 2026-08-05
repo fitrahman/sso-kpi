@@ -58,9 +58,15 @@
                     Dashboard SSO
                 </a>
                 
+                @php
+                    $pendingBadgeCount = \App\Models\User::where('status', 'pending')->count();
+                @endphp
                 <a href="{{ route('admin.users') }}" class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg {{ request()->routeIs('admin.users*') ? 'bg-kpi-50 text-kpi-700' : 'text-slate-600 hover:text-kpi-700 hover:bg-slate-50' }} transition-colors">
                     <svg class="w-5 h-5 mr-3 {{ request()->routeIs('admin.users*') ? 'text-kpi-600' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-                    Manajemen Pengguna
+                    <span>Manajemen Pengguna</span>
+                    @if($pendingBadgeCount > 0)
+                        <span class="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{{ $pendingBadgeCount }}</span>
+                    @endif
                 </a>
 
                 <a href="{{ route('admin.clients') }}" class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg {{ request()->routeIs('admin.clients*') ? 'bg-kpi-50 text-kpi-700' : 'text-slate-600 hover:text-kpi-700 hover:bg-slate-50' }} transition-colors">
@@ -267,17 +273,18 @@
                                                             class="inline-flex items-center px-3 py-1.5 bg-white border border-slate-300 rounded-md text-xs font-semibold text-slate-700 hover:bg-slate-50"
                                                             data-name="{{ $user->name }}" data-email="{{ $user->email }}" data-phone="{{ $user->phone }}" data-role="{{ $user->role }}" data-date="{{ $user->created_at->format('d M Y H:i') }}"
                                                             onclick="openDetailModal(this)">
-                                                        Detail
-                                                    </button>
-                                                    <form action="{{ route('admin.users.approve', $user->id) }}" method="POST" class="inline-block">
-                                                        @csrf
-                                                        <button type="submit" class="inline-flex items-center px-3 py-1.5 bg-green-600 border border-transparent rounded-md text-xs font-semibold text-white hover:bg-green-700 shadow-sm">Setujui</button>
-                                                    </form>
-                                                    <form action="{{ route('admin.users.reject', $user->id) }}" method="POST" class="inline-block" onsubmit="return confirm('Tolak dan hapus user ini?');">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit" class="inline-flex items-center px-3 py-1.5 bg-white border border-red-200 text-red-600 rounded-md text-xs font-semibold hover:bg-red-50 hover:border-red-300 shadow-sm">Tolak</button>
-                                                    </form>
+                                                         Detail
+                                                     </button>
+                                                     <button type="button"
+                                                             onclick="triggerConfirm('Setujui Pengguna', 'Apakah Anda yakin ingin menyetujui akun <strong>{{ addslashes($user->name) }}</strong> ({{ $user->email }})?', '{{ route('admin.users.approve', $user->id) }}', 'POST', 'green')"
+                                                             class="inline-flex items-center px-3 py-1.5 bg-green-600 border border-transparent rounded-md text-xs font-semibold text-white hover:bg-green-700 shadow-sm">
+                                                         Setujui
+                                                     </button>
+                                                     <button type="button"
+                                                             onclick="triggerConfirm('Tolak Pengguna', 'Apakah Anda yakin ingin menolak dan menghapus akun pendaftaran <strong>{{ addslashes($user->name) }}</strong> ({{ $user->email }})?', '{{ route('admin.users.reject', $user->id) }}', 'DELETE', 'reject')"
+                                                             class="inline-flex items-center px-3 py-1.5 bg-white border border-red-200 text-red-600 rounded-md text-xs font-semibold hover:bg-red-50 hover:border-red-300 shadow-sm">
+                                                         Tolak
+                                                     </button>
                                                 </div>
                                             @else
                                                 <div class="flex justify-end gap-2">
@@ -287,13 +294,11 @@
                                                     </a>
                                                     
                                                     @if ($user->role !== 'admin' && $user->id !== Auth::id())
-                                                        <form action="{{ route('admin.users.delete', $user->id) }}" method="POST" class="inline-block" onsubmit="return confirm('Apakah Anda yakin ingin menghapus akun ini secara permanen?');">
-                                                            @csrf
-                                                            @method('DELETE')
-                                                            <button type="submit" class="inline-flex items-center px-3 py-1.5 bg-red-600 border border-transparent rounded-md text-xs font-semibold text-white hover:bg-red-700 shadow-sm">
-                                                                Hapus
-                                                            </button>
-                                                        </form>
+                                                        <button type="button"
+                                                                onclick="triggerConfirm('Hapus Pengguna', 'Apakah Anda yakin ingin menghapus akun <strong>{{ addslashes($user->name) }}</strong> ({{ $user->email }}) secara permanen?', '{{ route('admin.users.delete', $user->id) }}', 'DELETE', 'delete')"
+                                                                class="inline-flex items-center px-3 py-1.5 bg-red-600 border border-transparent rounded-md text-xs font-semibold text-white hover:bg-red-700 shadow-sm">
+                                                            Hapus
+                                                        </button>
                                                     @endif
                                                 </div>
                                             @endif
@@ -382,6 +387,40 @@
         </div>
     </div>
 
+    <!-- Reusable Action Confirmation Modal -->
+    <div id="actionConfirmModal" class="modal fixed inset-0 z-50 flex items-center justify-center p-4">
+        <!-- Backdrop -->
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeConfirmModal()"></div>
+        
+        <!-- Modal Content -->
+        <div class="modal-content relative bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col p-6 text-center">
+            <div id="confirmIconContainer" class="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
+                <!-- Icon dynamically injected -->
+            </div>
+            
+            <h3 class="text-lg font-bold text-slate-900 mb-1" id="confirmTitle">Konfirmasi</h3>
+            <p class="text-sm text-slate-500 mb-6 leading-relaxed px-2" id="confirmDescription">
+                Apakah Anda yakin ingin melanjutkan tindakan ini?
+            </p>
+            
+            <form id="confirmActionForm" method="POST" action="">
+                @csrf
+                <div id="confirmFormMethod"></div>
+                
+                <div class="flex gap-3">
+                    <button type="button" onclick="closeConfirmModal()"
+                        class="flex-1 py-2.5 border border-slate-300 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
+                        Batal
+                    </button>
+                    <button type="submit" id="confirmSubmitBtn"
+                        class="flex-1 py-2.5 text-white rounded-xl text-xs font-semibold transition-colors shadow-sm">
+                        Ya, Lanjutkan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Live Search & Modal Script -->
     <script>
         function openDetailModal(btn) {
@@ -396,6 +435,44 @@
 
         function closeDetailModal() {
             document.getElementById('detailModal').classList.remove('active');
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('actionConfirmModal').classList.remove('active');
+        }
+
+        function triggerConfirm(title, description, actionUrl, method, theme = 'green') {
+            document.getElementById('confirmTitle').textContent = title;
+            document.getElementById('confirmDescription').innerHTML = description;
+            
+            const form = document.getElementById('confirmActionForm');
+            form.action = actionUrl;
+            
+            const methodContainer = document.getElementById('confirmFormMethod');
+            if (method.toUpperCase() === 'DELETE') {
+                methodContainer.innerHTML = '<input type="hidden" name="_method" value="DELETE">';
+            } else if (method.toUpperCase() === 'PUT') {
+                methodContainer.innerHTML = '<input type="hidden" name="_method" value="PUT">';
+            } else {
+                methodContainer.innerHTML = '';
+            }
+            
+            const iconContainer = document.getElementById('confirmIconContainer');
+            const submitBtn = document.getElementById('confirmSubmitBtn');
+            
+            if (theme === 'green') {
+                iconContainer.className = 'w-14 h-14 rounded-2xl bg-green-50 border border-green-100 text-green-600 flex items-center justify-center mx-auto mb-4 shadow-sm';
+                iconContainer.innerHTML = `<svg class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>`;
+                submitBtn.className = 'flex-1 py-2.5 bg-green-600 text-white rounded-xl text-xs font-semibold hover:bg-green-700 transition-colors shadow-sm';
+                submitBtn.textContent = 'Ya, Setujui';
+            } else {
+                iconContainer.className = 'w-14 h-14 rounded-2xl bg-red-50 border border-red-100 text-red-600 flex items-center justify-center mx-auto mb-4 shadow-sm';
+                iconContainer.innerHTML = `<svg class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>`;
+                submitBtn.className = 'flex-1 py-2.5 bg-red-600 text-white rounded-xl text-xs font-semibold hover:bg-red-700 transition-colors shadow-sm';
+                submitBtn.textContent = theme === 'reject' ? 'Ya, Tolak' : 'Ya, Hapus';
+            }
+            
+            document.getElementById('actionConfirmModal').classList.add('active');
         }
 
     </script>
