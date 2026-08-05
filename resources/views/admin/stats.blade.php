@@ -325,27 +325,31 @@
             const appCounts = appsData.map(item => item.count);
 
             new Chart(document.getElementById('appsDistributionChart'), {
-                type: 'bar',
+                type: 'pie',
                 data: {
                     labels: appLabels,
                     datasets: [{
-                        label: 'Jumlah Pengguna',
                         data: appCounts,
-                        backgroundColor: '#dc2626', // red-600 (KPI theme color)
-                        borderRadius: 6,
-                        maxBarThickness: 40
+                        backgroundColor: [
+                            '#dc2626', // Merah KPI
+                            '#3b82f6', // Biru
+                            '#10b981', // Emerald
+                            '#f59e0b', // Amber
+                            '#8b5cf6', // Ungu
+                            '#ec4899', // Pink
+                            '#f97316'  // Orange
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { display: false }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: { precision: 0 }
+                        legend: {
+                            position: 'bottom',
+                            labels: { boxWidth: 12, font: { family: 'Inter' } }
                         }
                     }
                 }
