@@ -131,6 +131,51 @@
                     Tambah Aplikasi
                 </button>
             </div>
+            <!-- Stat Cards Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+                <!-- Total Apps Card -->
+                <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex items-center">
+                    <div class="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mr-4 shrink-0">
+                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Aplikasi</div>
+                        <div class="text-2xl font-bold text-slate-900 mt-1">{{ count($clients) }}</div>
+                        <p class="text-xs text-slate-400 mt-0.5">Sistem terintegrasi</p>
+                    </div>
+                </div>
+
+                <!-- Active Apps Card -->
+                <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex items-center">
+                    <div class="w-12 h-12 rounded-full bg-green-50 text-green-600 flex items-center justify-center mr-4 shrink-0">
+                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Aktif & Publik</div>
+                        <div class="text-2xl font-bold text-green-600 mt-1">{{ $clients->where('is_visible', true)->count() }}</div>
+                        <p class="text-xs text-slate-400 mt-0.5">Terlihat di portal</p>
+                    </div>
+                </div>
+
+                <!-- Maintenance Apps Card -->
+                <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex items-center">
+                    <div class="w-12 h-12 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mr-4 shrink-0">
+                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Mode Pemeliharaan</div>
+                        <div class="text-2xl font-bold text-amber-600 mt-1">{{ $clients->where('is_maintenance', true)->count() }}</div>
+                        <p class="text-xs text-slate-400 mt-0.5">Akses terbatas admin</p>
+                    </div>
+                </div>
+            </div>
+
             <!-- Apps Grid -->
             <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-5 mb-10">
                 @foreach ($clients as $client)

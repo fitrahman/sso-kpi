@@ -122,35 +122,47 @@
 
 
 
-                <!-- Stats/Tabs -->
+                <!-- Stats Cards Grid -->
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                    <!-- Total Users -->
                     <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex items-center">
-                        <div class="w-12 h-12 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center mr-4">
-                            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                        <div class="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mr-4 shrink-0">
+                            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                            </svg>
                         </div>
                         <div>
-                            <div class="text-sm font-medium text-slate-500">Total Pengguna Terdaftar</div>
-                            <div class="text-2xl font-bold text-slate-900">{{ $totalCount }}</div>
+                            <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Pengguna</div>
+                            <div class="text-2xl font-bold text-slate-900 mt-1">{{ $totalCount }}</div>
+                            <p class="text-xs text-slate-400 mt-0.5">Pengguna terdaftar</p>
                         </div>
                     </div>
 
+                    <!-- Pending Approval -->
                     <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex items-center">
-                        <div class="w-12 h-12 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mr-4">
-                            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        <div class="w-12 h-12 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mr-4 shrink-0">
+                            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
                         </div>
                         <div>
-                            <div class="text-sm font-medium text-slate-500">Menunggu Persetujuan</div>
-                            <div class="text-2xl font-bold text-amber-600">{{ $pendingCount }}</div>
+                            <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Menunggu Persetujuan</div>
+                            <div class="text-2xl font-bold text-amber-600 mt-1">{{ $pendingCount }}</div>
+                            <p class="text-xs text-slate-400 mt-0.5">Perlu verifikasi admin</p>
                         </div>
                     </div>
 
+                    <!-- Inactive Users -->
                     <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex items-center">
-                        <div class="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mr-4">
-                            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
+                        <div class="w-12 h-12 rounded-full bg-red-50 text-red-600 flex items-center justify-center mr-4 shrink-0">
+                            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                            </svg>
                         </div>
                         <div>
-                            <div class="text-sm font-medium text-slate-500">Pengguna Nonaktif</div>
-                            <div class="text-2xl font-bold text-red-600">{{ $inactiveCount }}</div>
+                            <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Pengguna Nonaktif</div>
+                            <div class="text-2xl font-bold text-red-600 mt-1">{{ $inactiveCount }}</div>
+                            <p class="text-xs text-slate-400 mt-0.5">Akses dinonaktifkan</p>
                         </div>
                     </div>
                 </div>
