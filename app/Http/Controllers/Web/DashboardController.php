@@ -3,21 +3,26 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\UserActivityLog;
 use App\Models\ApplicationActivityLog;
+use App\Services\UserService;
+use App\Services\ClientService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\Rule;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
-use App\Mail\UserApprovedMail;
-use App\Mail\UserRejectedMail;
 use Laravel\Passport\Client;
-use App\Models\UserClientRole;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
+    protected $userService;
+    protected $clientService;
+
+    public function __construct(UserService $userService, ClientService $clientService)
+    {
+        $this->userService = $userService;
+        $this->clientService = $clientService;
+    }
+
     /**
      * Show dashboard
      */
@@ -31,7 +36,6 @@ class DashboardController extends Controller
                 ->where('client_user_access.status', 'approved')
                 ->get();
 
-            // Load all visible clients ordered by display_order for the dashboard
             $allClients = Client::where('personal_access_client', 0)
                 ->where('password_client', 0)
                 ->orderBy('display_order')
@@ -56,39 +60,9 @@ class DashboardController extends Controller
     public function users(Request $request)
     {
         try {
-            $search = $request->get('search');
-            $roleFilter = $request->get('role');
-            $statusFilter = $request->get('status');
-
-            $usersQuery = User::query();
-
-            // Handle search
-            if (!empty($search)) {
-                $usersQuery->where(function($q) use ($search) {
-                    $q->where('name', 'like', '%' . $search . '%')
-                      ->orWhere('email', 'like', '%' . $search . '%');
-                });
-            }
-
-            // Handle role filter
-            if (!empty($roleFilter)) {
-                $usersQuery->where('role', $roleFilter);
-            }
-
-            // Handle status filter
-            if (!empty($statusFilter)) {
-                $usersQuery->where('status', $statusFilter);
-            }
-
-            // Default order: pending first, then approved, then inactive
-            $usersQuery->orderByRaw("CASE 
-                WHEN status = 'pending' THEN 1 
-                WHEN status = 'approved' THEN 2 
-                WHEN status = 'inactive' THEN 3 
-                ELSE 4 END ASC")
-                ->orderBy('created_at', 'desc');
-
-            $users = $usersQuery->paginate(10)->withQueryString();
+            $filters = $request->only(['search', 'role', 'status']);
+            $users = $this->userService->getPaginatedUsers($filters, 10);
+            
             $totalCount = User::count();
             $pendingCount = User::where('status', 'pending')->count();
             $inactiveCount = User::where('status', 'inactive')->count();
@@ -99,9 +73,9 @@ class DashboardController extends Controller
                 'totalCount'    => $totalCount,
                 'pendingCount'  => $pendingCount,
                 'inactiveCount' => $inactiveCount,
-                'search'        => $search,
-                'roleFilter'    => $roleFilter,
-                'statusFilter'  => $statusFilter,
+                'search'        => $filters['search'] ?? '',
+                'roleFilter'    => $filters['role'] ?? '',
+                'statusFilter'  => $filters['status'] ?? '',
                 'rolesList'     => $rolesList,
             ]);
 
@@ -120,18 +94,15 @@ class DashboardController extends Controller
             $user = User::findOrFail($id);
             $roles = array_merge(['admin'], User::ROLES);
             
-            // Get all OAuth clients (Sistem 1, Sistem 2, etc.) excluding personal and password clients
             $clients = Client::where('personal_access_client', 0)
                 ->where('password_client', 0)
                 ->get();
                 
-            // Get the list of client IDs that this user currently has approved access to
             $userAccessIds = $user->accessedClients()
                 ->where('client_user_access.status', 'approved')
                 ->pluck('client_id')
                 ->toArray();
 
-            // Get the list of client roles mapped by client ID
             $userClientRoles = $user->clientRoles()
                 ->pluck('role', 'oauth_client_id')
                 ->toArray();
@@ -168,78 +139,11 @@ class DashboardController extends Controller
                 $rules['status'] = 'required|in:pending,approved,inactive';
             }
 
-            $request->validate($rules);
+            $validated = $request->validate($rules);
+            $clientIds = $request->input('clients', []);
+            $clientRoles = $request->input('client_roles', []);
 
-            $updateData = [
-                'name'  => $request->name,
-                'email' => $request->email,
-                'phone' => $request->phone,
-                'role'  => $request->role,
-            ];
-
-            if ($user->role !== 'admin' && $user->id !== Auth::id()) {
-                $updateData['status'] = $request->status;
-
-                if ($request->status === 'inactive') {
-                    $user->tokens()->each(function ($token) {
-                        $token->revoke();
-                    });
-                }
-            }
-
-            $user->update($updateData);
-
-            // Sync client access from admin checkboxes
-            $clientIds = $request->input('clients', []); // list of checked client IDs
-            
-            // Get all valid clients to prevent manipulating other client types
-            $allClients = Client::where('personal_access_client', 0)
-                ->where('password_client', 0)
-                ->pluck('id')
-                ->toArray();
-                
-            $validSelectedClientIds = array_intersect($clientIds, $allClients);
-            
-            // 1. We want to delete any access records for clients NOT selected
-            $user->accessedClients()->wherePivotNotIn('client_id', $validSelectedClientIds)->detach();
-
-            // 2. Delete roles for clients NOT selected
-            UserClientRole::where('user_id', $user->id)
-                ->whereNotIn('oauth_client_id', $validSelectedClientIds)
-                ->delete();
-            
-            // 3. For each selected client, we attach or update it with 'approved' status AND updateOrCreate role
-            $inputRoles = $request->input('client_roles', []);
-
-            foreach ($validSelectedClientIds as $cId) {
-                $existing = $user->accessedClients()->where('client_id', $cId)->first();
-                if ($existing) {
-                    $user->accessedClients()->updateExistingPivot($cId, ['status' => 'approved']);
-                } else {
-                    $user->accessedClients()->attach($cId, ['status' => 'approved']);
-                }
-                
-                // Fetch the client model to validate its supported roles dynamically
-                $clientModel = Client::find($cId);
-                $supportedRoles = [];
-                if ($clientModel && !empty($clientModel->supported_roles)) {
-                    $supportedRoles = json_decode($clientModel->supported_roles, true);
-                }
-                if (empty($supportedRoles) || !is_array($supportedRoles)) {
-                    $supportedRoles = ['admin', 'pengguna'];
-                }
-
-                // Save or update client role
-                $roleValue = $inputRoles[$cId] ?? $supportedRoles[0];
-                if (!in_array($roleValue, $supportedRoles)) {
-                    $roleValue = $supportedRoles[0];
-                }
-
-                UserClientRole::updateOrCreate(
-                    ['user_id' => $user->id, 'oauth_client_id' => $cId],
-                    ['role' => $roleValue]
-                );
-            }
+            $this->userService->updateUser($user, $validated, $clientIds, $clientRoles);
 
             return redirect()->route('admin.users')
                 ->with('success', 'Data pengguna berhasil diperbarui!');
@@ -253,19 +157,7 @@ class DashboardController extends Controller
     {
         try {
             $user = User::findOrFail($id);
-            if ($user->status !== 'pending') {
-                return back()->withErrors(['error' => 'User ini bukan berstatus pending.']);
-            }
-
-            $user->status = 'approved';
-            $user->save();
-
-            try {
-                Mail::to($user->email)->send(new UserApprovedMail($user));
-            } catch (\Exception $e) {
-                // Biarkan lanjut meskipun email gagal
-            }
-
+            $this->userService->approveUser($user);
             return back()->with('success', 'User ' . $user->email . ' berhasil disetujui.');
         } catch (\Exception $e) {
             return back()->withErrors(['error' => config('app.debug') ? 'Gagal menyetujui user: ' . $e->getMessage() : 'Gagal menyetujui user: Internal Server Error']);
@@ -276,21 +168,21 @@ class DashboardController extends Controller
     {
         try {
             $user = User::findOrFail($id);
-            if ($user->status !== 'pending') {
-                return back()->withErrors(['error' => 'User ini bukan berstatus pending.']);
-            }
-
-            try {
-                Mail::to($user->email)->send(new UserRejectedMail($user));
-            } catch (\Exception $e) {
-                // Biarkan lanjut meskipun email gagal
-            }
-
-            $user->delete();
-
+            $this->userService->rejectUser($user);
             return back()->with('success', 'User berhasil ditolak dan dihapus.');
         } catch (\Exception $e) {
             return back()->withErrors(['error' => config('app.debug') ? 'Gagal menolak user: ' . $e->getMessage() : 'Gagal menolak user: Internal Server Error']);
+        }
+    }
+
+    public function deleteUser($id)
+    {
+        try {
+            $user = User::findOrFail($id);
+            $this->userService->deleteUser($user);
+            return back()->with('success', 'Akun berhasil dihapus secara permanen.');
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Gagal menghapus akun: ' . $e->getMessage()]);
         }
     }
 
@@ -308,7 +200,6 @@ class DashboardController extends Controller
 
         $user = Auth::user();
         
-        // Cek mode maintenance (Kecuali Admin)
         if ($client->is_maintenance && $user->role !== 'admin') {
             return redirect()->route('app.maintenance', [
                 'appName' => $client->name,
@@ -316,7 +207,6 @@ class DashboardController extends Controller
             ]);
         }
         
-        // Admin has direct access to all portals
         if ($user->role === 'admin') {
             $parsedUrl = parse_url($client->redirect);
             $baseUrl = ($parsedUrl['scheme'] ?? 'http') . '://' . ($parsedUrl['host'] ?? '');
@@ -326,14 +216,12 @@ class DashboardController extends Controller
             return redirect($baseUrl . '/login');
         }
 
-        // Cek apakah user memiliki akses ke aplikasi ini (tabel client_user_access) dengan status approved
         $access = $user->accessedClients()
             ->where('client_id', $client->id)
             ->where('client_user_access.status', 'approved')
             ->first();
 
         if ($access) {
-            // Beri akses -> Redirect ke halaman OAuth Authorize aplikasi terkait
             $parsedUrl = parse_url($client->redirect);
             $baseUrl = ($parsedUrl['scheme'] ?? 'http') . '://' . ($parsedUrl['host'] ?? '');
             if (isset($parsedUrl['port'])) {
@@ -343,18 +231,42 @@ class DashboardController extends Controller
             return redirect($baseUrl . '/login');
         }
 
-        // Jika tidak memiliki akses approved, langsung tampilkan halaman Akses Ditolak
         return view('auth.app-denied', ['appName' => $appName]);
     }
-
-
-
-
-
 
     // =========================================================
     // Application Management (Admin only)
     // =========================================================
+
+    public function stats()
+    {
+        try {
+            $totalUsers = User::count();
+            $pendingUsers = User::where('status', 'pending')->count();
+            $activeClientsCount = Client::where('personal_access_client', 0)->where('password_client', 0)->count();
+            
+            // Login success today
+            $todayLogins = UserActivityLog::where('activity', 'login_success')
+                ->whereDate('created_at', today())
+                ->count();
+                
+            // Recent user activities
+            $recentActivities = UserActivityLog::with('user')
+                ->orderByDesc('created_at')
+                ->limit(30)
+                ->get();
+
+            return view('admin.stats', [
+                'totalUsers'         => $totalUsers,
+                'pendingUsers'       => $pendingUsers,
+                'activeClientsCount' => $activeClientsCount,
+                'todayLogins'        => $todayLogins,
+                'recentActivities'   => $recentActivities,
+            ]);
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Gagal memuat statistik & audit: ' . $e->getMessage()]);
+        }
+    }
 
     public function clients()
     {
@@ -365,9 +277,8 @@ class DashboardController extends Controller
                 ->orderBy('id')
                 ->get();
 
-            // Attach user count per client
             $clients->each(function ($client) {
-                $client->user_count = \DB::table('client_user_access')
+                $client->user_count = DB::table('client_user_access')
                     ->where('client_id', $client->id)
                     ->where('status', 'approved')
                     ->count();
@@ -387,79 +298,26 @@ class DashboardController extends Controller
         }
     }
 
-    /**
-     * Store a newly created application (Admin only)
-     */
     public function storeClient(Request $request)
     {
         try {
-            $admin = Auth::user();
-
             $validated = $request->validate([
-                'name'                => 'required|string|max:255',
-                'redirect'            => 'required|url|max:500',
-                'description'         => 'nullable|string|max:500',
-                'supported_roles'     => 'nullable|string|max:500',
-                'display_order'       => 'nullable|integer|min:0',
-                'is_visible'          => 'nullable|boolean',
-                'logo'                => 'nullable|image|mimes:png,jpg,jpeg,svg|max:2048',
+                'name'            => 'required|string|max:255',
+                'redirect'        => 'required|url|max:500',
+                'description'     => 'nullable|string|max:500',
+                'supported_roles' => 'nullable|string|max:500',
+                'display_order'   => 'nullable|integer|min:0',
+                'is_visible'      => 'nullable|boolean',
+                'logo'            => 'nullable|image|mimes:png,jpg,jpeg,svg|max:2048',
             ]);
 
-            $secret = Str::random(40);
-
-            $rolesArray = [];
-            if (!empty($validated['supported_roles'])) {
-                $rolesArray = array_map('trim', explode(',', $validated['supported_roles']));
-                $rolesArray = array_values(array_filter($rolesArray));
-            }
-            if (empty($rolesArray)) {
-                $rolesArray = ['Admin', 'Staff'];
-            }
-
-            $logoPath = null;
-            if ($request->hasFile('logo')) {
-                $logoPath = $request->file('logo')->store('app-logos', 'public');
-            }
-
-            $client = Client::create([
-                'name'                   => $validated['name'],
-                'secret'                 => $secret,
-                'redirect'               => $validated['redirect'],
-                'personal_access_client' => 0,
-                'password_client'        => 0,
-                'revoked'                => 0,
-                'is_maintenance'         => 0,
-                'is_visible'             => $request->boolean('is_visible', true),
-                'description'            => $validated['description'] ?? null,
-                'display_order'          => $validated['display_order'] ?? 0,
-                'supported_roles'        => json_encode($rolesArray),
-                'logo_path'              => $logoPath,
-            ]);
-
-            // Auto-grant access to all approved users
-            $approvedUsers = User::where('status', 'approved')->get();
-            foreach ($approvedUsers as $u) {
-                DB::table('client_user_access')->insert([
-                    'user_id'    => $u->id,
-                    'client_id'  => $client->id,
-                    'status'     => 'approved',
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
-
-            ApplicationActivityLog::create([
-                'oauth_client_id' => $client->id,
-                'admin_id'        => $admin->id,
-                'action'          => 'created',
-                'description'     => "Aplikasi baru '{$client->name}' berhasil ditambahkan (Client ID: {$client->id}).",
-            ]);
+            $result = $this->clientService->createClient($validated, $request->file('logo'));
 
             return back()
-                ->with('success', "Aplikasi '{$client->name}' berhasil ditambahkan!")
-                ->with('new_client_name', $client->name)
-                ->with('new_client_id', $client->id)
-                ->with('new_client_secret', $secret);
+                ->with('success', "Aplikasi '{$result['client']->name}' berhasil ditambahkan!")
+                ->with('new_client_name', $result['client']->name)
+                ->with('new_client_id', $result['client']->id)
+                ->with('new_client_secret', $result['secret']);
         } catch (\Exception $e) {
             return back()->withErrors(['error' => 'Gagal menambahkan aplikasi: ' . $e->getMessage()]);
         }
@@ -469,8 +327,6 @@ class DashboardController extends Controller
     {
         try {
             $client = Client::findOrFail($id);
-            $admin  = Auth::user();
-            $changes = [];
 
             $validated = $request->validate([
                 'name'                => 'required|string|max:255',
@@ -483,50 +339,7 @@ class DashboardController extends Controller
                 'logo'                => 'nullable|image|mimes:png,jpg,jpeg,svg|max:2048',
             ]);
 
-            if ($client->name !== $validated['name']) {
-                $changes[] = "Nama: '{$client->name}' → '{$validated['name']}'";
-            }
-
-            if ($client->redirect !== $validated['redirect']) {
-                $changes[] = "Redirect URL: '{$client->redirect}' → '{$validated['redirect']}'";
-            }
-
-            $rolesArray = [];
-            if (!empty($validated['supported_roles'])) {
-                $rolesArray = array_map('trim', explode(',', $validated['supported_roles']));
-                $rolesArray = array_values(array_filter($rolesArray));
-            }
-            if (empty($rolesArray)) {
-                $rolesArray = ['Admin', 'Staff', 'pengguna'];
-            }
-
-            $client->name                = $validated['name'];
-            $client->redirect            = $validated['redirect'];
-            $client->description         = $validated['description'] ?? null;
-            $client->supported_roles     = json_encode($rolesArray);
-            $client->maintenance_message = $validated['maintenance_message'] ?? null;
-            $client->display_order       = $validated['display_order'] ?? 0;
-            $client->is_visible          = $request->boolean('is_visible', true);
-
-            if ($request->hasFile('logo')) {
-                if ($client->logo_path) {
-                    Storage::disk('public')->delete($client->logo_path);
-                }
-                $path = $request->file('logo')->store('app-logos', 'public');
-                $client->logo_path = $path;
-                $changes[] = 'Logo diperbarui';
-            }
-
-            $client->save();
-
-            if (!empty($changes)) {
-                ApplicationActivityLog::create([
-                    'oauth_client_id' => $client->id,
-                    'admin_id'        => $admin->id,
-                    'action'          => 'updated',
-                    'description'     => implode(', ', $changes),
-                ]);
-            }
+            $this->clientService->updateClient($client, $validated, $request->file('logo'));
 
             return back()->with('success', "Aplikasi '{$client->name}' berhasil diperbarui.");
         } catch (\Exception $e) {
@@ -538,17 +351,7 @@ class DashboardController extends Controller
     {
         try {
             $client = Client::findOrFail($id);
-            $client->is_maintenance = !$client->is_maintenance;
-            $client->save();
-
-            ApplicationActivityLog::create([
-                'oauth_client_id' => $client->id,
-                'admin_id'        => Auth::id(),
-                'action'          => $client->is_maintenance ? 'maintenance_on' : 'maintenance_off',
-                'description'     => $client->is_maintenance
-                    ? "Mode maintenance diaktifkan untuk '{$client->name}'"
-                    : "Mode maintenance dinonaktifkan untuk '{$client->name}'",
-            ]);
+            $this->clientService->toggleMaintenance($client);
 
             return back()->with('success', $client->is_maintenance
                 ? "Aplikasi '{$client->name}' sekarang dalam mode maintenance."
@@ -563,17 +366,7 @@ class DashboardController extends Controller
     {
         try {
             $client = Client::findOrFail($id);
-            $client->is_visible = !$client->is_visible;
-            $client->save();
-
-            ApplicationActivityLog::create([
-                'oauth_client_id' => $client->id,
-                'admin_id'        => Auth::id(),
-                'action'          => $client->is_visible ? 'visibility_on' : 'visibility_off',
-                'description'     => $client->is_visible
-                    ? "Aplikasi '{$client->name}' ditampilkan kembali di dashboard"
-                    : "Aplikasi '{$client->name}' disembunyikan dari dashboard",
-            ]);
+            $this->clientService->toggleVisibility($client);
 
             return back()->with('success', $client->is_visible
                 ? "Aplikasi '{$client->name}' kini tampil di dashboard."
@@ -589,21 +382,23 @@ class DashboardController extends Controller
         try {
             $client = Client::findOrFail($id);
             $clientName = $client->name;
-
-            if ($client->logo_path) {
-                Storage::disk('public')->delete($client->logo_path);
-            }
-
-            // Clean up related DB records
-            DB::table('client_user_access')->where('client_id', $client->id)->delete();
-            DB::table('user_client_roles')->where('oauth_client_id', $client->id)->delete();
-            DB::table('application_activity_logs')->where('oauth_client_id', $client->id)->delete();
-
-            $client->delete();
+            $this->clientService->deleteClient($client);
 
             return redirect()->route('admin.clients')->with('success', "Aplikasi '{$clientName}' berhasil dihapus secara permanen.");
         } catch (\Exception $e) {
             return back()->withErrors(['error' => 'Gagal menghapus aplikasi: ' . $e->getMessage()]);
+        }
+    }
+
+    public function deleteClientLogo($id)
+    {
+        try {
+            $client = Client::findOrFail($id);
+            $this->clientService->deleteClientLogo($client);
+
+            return back()->with('success', "Gambar aplikasi '{$client->name}' berhasil dihapus.");
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Gagal menghapus gambar: ' . $e->getMessage()]);
         }
     }
 
@@ -651,13 +446,13 @@ class DashboardController extends Controller
 
             if (!empty($localRoleFilter)) {
                 if ($localRoleFilter === 'none') {
-                    $userIdsWithRole = UserClientRole::where('oauth_client_id', $client->id)
+                    $userIdsWithRole = \App\Models\UserClientRole::where('oauth_client_id', $client->id)
                         ->whereNotNull('role')
                         ->where('role', '!=', '')
                         ->pluck('user_id');
                     $usersQuery->whereNotIn('id', $userIdsWithRole);
                 } else {
-                    $userIdsWithRole = UserClientRole::where('oauth_client_id', $client->id)
+                    $userIdsWithRole = \App\Models\UserClientRole::where('oauth_client_id', $client->id)
                         ->where('role', $localRoleFilter)
                         ->pluck('user_id');
                     $usersQuery->whereIn('id', $userIdsWithRole);
@@ -666,18 +461,15 @@ class DashboardController extends Controller
 
             $users = $usersQuery->orderBy('name')->paginate(10)->withQueryString();
 
-            // Fetch client access mapping for this client [user_id => status]
             $accessMap = DB::table('client_user_access')
                 ->where('client_id', $client->id)
                 ->pluck('status', 'user_id')
                 ->toArray();
 
-            // Fetch local roles mapping for this client [user_id => role]
-            $localRolesMap = UserClientRole::where('oauth_client_id', $client->id)
+            $localRolesMap = \App\Models\UserClientRole::where('oauth_client_id', $client->id)
                 ->pluck('role', 'user_id')
                 ->toArray();
 
-            // Activity logs for this client
             $logs = ApplicationActivityLog::where('oauth_client_id', $client->id)
                 ->with('admin')
                 ->orderBy('created_at', 'desc')
@@ -719,7 +511,6 @@ class DashboardController extends Controller
                 'local_role'    => 'nullable|string|max:50',
             ]);
 
-            // Determine status: if has_access input exists (checkbox submitted), use boolean to set approved/none
             if ($request->has('has_access')) {
                 $status = $request->boolean('has_access') ? 'approved' : 'none';
             } else {
@@ -728,17 +519,16 @@ class DashboardController extends Controller
 
             $localRole = trim($validated['local_role'] ?? '');
 
-            // Update client_user_access pivot table
             if ($status === 'none') {
                 $user->accessedClients()->detach($client->id);
             } else {
-                $exists = \DB::table('client_user_access')
+                $exists = DB::table('client_user_access')
                     ->where('user_id', $user->id)
                     ->where('client_id', $client->id)
                     ->exists();
 
                 if ($exists) {
-                    \DB::table('client_user_access')
+                    DB::table('client_user_access')
                         ->where('user_id', $user->id)
                         ->where('client_id', $client->id)
                         ->update(['status' => $status, 'updated_at' => now()]);
@@ -747,19 +537,17 @@ class DashboardController extends Controller
                 }
             }
 
-            // Update user_client_roles
             if (!empty($localRole)) {
-                UserClientRole::updateOrCreate(
+                \App\Models\UserClientRole::updateOrCreate(
                     ['user_id' => $user->id, 'oauth_client_id' => $client->id],
                     ['role' => $localRole]
                 );
             } else {
-                UserClientRole::where('user_id', $user->id)
+                \App\Models\UserClientRole::where('user_id', $user->id)
                     ->where('oauth_client_id', $client->id)
                     ->delete();
             }
 
-            // Log activity
             ApplicationActivityLog::create([
                 'oauth_client_id' => $client->id,
                 'admin_id'        => Auth::id(),
@@ -767,7 +555,6 @@ class DashboardController extends Controller
                 'description'     => "Akses '{$user->name}' diubah (Status: {$status}, Role: " . ($localRole ?: 'default/none') . ")",
             ]);
 
-            // Dispatch Real-time Webhook to Client Application
             if ($client->redirect) {
                 $webhookUrl = str_replace('/auth/sso/callback', '/api/sso/webhook', $client->redirect);
                 try {
@@ -784,70 +571,13 @@ class DashboardController extends Controller
                         'signature' => hash_hmac('sha256', $user->email . ':' . ($localRole ?: 'none'), $client->secret),
                     ]);
                 } catch (\Exception $e) {
-                    // Log silent if client app webhook endpoint is unavailable
+                    // silent webhook failure
                 }
             }
 
             return back()->with('success', "Akses & role lokal '{$user->name}' untuk {$client->name} berhasil diperbarui.");
         } catch (\Exception $e) {
             return back()->withErrors(['error' => 'Gagal memperbarui akses pengguna: ' . $e->getMessage()]);
-        }
-    }
-
-    /**
-     * Delete application logo image (Admin only)
-     */
-    public function deleteClientLogo($id)
-    {
-        try {
-            $client = Client::findOrFail($id);
-
-            if (!$client->logo_path) {
-                return back()->withErrors(['error' => 'Aplikasi ini tidak memiliki gambar.']);
-            }
-
-            Storage::disk('public')->delete($client->logo_path);
-            $client->logo_path = null;
-            $client->save();
-
-            ApplicationActivityLog::create([
-                'oauth_client_id' => $client->id,
-                'admin_id'        => Auth::id(),
-                'action'          => 'logo_deleted',
-                'description'     => "Gambar kartu aplikasi '{$client->name}' dihapus.",
-            ]);
-
-            return back()->with('success', "Gambar aplikasi '{$client->name}' berhasil dihapus.");
-        } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Gagal menghapus gambar: ' . $e->getMessage()]);
-        }
-    }
-
-    /**
-     * Delete user account (Admin only)
-     */
-    public function deleteUser($id)
-    {
-        try {
-            $user = User::findOrFail($id);
-            if ($user->role === 'admin') {
-                return back()->withErrors(['error' => 'Akun administrator utama tidak dapat dihapus.']);
-            }
-            if ($user->id === Auth::id()) {
-                return back()->withErrors(['error' => 'Anda tidak dapat menghapus akun Anda sendiri.']);
-            }
-
-            // Revoke tokens
-            $user->tokens()->each(function ($token) {
-                $token->revoke();
-            });
-
-            // Delete the user (database cascade will handle profile_update_requests and client_user_access)
-            $user->delete();
-
-            return back()->with('success', 'Akun berhasil dihapus secara permanen.');
-        } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Gagal menghapus akun: ' . $e->getMessage()]);
         }
     }
 }

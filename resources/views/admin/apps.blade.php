@@ -55,6 +55,12 @@
                     <svg class="w-5 h-5 mr-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
                     Dashboard SSO
                 </a>
+                
+                <a href="{{ route('admin.stats') }}" class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:text-kpi-700 hover:bg-slate-50 transition-colors">
+                    <svg class="w-5 h-5 mr-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                    Statistik & Audit
+                </a>
+
                 @php
                     $pendingBadgeCount = \App\Models\User::where('status', 'pending')->count();
                 @endphp
@@ -125,7 +131,6 @@
                     Tambah Aplikasi
                 </button>
             </div>
-
             <!-- Apps Grid -->
             <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-5 mb-10">
                 @foreach ($clients as $client)
@@ -230,42 +235,42 @@
                 @endforeach
             </div>
 
-            <!-- Activity Log -->
-            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-                    <h2 class="font-bold text-slate-900">Log Aktivitas</h2>
+            <!-- Activity Log Aplikasi -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+                <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                    <h2 class="font-bold text-slate-800 text-sm tracking-wide">Log Manajemen Aplikasi</h2>
                 </div>
                 @if ($activityLogs->isEmpty())
                     <div class="px-6 py-10 text-center text-slate-400 text-sm">Belum ada aktivitas tercatat.</div>
                 @else
-                    <div class="overflow-x-auto max-h-[250px] overflow-y-auto">
+                    <div class="overflow-x-auto">
                         <table class="w-full text-sm">
-                            <thead class="bg-slate-50 border-b border-slate-100 text-xs uppercase tracking-wider text-slate-500 font-semibold sticky top-0 z-10">
+                            <thead class="bg-slate-50 border-b border-slate-100 text-xs uppercase tracking-wider text-slate-500 font-semibold">
                                 <tr>
-                                    <th class="px-6 py-3 text-left bg-slate-50">Admin</th>
-                                    <th class="px-6 py-3 text-left bg-slate-50">Aksi</th>
-                                    <th class="px-6 py-3 text-left bg-slate-50">Detail</th>
-                                    <th class="px-6 py-3 text-left bg-slate-50">Waktu</th>
+                                    <th class="px-6 py-3.5 text-left bg-slate-50">Admin</th>
+                                    <th class="px-6 py-3.5 text-left bg-slate-50">Aksi</th>
+                                    <th class="px-6 py-3.5 text-left bg-slate-50">Detail</th>
+                                    <th class="px-6 py-3.5 text-left bg-slate-50">Waktu</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-slate-100">
+                            <tbody class="divide-y divide-slate-100 bg-white">
                                 @foreach ($activityLogs as $log)
                                     <tr class="hover:bg-slate-50/50 transition-colors">
-                                        <td class="px-6 py-3 font-medium text-slate-800">{{ $log->admin->name ?? 'N/A' }}</td>
-                                        <td class="px-6 py-3">
+                                        <td class="px-6 py-4 font-medium text-slate-800">{{ $log->admin->name ?? 'N/A' }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
                                             @php
                                                 $actionColor = match($log->action) {
-                                                    'maintenance_on'  => 'bg-amber-100 text-amber-700',
-                                                    'maintenance_off' => 'bg-green-100 text-green-700',
-                                                    'visibility_on'   => 'bg-blue-100 text-blue-700',
-                                                    'visibility_off'  => 'bg-slate-100 text-slate-600',
-                                                    default           => 'bg-slate-100 text-slate-600',
+                                                    'maintenance_on'  => 'bg-amber-50 text-amber-700 border border-amber-200',
+                                                    'maintenance_off' => 'bg-green-50 text-green-700 border border-green-200',
+                                                    'visibility_on'   => 'bg-blue-50 text-blue-700 border border-blue-200',
+                                                    'visibility_off'  => 'bg-slate-50 text-slate-600 border border-slate-200',
+                                                    default           => 'bg-slate-50 text-slate-600 border border-slate-200',
                                                 };
                                             @endphp
-                                            <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold {{ $actionColor }}">{{ $log->action }}</span>
+                                            <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold {{ $actionColor }}">{{ strtoupper(str_replace('_', ' ', $log->action)) }}</span>
                                         </td>
-                                        <td class="px-6 py-3 text-slate-500">{{ $log->description }}</td>
-                                        <td class="px-6 py-3 text-slate-400 whitespace-nowrap">{{ $log->created_at->format('d M Y, H:i') }}</td>
+                                        <td class="px-6 py-4 text-xs text-slate-600">{{ $log->description }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-xs text-slate-400">{{ $log->created_at->format('d M Y, H:i') }}</td>
                                     </tr>
                                 @endforeach
                             </tbody>

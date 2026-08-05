@@ -37,6 +37,7 @@ Route::middleware('auth:web')->group(function () {
     
     // Admin only routes
     Route::middleware('admin')->group(function () {
+        Route::get('/admin/stats', [DashboardController::class, 'stats'])->name('admin.stats');
         Route::get('/admin/users', [DashboardController::class, 'users'])->name('admin.users');
         Route::get('/admin/users/{id}/edit', [DashboardController::class, 'editUser'])->name('admin.users.edit');
         Route::put('/admin/users/{id}', [DashboardController::class, 'updateUser'])->name('admin.users.update');
