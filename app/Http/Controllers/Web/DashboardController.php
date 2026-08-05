@@ -256,34 +256,13 @@ class DashboardController extends Controller
                 ->limit(30)
                 ->get();
 
-            // Login history (last 7 days)
-            $loginHistory = [];
-            for ($i = 6; $i >= 0; $i--) {
-                $date = now()->subDays($i)->format('Y-m-d');
-                $dateLabel = now()->subDays($i)->format('d M');
-                
-                $dbVal = UserActivityLog::selectRaw("
-                            SUM(CASE WHEN activity = 'login_success' THEN 1 ELSE 0 END) as success,
-                            SUM(CASE WHEN activity = 'login_failed' THEN 1 ELSE 0 END) as failed
-                         ")
-                         ->whereDate('created_at', $date)
-                         ->first();
-                
-                $loginHistory[] = [
-                    'date' => $dateLabel,
-                    'success' => $dbVal ? (int) $dbVal->success : 0,
-                    'failed' => $dbVal ? (int) $dbVal->failed : 0,
-                ];
-            }
-
-            // User distribution per application
+            // User distribution per application based on login tokens
             $appsChartData = Client::where('personal_access_client', 0)
                 ->where('password_client', 0)
                 ->get()
                 ->map(function($client) {
-                    $count = DB::table('client_user_access')
+                    $count = DB::table('oauth_access_tokens')
                         ->where('client_id', $client->id)
-                        ->where('status', 'approved')
                         ->count();
                     return [
                         'name' => $client->name,
@@ -297,7 +276,6 @@ class DashboardController extends Controller
                 'activeClientsCount' => $activeClientsCount,
                 'todayLogins'        => $todayLogins,
                 'recentActivities'   => $recentActivities,
-                'loginHistory'       => $loginHistory,
                 'appsChartData'      => $appsChartData,
             ]);
         } catch (\Exception $e) {

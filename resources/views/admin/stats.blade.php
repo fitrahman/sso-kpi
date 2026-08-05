@@ -177,19 +177,11 @@
             </div>
 
             <!-- Charts Section -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                <!-- Login Activity Chart -->
-                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
-                    <h3 class="text-sm font-bold text-slate-800 tracking-wide mb-4">Tren Aktivitas Login (7 Hari Terakhir)</h3>
-                    <div class="relative w-full h-64">
-                        <canvas id="loginActivityChart"></canvas>
-                    </div>
-                </div>
-
+            <div class="mb-8">
                 <!-- Users Distribution Chart -->
-                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
-                    <h3 class="text-sm font-bold text-slate-800 tracking-wide mb-4">Distribusi Pengguna per Aplikasi Klien</h3>
-                    <div class="relative w-full h-64">
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center">
+                    <h3 class="text-sm font-bold text-slate-800 tracking-wide mb-4 w-full text-left">Distribusi Penggunaan Aplikasi (Berdasarkan Login)</h3>
+                    <div class="relative w-full max-w-md h-72">
                         <canvas id="appsDistributionChart"></canvas>
                     </div>
                 </div>
@@ -268,58 +260,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-            // 1. Login Activity Chart
-            const loginHistory = @json($loginHistory);
-            const loginLabels = loginHistory.map(item => item.date);
-            const successData = loginHistory.map(item => item.success);
-            const failedData = loginHistory.map(item => item.failed);
-
-            new Chart(document.getElementById('loginActivityChart'), {
-                type: 'line',
-                data: {
-                    labels: loginLabels,
-                    datasets: [
-                        {
-                            label: 'Login Sukses',
-                            data: successData,
-                            borderColor: '#10b981', // green-500
-                            backgroundColor: 'rgba(16, 185, 129, 0.05)',
-                            fill: true,
-                            tension: 0.4,
-                            borderWidth: 2,
-                            pointBackgroundColor: '#10b981',
-                        },
-                        {
-                            label: 'Login Gagal',
-                            data: failedData,
-                            borderColor: '#ef4444', // red-500
-                            backgroundColor: 'rgba(239, 68, 68, 0.05)',
-                            fill: true,
-                            tension: 0.4,
-                            borderWidth: 2,
-                            pointBackgroundColor: '#ef4444',
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: { boxWidth: 12, font: { family: 'Inter' } }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: { precision: 0 }
-                        }
-                    }
-                }
-            });
-
-            // 2. Apps Distribution Chart
+            // Apps Distribution Chart
             const appsData = @json($appsChartData);
             const appLabels = appsData.map(item => item.name);
             const appCounts = appsData.map(item => item.count);
