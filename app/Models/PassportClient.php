@@ -6,6 +6,10 @@ use Laravel\Passport\Client as BaseClient;
 
 class PassportClient extends BaseClient
 {
+    protected $casts = [
+        'roles_synced_at' => 'datetime',
+    ];
+
     /**
      * Determine if the client should skip the authorization prompt.
      *

@@ -589,6 +589,11 @@ class DashboardController extends Controller
             // Handle local role (independent of access checkbox status)
             if ($request->has('local_role')) {
                 $localRole = trim($request->input('local_role') ?: 'user');
+
+                if (! \App\Services\RoleValidationService::isValidRole($client->id, $localRole)) {
+                    return back()->withErrors(['error' => "Role '{$localRole}' tidak valid untuk aplikasi {$client->name}."]);
+                }
+
                 \App\Models\UserClientRole::updateOrCreate(
                     ['user_id' => $user->id, 'oauth_client_id' => $client->id],
                     ['role' => $localRole]
