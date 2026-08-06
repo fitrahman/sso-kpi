@@ -52,17 +52,17 @@
     <div class="max-w-5xl w-full bg-white rounded-3xl shadow-xl overflow-hidden flex flex-col md:flex-row">
         
         <!-- Left: Illustration -->
-        <div class="hidden md:flex md:w-1/2 bg-slate-900 bg-pattern flex-col justify-center items-center p-12 relative overflow-hidden text-white text-center">
-            <div class="absolute inset-0 bg-slate-800/90 mix-blend-multiply"></div>
+        <div class="hidden md:flex md:w-1/2 bg-kpi-700 bg-pattern flex-col justify-center items-center p-12 relative overflow-hidden text-white text-center">
+            <div class="absolute inset-0 bg-kpi-800/90 mix-blend-multiply"></div>
             <div class="relative z-10 w-full max-w-sm flex flex-col items-center">
                 <img src="{{ asset('logoKPI.png') }}" alt="KPI Logo" class="h-24 w-auto mb-8">
                 <h2 class="text-3xl font-bold mb-4 tracking-tight">Bergabung dengan KPI</h2>
-                <p class="text-slate-300 text-lg leading-relaxed">
+                <p class="text-kpi-100 text-lg leading-relaxed">
                     Daftarkan diri anda untuk mendapatkan akses ke berbagai layanan aplikasi internal secara aman.
                 </p>
             </div>
-            <div class="absolute -bottom-24 -left-24 w-64 h-64 border-4 border-slate-700 rounded-full"></div>
-            <div class="absolute -top-24 -right-24 w-80 h-80 border-4 border-slate-700 rounded-full"></div>
+            <div class="absolute -bottom-24 -left-24 w-64 h-64 border-4 border-white/10 rounded-full"></div>
+            <div class="absolute -top-24 -right-24 w-80 h-80 border-4 border-white/10 rounded-full"></div>
         </div>
 
         <!-- Right: Register Form -->
@@ -119,25 +119,25 @@
                     
                     <div class="relative">
                         <input type="text" id="name" name="name" value="{{ old('name') }}" required placeholder=" "
-                            class="block px-4 pb-2.5 pt-6 w-full text-base text-slate-900 bg-transparent rounded-xl border-2 border-slate-200 appearance-none focus:outline-none focus:border-kpi-600 peer transition-colors" />
+                            class="block px-4 pb-2.5 pt-6 w-full text-base text-slate-900 bg-transparent rounded-xl border border-slate-300 appearance-none focus:outline-none focus:ring-2 focus:ring-kpi-500 focus:border-kpi-500 peer transition-colors" />
                         <label for="name" class="absolute text-base text-slate-500 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] left-4 peer-focus:text-kpi-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 bg-white px-1">Nama Lengkap</label>
                     </div>
 
                     <div class="relative">
                         <input type="email" id="email" name="email" value="{{ old('email') }}" required placeholder=" "
-                            class="block px-4 pb-2.5 pt-6 w-full text-base text-slate-900 bg-transparent rounded-xl border-2 border-slate-200 appearance-none focus:outline-none focus:border-kpi-600 peer transition-colors" />
+                            class="block px-4 pb-2.5 pt-6 w-full text-base text-slate-900 bg-transparent rounded-xl border border-slate-300 appearance-none focus:outline-none focus:ring-2 focus:ring-kpi-500 focus:border-kpi-500 peer transition-colors" />
                         <label for="email" class="absolute text-base text-slate-500 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] left-4 peer-focus:text-kpi-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 bg-white px-1">Alamat Email</label>
                     </div>
 
                     <div class="relative">
                         <input type="tel" id="phone" name="phone" value="{{ old('phone') }}" required placeholder=" "
-                            class="block px-4 pb-2.5 pt-6 w-full text-base text-slate-900 bg-transparent rounded-xl border-2 border-slate-200 appearance-none focus:outline-none focus:border-kpi-600 peer transition-colors" />
+                            class="block px-4 pb-2.5 pt-6 w-full text-base text-slate-900 bg-transparent rounded-xl border border-slate-300 appearance-none focus:outline-none focus:ring-2 focus:ring-kpi-500 focus:border-kpi-500 peer transition-colors" />
                         <label for="phone" class="absolute text-base text-slate-500 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] left-4 peer-focus:text-kpi-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 bg-white px-1">Nomor Telepon</label>
                     </div>
 
                     <div class="relative">
                         <input type="password" id="password" name="password" required minlength="8" placeholder=" "
-                            class="block px-4 pb-2.5 pt-6 w-full text-base text-slate-900 bg-transparent rounded-xl border-2 border-slate-200 appearance-none focus:outline-none focus:border-kpi-600 peer transition-colors pr-12" />
+                            class="block px-4 pb-2.5 pt-6 w-full text-base text-slate-900 bg-transparent rounded-xl border border-slate-300 appearance-none focus:outline-none focus:ring-2 focus:ring-kpi-500 focus:border-kpi-500 peer transition-colors pr-12" />
                         <label for="password" class="absolute text-base text-slate-500 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] left-4 peer-focus:text-kpi-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 bg-white px-1">Kata Sandi</label>
                         <button type="button" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" onclick="togglePass('password', this)">
                             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
@@ -146,11 +146,11 @@
 
                     <div class="relative">
                         <input type="password" id="password_confirmation" name="password_confirmation" required minlength="8" placeholder=" "
-                            class="block px-4 pb-2.5 pt-6 w-full text-base text-slate-900 bg-transparent rounded-xl border-2 border-slate-200 appearance-none focus:outline-none focus:border-kpi-600 peer transition-colors pr-12" />
+                            class="block px-4 pb-2.5 pt-6 w-full text-base text-slate-900 bg-transparent rounded-xl border border-slate-300 appearance-none focus:outline-none focus:ring-2 focus:ring-kpi-500 focus:border-kpi-500 peer transition-colors pr-12" />
                         <label for="password_confirmation" class="absolute text-base text-slate-500 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] left-4 peer-focus:text-kpi-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 bg-white px-1">Konfirmasi Kata Sandi</label>
                     </div>
                     
-                    <button type="button" onclick="nextStep()" class="mt-6 w-full py-3.5 bg-slate-900 text-white rounded-xl font-semibold shadow-sm hover:bg-slate-800 transition-colors">
+                    <button type="button" onclick="nextStep()" class="mt-6 w-full py-3 px-4 bg-kpi-700 hover:bg-kpi-800 text-white font-semibold rounded-xl transition-colors shadow-sm cursor-pointer">
                         Lanjutkan
                     </button>
                 </div>
@@ -165,7 +165,7 @@
                         @foreach($roles as $role)
                         <label class="relative cursor-pointer">
                             <input type="radio" name="role" value="{{ $role }}" class="peer sr-only" {{ old('role') == $role ? 'checked' : '' }} required>
-                            <div class="px-4 py-3 border-2 border-slate-200 rounded-xl text-center text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors">
+                            <div class="px-4 py-3 border border-slate-300 rounded-xl text-center text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors">
                                 {{ $role }}
                             </div>
                         </label>
@@ -173,10 +173,10 @@
                     </div>
 
                     <div class="flex gap-4">
-                        <button type="button" onclick="prevStep()" class="w-1/3 py-3.5 border-2 border-slate-200 text-slate-700 rounded-xl font-semibold hover:bg-slate-50 transition-colors">
+                        <button type="button" onclick="prevStep()" class="w-1/3 py-3 px-4 border border-slate-300 text-sm font-medium rounded-xl text-slate-700 bg-white hover:bg-slate-50 transition-colors shadow-sm cursor-pointer">
                             Kembali
                         </button>
-                        <button type="submit" id="submitBtn" class="w-2/3 flex justify-center py-3.5 bg-kpi-700 text-white rounded-xl font-semibold shadow-sm hover:bg-kpi-800 transition-colors">
+                        <button type="submit" id="submitBtn" class="w-2/3 flex justify-center items-center py-3 px-4 bg-kpi-700 hover:bg-kpi-800 text-white font-semibold rounded-xl transition-colors shadow-sm cursor-pointer">
                             <span id="btnText">Daftar Akun</span>
                             <svg id="btnSpinner" class="hidden animate-spin ml-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                         </button>

@@ -326,6 +326,72 @@ php artisan cache:clear
 
 ---
 
+## 📌 Langkah 9: Real-time SSO Webhook (Opsi Optimal - Asinkronus)
+
+Setiap kali Administrator di portal SSO melakukan **pembaruan role** atau **pencabutan hak akses** pengguna, SSO Server akan mengirimkan HTTP POST request asinkronus langsung ke **Webhook URL** aplikasi klien Anda.
+
+### 1. Struktur Payload Webhook
+
+Webhook dikirim dengan format JSON sebagai berikut:
+
+```json
+{
+  "event": "user.role_updated", // atau "user.access_revoked"
+  "timestamp": 1799988222,
+  "data": {
+    "user_id": 42,
+    "email": "nama.pegawai@kpi.go.id",
+    "name": "Nama Pegawai",
+    "role": "pegawai" // "none" jika akses dicabut
+  }
+}
+```
+
+### 2. Verifikasi Tanda Tangan Webhook (HMAC-SHA256)
+
+Untuk memastikan request benar-benar berasal dari SSO Server KPI, SSO Server mengirimkan header `X-SSO-Signature`. Header ini adalah tanda tangan HMAC-SHA256 dari JSON string payload menggunakan **Webhook Secret** yang Anda daftarkan di SSO Admin Portal.
+
+Contoh middleware verifikasi webhook di aplikasi klien Anda:
+
+```php
+<?php
+
+namespace App\Http\Middleware;
+
+use Closure;
+use Illuminate\Http\Request;
+
+class VerifyWebhookSignature
+{
+    public function handle(Request $request, Closure $next)
+    {
+        $signature = $request->header('X-SSO-Signature');
+        $secret = env('SSO_WEBHOOK_SECRET');
+
+        if (!$signature || !$secret) {
+            return response()->json(['message' => 'Signature or Secret missing'], 401);
+        }
+
+        $computedSignature = hash_hmac('sha256', $request->getContent(), $secret);
+
+        if (!hash_equals($signature, $computedSignature)) {
+            return response()->json(['message' => 'Invalid signature'], 401);
+        }
+
+        return $next($request);
+    }
+}
+```
+
+Daftarkan rute webhook di `routes/api.php` aplikasi klien Anda:
+
+```php
+Route::post('/api/sso-webhook', [AuthController::class, 'handleSSOWebhook'])
+    ->middleware(\App\Http\Middleware\VerifyWebhookSignature::class);
+```
+
+---
+
 ## ✅ Checklist Akhir
 
 - [ ] Aplikasi sudah terdaftar di SSO Admin Portal (Langkah 1)

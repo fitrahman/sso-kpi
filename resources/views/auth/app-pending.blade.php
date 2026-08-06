@@ -50,7 +50,7 @@
             Permohonan akses anda untuk aplikasi <strong class="text-slate-900 font-semibold">{{ $appName }}</strong> sedang menunggu persetujuan dari Administrator.
         </p>
 
-        <a href="{{ route('dashboard') }}" class="inline-flex justify-center w-full py-3.5 bg-slate-900 text-white rounded-xl font-semibold shadow-sm hover:bg-slate-800 transition-colors">
+        <a href="{{ route('dashboard') }}" class="inline-flex justify-center items-center w-full py-3 px-4 bg-kpi-700 hover:bg-kpi-800 text-white font-semibold rounded-xl transition-colors shadow-sm cursor-pointer">
             Kembali ke Dashboard
         </a>
     </div>

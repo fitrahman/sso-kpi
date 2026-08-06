@@ -51,28 +51,28 @@
         <div class="p-4 flex-grow sidebar-scroll overflow-y-auto">
             <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 mt-2 px-3">Menu Utama</div>
             <nav class="space-y-1">
-                <a href="{{ route('dashboard') }}" class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:text-kpi-700 hover:bg-slate-50 transition-colors">
-                    <svg class="w-5 h-5 mr-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+                <a href="{{ route('dashboard') }}" class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg {{ request()->routeIs('dashboard') ? 'bg-kpi-50 text-kpi-700' : 'text-slate-600 hover:text-kpi-700 hover:bg-slate-50' }} transition-colors">
+                    <svg class="w-5 h-5 mr-3 {{ request()->routeIs('dashboard') ? 'text-kpi-600' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
                     Dashboard SSO
                 </a>
                 
-                <a href="{{ route('admin.stats') }}" class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:text-kpi-700 hover:bg-slate-50 transition-colors">
-                    <svg class="w-5 h-5 mr-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-                    Statistik & Audit
+                <a href="{{ route('admin.stats') }}" class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg {{ request()->routeIs('admin.stats*') ? 'bg-kpi-50 text-kpi-700' : 'text-slate-600 hover:text-kpi-700 hover:bg-slate-50' }} transition-colors">
+                    <svg class="w-5 h-5 mr-3 {{ request()->routeIs('admin.stats*') ? 'text-kpi-600' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                    Statistik
                 </a>
 
                 @php
                     $pendingBadgeCount = \App\Models\User::where('status', 'pending')->count();
                 @endphp
-                <a href="{{ route('admin.users') }}" class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:text-kpi-700 hover:bg-slate-50 transition-colors">
-                    <svg class="w-5 h-5 mr-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                <a href="{{ route('admin.users') }}" class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg {{ request()->routeIs('admin.users*', 'admin.edit*') ? 'bg-kpi-50 text-kpi-700' : 'text-slate-600 hover:text-kpi-700 hover:bg-slate-50' }} transition-colors">
+                    <svg class="w-5 h-5 mr-3 {{ request()->routeIs('admin.users*', 'admin.edit*') ? 'text-kpi-600' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
                     <span>Manajemen Pengguna</span>
                     @if($pendingBadgeCount > 0)
                         <span class="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{{ $pendingBadgeCount }}</span>
                     @endif
                 </a>
-                <a href="{{ route('admin.clients') }}" class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg bg-kpi-50 text-kpi-700 transition-colors">
-                    <svg class="w-5 h-5 mr-3 text-kpi-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+                <a href="{{ route('admin.clients') }}" class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg {{ request()->routeIs('admin.clients*') ? 'bg-kpi-50 text-kpi-700' : 'text-slate-600 hover:text-kpi-700 hover:bg-slate-50' }} transition-colors">
+                    <svg class="w-5 h-5 mr-3 {{ request()->routeIs('admin.clients*') ? 'text-kpi-600' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
                     Manajemen Aplikasi
                 </a>
             </nav>
@@ -80,7 +80,7 @@
         
         <div class="p-4 border-t border-slate-200">
             <div class="flex items-center mb-4 px-2">
-                <div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center font-bold text-slate-600 mr-3">
+                <div class="w-8 h-8 rounded-full bg-kpi-100 text-kpi-700 flex items-center justify-center font-bold text-sm mr-3">
                     {{ substr(auth()->user()->name ?? 'A', 0, 1) }}
                 </div>
                 <div class="flex-1 min-w-0">
@@ -91,6 +91,7 @@
             <form action="{{ route('logout') }}" method="POST">
                 @csrf
                 <button type="submit" class="w-full flex justify-center items-center px-4 py-2 border border-slate-300 shadow-sm text-sm font-medium rounded-lg text-slate-700 bg-white hover:bg-slate-50 transition-colors">
+                    <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
                     Keluar
                 </button>
             </form>
@@ -107,7 +108,7 @@
         </header>
 
         <!-- Scrollable content -->
-        <div class="flex-1 overflow-y-auto p-6 lg:p-8">
+        <div class="flex-1 overflow-y-auto p-4 sm:p-8">
 
 
 
@@ -121,8 +122,8 @@
             <!-- Page Header -->
             <div class="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 class="text-2xl font-bold text-slate-900">Manajemen Aplikasi</h1>
-                    <p class="text-slate-500 mt-1">Kelola nama, deskripsi, logo, status maintenance, dan visibilitas setiap aplikasi.</p>
+                    <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Manajemen Aplikasi</h1>
+                    <p class="text-slate-500 mt-1 text-sm">Kelola nama, deskripsi, logo, status maintenance, dan visibilitas setiap aplikasi.</p>
                 </div>
                 <button onclick="openCreateModal()" class="inline-flex items-center gap-2 px-4 py-2.5 bg-kpi-700 hover:bg-kpi-800 text-white rounded-xl font-semibold text-sm transition-colors shadow-sm cursor-pointer w-fit">
                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -238,8 +239,11 @@
                                         $rolesStr = implode(', ', $rArr);
                                     }
                                 }
+                                $webhookUrl = $client->webhookEndpoint ? $client->webhookEndpoint->url : '';
+                                $webhookSecret = $client->webhookEndpoint ? $client->webhookEndpoint->secret : '';
+                                $webhookActive = $client->webhookEndpoint ? ($client->webhookEndpoint->is_active ? 1 : 0) : 1;
                             @endphp
-                            <button onclick="openEditModal({{ $client->id }}, '{{ addslashes($client->name) }}', '{{ addslashes($client->redirect) }}', '{{ addslashes($client->description ?? '') }}', '{{ addslashes($rolesStr) }}', '{{ addslashes($client->maintenance_message ?? '') }}', {{ $client->display_order }}, {{ $client->is_visible ? 1 : 0 }})"
+                            <button onclick="openEditModal({{ $client->id }}, '{{ addslashes($client->name) }}', '{{ addslashes($client->redirect) }}', '{{ addslashes($client->description ?? '') }}', '{{ addslashes($rolesStr) }}', '{{ addslashes($client->maintenance_message ?? '') }}', {{ $client->display_order }}, {{ $client->is_visible ? 1 : 0 }}, '{{ addslashes($webhookUrl) }}', '{{ addslashes($webhookSecret) }}', {{ $webhookActive }})"
                                 class="inline-flex justify-center items-center gap-1.5 px-3 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg text-xs font-semibold hover:bg-slate-50 transition-colors">
                                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                 Edit
@@ -288,9 +292,9 @@
                 @if ($activityLogs->isEmpty())
                     <div class="px-6 py-10 text-center text-slate-400 text-sm">Belum ada aktivitas tercatat.</div>
                 @else
-                    <div class="overflow-x-auto">
+                    <div class="overflow-x-auto max-h-[500px] overflow-y-auto sidebar-scroll">
                         <table class="w-full text-sm">
-                            <thead class="bg-slate-50 border-b border-slate-100 text-xs uppercase tracking-wider text-slate-500 font-semibold">
+                            <thead class="bg-slate-50 border-b border-slate-100 text-xs uppercase tracking-wider text-slate-500 font-semibold sticky top-0 z-10">
                                 <tr>
                                     <th class="px-6 py-3.5 text-left bg-slate-50">Admin</th>
                                     <th class="px-6 py-3.5 text-left bg-slate-50">Aksi</th>
@@ -391,6 +395,30 @@
                     <p class="text-xs text-slate-400 mt-1">Format: PNG, JPG, SVG. Maks. 2MB.</p>
                 </div>
 
+                <div class="border-t border-slate-100 pt-4 space-y-4">
+                    <h4 class="text-sm font-bold text-slate-900">Konfigurasi SSO Webhook (Opsional)</h4>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">Webhook URL</label>
+                        <input type="url" name="webhook_url" placeholder="Contoh: https://client-app.test/api/sso-webhook"
+                            class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500 focus:border-transparent">
+                        <p class="text-xs text-slate-400 mt-1">URL endpoint klien yang akan menerima event asinkronus (user.role_updated, user.access_revoked).</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">Webhook Secret (Kunci HMAC)</label>
+                        <input type="text" name="webhook_secret" placeholder="Masukkan string acak / secret key"
+                            class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500 focus:border-transparent">
+                        <p class="text-xs text-slate-400 mt-1">Digunakan untuk menandatangani payload dengan signature HMAC-SHA256.</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">Status Webhook</label>
+                        <select name="webhook_active"
+                            class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500">
+                            <option value="1">Aktif</option>
+                            <option value="0">Nonaktif</option>
+                        </select>
+                    </div>
+                </div>
+
                 <div class="flex gap-3 pt-2">
                     <button type="button" onclick="closeCreateModal()"
                         class="flex-1 py-2.5 border border-slate-300 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
@@ -475,6 +503,28 @@
                     <input type="file" name="logo" accept="image/png,image/jpeg,image/jpg,image/svg+xml"
                         class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-slate-100 file:text-slate-700 file:font-semibold hover:file:bg-slate-200 cursor-pointer">
                     <p class="text-xs text-slate-400 mt-1">Format: PNG, JPG, SVG. Maks. 2MB.</p>
+                </div>
+
+                <div class="border-t border-slate-100 pt-4 space-y-4">
+                    <h4 class="text-sm font-bold text-slate-900">Konfigurasi SSO Webhook</h4>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">Webhook URL</label>
+                        <input type="url" name="webhook_url" id="edit-webhook-url" placeholder="Contoh: https://client-app.test/api/sso-webhook"
+                            class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">Webhook Secret (Kunci HMAC)</label>
+                        <input type="text" name="webhook_secret" id="edit-webhook-secret" placeholder="Masukkan secret key"
+                            class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">Status Webhook</label>
+                        <select name="webhook_active" id="edit-webhook-active"
+                            class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500">
+                            <option value="1">Aktif</option>
+                            <option value="0">Nonaktif</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="flex items-center justify-between gap-3 pt-3 border-t border-slate-100">
@@ -648,7 +698,7 @@
             document.getElementById('createModal').classList.remove('active');
         }
 
-        function openEditModal(id, name, redirect, description, supportedRoles, maintenanceMsg, displayOrder, isVisible) {
+        function openEditModal(id, name, redirect, description, supportedRoles, maintenanceMsg, displayOrder, isVisible, webhookUrl = '', webhookSecret = '', webhookActive = 1) {
             currentEditAppId = id;
             currentEditAppName = name;
             document.getElementById('editForm').action = '/admin/applications/' + id;
@@ -659,6 +709,9 @@
             document.getElementById('edit-maintenance-message').value = maintenanceMsg;
             document.getElementById('edit-display-order').value = displayOrder;
             document.getElementById('edit-is-visible').value = isVisible;
+            document.getElementById('edit-webhook-url').value = webhookUrl;
+            document.getElementById('edit-webhook-secret').value = webhookSecret;
+            document.getElementById('edit-webhook-active').value = webhookActive;
             document.getElementById('editModal').classList.add('active');
         }
 

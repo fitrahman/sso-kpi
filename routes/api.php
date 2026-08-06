@@ -27,7 +27,7 @@ Route::prefix('v1')->group(function () {
 });
 
 // Backward Compatible Legacy API Group (Without prefix)
-Route::middleware('throttle:60,1')->group(function () {
+Route::middleware('throttle:20,1')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/client-roles/sync', [AuthController::class, 'syncClientRoles']);

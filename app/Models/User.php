@@ -75,6 +75,11 @@ class User extends Authenticatable
         return $this->hasMany(UserClientRole::class);
     }
 
+    public function activityLogs()
+    {
+        return $this->hasMany(UserActivityLog::class);
+    }
+
     public function isStaff()
     {
         return in_array($this->role, self::ROLES);

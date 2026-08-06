@@ -468,7 +468,7 @@
                     </div>
 
                     <div class="mt-6 flex justify-end">
-                        <button onclick="toggleModal('profileModal')" class="px-5 py-2.5 bg-slate-950 text-white rounded-xl text-sm font-semibold hover:bg-slate-800 transition-colors">Tutup</button>
+                        <button onclick="toggleModal('profileModal')" class="px-5 py-2.5 bg-kpi-700 text-white rounded-xl text-sm font-semibold hover:bg-kpi-800 transition-colors shadow-sm cursor-pointer">Tutup</button>
                     </div>
                 </div>
 

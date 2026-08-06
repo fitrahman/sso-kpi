@@ -5,7 +5,7 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Laravel\Passport\Client;
+use App\Models\PassportClient;
 
 class CheckOAuthAccess
 {
@@ -20,7 +20,7 @@ class CheckOAuthAccess
             
             if ($clientId) {
                 $user = Auth::user();
-                $client = Client::find($clientId);
+                $client = PassportClient::find($clientId);
 
                 if ($client) {
                     // Blokir jika aplikasi sedang maintenance (kecuali admin)

@@ -5,11 +5,11 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\UserActivityLog;
 use App\Models\ApplicationActivityLog;
+use App\Models\PassportClient;
 use App\Services\UserService;
 use App\Services\ClientService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Laravel\Passport\Client;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
@@ -36,7 +36,7 @@ class DashboardController extends Controller
                 ->where('client_user_access.status', 'approved')
                 ->get();
 
-            $allClients = Client::where('personal_access_client', 0)
+            $allClients = PassportClient::where('personal_access_client', 0)
                 ->where('password_client', 0)
                 ->orderBy('display_order')
                 ->orderBy('id')
@@ -94,7 +94,7 @@ class DashboardController extends Controller
             $user = User::findOrFail($id);
             $roles = array_merge(['admin'], User::ROLES);
             
-            $clients = Client::where('personal_access_client', 0)
+            $clients = PassportClient::where('personal_access_client', 0)
                 ->where('password_client', 0)
                 ->get();
                 
@@ -193,7 +193,7 @@ class DashboardController extends Controller
             return redirect()->route('dashboard')->withErrors(['error' => 'Aplikasi tidak valid.']);
         }
 
-        $client = Client::where('name', $appName)->first();
+        $client = PassportClient::where('name', $appName)->first();
         if (!$client) {
             return redirect()->route('dashboard')->withErrors(['error' => 'Aplikasi tidak ditemukan di sistem.']);
         }
@@ -243,7 +243,7 @@ class DashboardController extends Controller
         try {
             $totalUsers = User::count();
             $pendingUsers = User::where('status', 'pending')->count();
-            $activeClientsCount = Client::where('personal_access_client', 0)->where('password_client', 0)->count();
+            $activeClientsCount = PassportClient::where('personal_access_client', 0)->where('password_client', 0)->count();
             
             // Login success today
             $todayLogins = UserActivityLog::where('activity', 'login_success')
@@ -253,7 +253,7 @@ class DashboardController extends Controller
             // Recent user activities
             $recentActivities = UserActivityLog::with('user')
                 ->orderByDesc('created_at')
-                ->limit(30)
+                ->limit(50)
                 ->get();
 
             // Construct past 7 days dates and labels
@@ -265,7 +265,7 @@ class DashboardController extends Controller
             }
 
             // Get clients and query daily token counts (logins)
-            $clients = Client::where('personal_access_client', 0)
+            $clients = PassportClient::where('personal_access_client', 0)
                 ->where('password_client', 0)
                 ->get();
 
@@ -301,7 +301,7 @@ class DashboardController extends Controller
     public function clients()
     {
         try {
-            $clients = Client::where('personal_access_client', 0)
+            $clients = PassportClient::with('webhookEndpoint')->where('personal_access_client', 0)
                 ->where('password_client', 0)
                 ->orderBy('display_order')
                 ->orderBy('id')
@@ -316,7 +316,7 @@ class DashboardController extends Controller
 
             $activityLogs = ApplicationActivityLog::with('admin')
                 ->orderByDesc('created_at')
-                ->limit(30)
+                ->limit(50)
                 ->get();
 
             return view('admin.apps', [
@@ -339,6 +339,9 @@ class DashboardController extends Controller
                 'display_order'   => 'nullable|integer|min:0',
                 'is_visible'      => 'nullable|boolean',
                 'logo'            => 'nullable|image|mimes:png,jpg,jpeg,svg|max:2048',
+                'webhook_url'     => 'nullable|url|max:500',
+                'webhook_secret'  => 'nullable|string|max:255',
+                'webhook_active'  => 'nullable|boolean',
             ]);
 
             $result = $this->clientService->createClient($validated, $request->file('logo'));
@@ -356,7 +359,7 @@ class DashboardController extends Controller
     public function updateClient(Request $request, $id)
     {
         try {
-            $client = Client::findOrFail($id);
+            $client = PassportClient::findOrFail($id);
 
             $validated = $request->validate([
                 'name'                => 'required|string|max:255',
@@ -367,6 +370,9 @@ class DashboardController extends Controller
                 'display_order'       => 'nullable|integer|min:0',
                 'is_visible'          => 'nullable|boolean',
                 'logo'                => 'nullable|image|mimes:png,jpg,jpeg,svg|max:2048',
+                'webhook_url'         => 'nullable|url|max:500',
+                'webhook_secret'      => 'nullable|string|max:255',
+                'webhook_active'      => 'nullable|boolean',
             ]);
 
             $this->clientService->updateClient($client, $validated, $request->file('logo'));
@@ -380,7 +386,7 @@ class DashboardController extends Controller
     public function toggleMaintenance($id)
     {
         try {
-            $client = Client::findOrFail($id);
+            $client = PassportClient::findOrFail($id);
             $this->clientService->toggleMaintenance($client);
 
             return back()->with('success', $client->is_maintenance
@@ -395,7 +401,7 @@ class DashboardController extends Controller
     public function toggleVisibility($id)
     {
         try {
-            $client = Client::findOrFail($id);
+            $client = PassportClient::findOrFail($id);
             $this->clientService->toggleVisibility($client);
 
             return back()->with('success', $client->is_visible
@@ -410,7 +416,7 @@ class DashboardController extends Controller
     public function deleteClient($id)
     {
         try {
-            $client = Client::findOrFail($id);
+            $client = PassportClient::findOrFail($id);
             $clientName = $client->name;
             $this->clientService->deleteClient($client);
 
@@ -423,7 +429,7 @@ class DashboardController extends Controller
     public function deleteClientLogo($id)
     {
         try {
-            $client = Client::findOrFail($id);
+            $client = PassportClient::findOrFail($id);
             $this->clientService->deleteClientLogo($client);
 
             return back()->with('success', "Gambar aplikasi '{$client->name}' berhasil dihapus.");
@@ -438,7 +444,7 @@ class DashboardController extends Controller
     public function clientUsers(Request $request, $id)
     {
         try {
-            $client = Client::findOrFail($id);
+            $client = PassportClient::findOrFail($id);
             $search = $request->get('search');
             $roleFilter = $request->get('role');
             $accessFilter = $request->get('access');
@@ -532,7 +538,7 @@ class DashboardController extends Controller
     public function updateClientUser(Request $request, $clientId, $userId)
     {
         try {
-            $client = Client::findOrFail($clientId);
+            $client = PassportClient::findOrFail($clientId);
             $user   = User::findOrFail($userId);
 
             $validated = $request->validate([

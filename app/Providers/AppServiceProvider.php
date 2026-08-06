@@ -4,6 +4,9 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Passport\Passport;
 
+use Illuminate\Support\Facades\Event;
+use App\Listeners\AuthEventSubscriber;
+
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -39,5 +42,8 @@ class AppServiceProvider extends ServiceProvider
         Passport::setDefaultScope([
             'user-read',
         ]);
+
+        // Register authentication event subscriber
+        Event::subscribe(AuthEventSubscriber::class);
     }
 }

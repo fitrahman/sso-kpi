@@ -51,7 +51,7 @@
             Akun anda telah berhasil didaftarkan dan saat ini sedang menunggu persetujuan dari Administrator. Anda dapat masuk ke dalam sistem setelah akun anda disetujui.
         </p>
 
-        <a href="{{ route('dashboard') }}" class="inline-flex justify-center w-full py-3.5 bg-kpi-700 text-white rounded-xl font-semibold shadow-sm hover:bg-kpi-800 transition-colors">
+        <a href="{{ route('dashboard') }}" class="inline-flex justify-center items-center w-full py-3 px-4 bg-kpi-700 hover:bg-kpi-800 text-white font-semibold rounded-xl transition-colors shadow-sm cursor-pointer">
             Kembali ke Halaman Awal
         </a>
     </div>

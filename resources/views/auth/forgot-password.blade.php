@@ -110,7 +110,7 @@
                 <!-- Email Input -->
                 <div class="relative">
                     <input type="email" id="email" name="email" value="{{ old('email') }}" required autofocus placeholder=" "
-                        class="block px-4 pb-2.5 pt-6 w-full text-base text-slate-900 bg-transparent rounded-xl border-2 border-slate-200 appearance-none focus:outline-none focus:ring-0 focus:border-kpi-600 peer transition-colors" />
+                        class="block px-4 pb-2.5 pt-6 w-full text-base text-slate-900 bg-transparent rounded-xl border border-slate-300 appearance-none focus:outline-none focus:ring-2 focus:ring-kpi-500 focus:border-kpi-500 peer transition-colors" />
                     <label for="email" 
                         class="absolute text-base text-slate-500 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] left-4 peer-focus:text-kpi-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 bg-white px-1">
                         Alamat Email
@@ -118,7 +118,7 @@
                 </div>
 
                 <!-- Submit Button -->
-                <button type="submit" id="submitBtn" class="w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl shadow-sm text-sm font-semibold text-white bg-kpi-700 hover:bg-kpi-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-kpi-600 transition-all transform hover:-translate-y-0.5">
+                <button type="submit" id="submitBtn" class="w-full flex justify-center items-center py-3 px-4 bg-kpi-700 hover:bg-kpi-800 text-white font-semibold rounded-xl transition-colors shadow-sm cursor-pointer">
                     <span id="btnText">Kirim Link Reset Password</span>
                     <svg id="btnSpinner" class="hidden animate-spin ml-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>

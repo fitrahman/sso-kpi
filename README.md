@@ -10,8 +10,11 @@ Aplikasi ini berfungsi sebagai penyedia identitas pusat (*Identity Provider*) di
 
 - **Pusat Autentikasi OAuth2 (Laravel Passport)**: Berfungsi sebagai *Identity Provider* terpusat yang siap diintegrasikan dengan berbagai aplikasi klien menggunakan metode OAuth2 Authorization Code Grant.
 - **Registrasi Akun dengan Persetujuan Admin**: Pengguna baru dapat mendaftar secara mandiri, tetapi akun baru dalam status `pending` dan hanya aktif setelah disetujui oleh Administrator.
-- **Pengajuan Edit Profil dengan Persetujuan Admin**: Pengguna dapat mengajukan perubahan data profil mereka (Nama, Telepon, dll). Perubahan data baru akan diterapkan ke database setelah disetujui oleh Administrator di dashboard.
-- **Pemberitahuan Email**: Sistem mengirimkan email otomatis (tanpa email verifikasi paksa) saat pendaftaran disetujui/ditolak, serta saat pengajuan akses aplikasi disetujui/ditolak.
+- **Pengisian Sandi yang Aman**: Pendaftaran dan reset kata sandi kini mewajibkan standar kompleksitas tinggi (minimal 8 karakter, huruf besar, huruf kecil, angka, dan simbol).
+- **Perlindungan Brute Force**: Dilengkapi dengan *Rate Limiting* di halaman sensitif (Login, Register, Reset Password) untuk menangkal serangan otomatis.
+- **SSO Webhooks Asinkronus**: Mengirimkan pemberitahuan instan secara asinkronus (*Laravel Queue*) ke aplikasi klien saat peran pengguna berubah (`user.role_updated`) atau ketika akses dicabut/dinonaktifkan (`user.access_revoked`). Dilengkapi dengan tanda tangan HMAC-SHA256 untuk memverifikasi asal request.
+- **Pengajuan Edit Profil dengan Persetujuan Admin**: Pengguna dapat mengajukan perubahan data profil mereka. Perubahan data baru akan diterapkan ke database setelah disetujui oleh Administrator di dashboard.
+- **Pemberitahuan Email**: Sistem mengirimkan email otomatis saat pendaftaran disetujui/ditolak, serta saat pengajuan akses aplikasi disetujui/ditolak.
 - **Manajemen Hak Akses Aplikasi**: Administrator dapat mengelola daftar aplikasi terintegrasi serta menyetujui atau menolak permohonan akses dari pengguna untuk aplikasi tertentu.
 
 ---
@@ -19,7 +22,7 @@ Aplikasi ini berfungsi sebagai penyedia identitas pusat (*Identity Provider*) di
 ## 🛠️ Langkah Instalasi di Laragon
 
 ### 1. Prasyarat
-* **Laragon** terpasang dengan PHP versi 8.2 ke atas.
+* **Laragon** terpasang dengan PHP versi 8.2 ke atas (pastikan modul `mbstring` aktif).
 * Driver **MySQL** aktif di Laragon.
 * Fitur **Auto Virtual Hosts** di Laragon aktif untuk membuat domain otomatis `.test`.
 
@@ -55,6 +58,10 @@ Pastikan folder diletakkan di dalam direktori root Laragon Anda (`C:\laragon\www
    ```bash
    php artisan passport:keys
    ```
+6. Jalankan queue worker untuk memproses Webhook secara asinkronus:
+   ```bash
+   php artisan queue:work
+   ```
 
 ---
 
@@ -76,38 +83,4 @@ Gunakan akun tes berikut untuk masuk dan menguji alur sistem:
 
 ## 🌐 Integrasi Aplikasi Klien (Lokal & Produksi/Global)
 
-Agar aplikasi klien (seperti Sistem Informasi, Dashboard internal, dll.) dapat terhubung ke portal **SSO KPI** ini (baik di lingkungan lokal maupun setelah di-deploy ke server produksi/global), ikuti panduan berikut:
-
-### 1. Dapatkan Kredensial OAuth Client
-1. Masuk ke database/admin panel **SSO KPI Portal** Anda.
-2. Daftarkan entri baru di tabel `oauth_clients` untuk aplikasi klien Anda untuk mendapatkan **Client ID** dan **Client Secret** (bisa dibuat secara otomatis menggunakan Laravel Passport CLI: `php artisan passport:client`).
-3. Tentukan **Redirect URL** (alamat callback pada aplikasi klien Anda di mana portal akan mengarahkan kembali setelah login sukses).
-
-### 2. Konfigurasi di Sisi Aplikasi Klien
-Pada berkas `.env` aplikasi klien Anda, tambahkan/sesuaikan variabel berikut:
-
-```env
-# ==========================================
-# SSO Passport Configuration
-# ==========================================
-
-# 1. Masukkan Client ID yang didapatkan dari SSO Portal
-SSO_CLIENT_ID="MASUKKAN_CLIENT_ID_ANDA"
-
-# 2. Masukkan Client Secret yang didapatkan dari SSO Portal
-SSO_CLIENT_SECRET="MASUKKAN_CLIENT_SECRET_ANDA"
-
-# 3. Alamat callback sistem klien Anda (harus sama persis dengan yang didaftarkan di SSO)
-SSO_REDIRECT_URI="http://nama-sistem-klien.test/auth/sso/callback"
-
-# 4. Alamat host SSO Portal (Pusat Autentikasi)
-# Gunakan http://sso-kpi.test untuk lokal Laragon, atau ganti ke domain produksi global Anda (misal: https://sso.kpi.go.id)
-SSO_HOST="http://sso-kpi.test"
-```
-
-### 3. Bersihkan Cache Klien
-Setelah memperbarui konfigurasi `.env` pada aplikasi klien, bersihkan cache agar konfigurasi baru terbaca:
-```bash
-php artisan config:clear
-php artisan cache:clear
-```
+Lihat panduan lengkap integrasi, API, dan skema pemrosesan SSO Webhook pada file **[Integrasi SSO.md](Integrasi%20SSO.md)**.

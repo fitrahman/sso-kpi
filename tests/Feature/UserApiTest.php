@@ -16,7 +16,7 @@ class UserApiTest extends TestCase
     /** @test */
     public function it_returns_unauthorized_when_not_logged_in()
     {
-        $response = $this->getJson('/api/user?client_id=1');
+        $response = $this->getJson('/api/v1/user?client_id=1');
 
         $response->assertStatus(401);
     }
@@ -28,7 +28,7 @@ class UserApiTest extends TestCase
         
         Passport::actingAs($user);
 
-        $response = $this->getJson('/api/user?client_id=999');
+        $response = $this->getJson('/api/v1/user?client_id=999');
 
         $response->assertStatus(200)
             ->assertJson([
@@ -66,7 +66,7 @@ class UserApiTest extends TestCase
 
         Passport::actingAs($user);
 
-        $response = $this->getJson('/api/user?client_id=2');
+        $response = $this->getJson('/api/v1/user?client_id=2');
 
         $response->assertStatus(200)
             ->assertJson([
@@ -86,7 +86,7 @@ class UserApiTest extends TestCase
 
         Passport::actingAs($admin);
 
-        $response = $this->getJson('/api/user?client_id=2');
+        $response = $this->getJson('/api/v1/user?client_id=2');
 
         $response->assertStatus(200)
             ->assertJson([
@@ -122,7 +122,7 @@ class UserApiTest extends TestCase
 
         Passport::actingAs($admin);
 
-        $response = $this->getJson('/api/user?client_id=4');
+        $response = $this->getJson('/api/v1/user?client_id=4');
 
         $response->assertStatus(200)
             ->assertJson([
@@ -152,8 +152,8 @@ class UserApiTest extends TestCase
             'updated_at'             => now(),
         ]);
 
-        // Test GET /api/client-roles
-        $getRes = $this->getJson('/api/client-roles?client_id=10');
+        // Test GET /api/v1/client-roles
+        $getRes = $this->getJson('/api/v1/client-roles?client_id=10');
         $getRes->assertStatus(200)
             ->assertJson([
                 'success'         => true,
@@ -161,10 +161,11 @@ class UserApiTest extends TestCase
                 'supported_roles' => ['Admin', 'Staff'],
             ]);
 
-        // Test POST /api/client-roles/sync
-        $postRes = $this->postJson('/api/client-roles/sync', [
-            'client_id' => 10,
-            'roles'     => ['Admin', 'Supervisor', 'Operator', 'Staff'],
+        // Test POST /api/v1/client-roles/sync
+        $postRes = $this->postJson('/api/v1/client-roles/sync', [
+            'client_id'     => 10,
+            'client_secret' => 'secret',
+            'roles'         => ['Admin', 'Supervisor', 'Operator', 'Staff'],
         ]);
 
         $postRes->assertStatus(200)

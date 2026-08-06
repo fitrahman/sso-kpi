@@ -54,7 +54,7 @@ class SsoDisruptionEdgeCasesTest extends TestCase
         $response = $this->withHeaders([
             'Authorization' => 'Bearer invalid_token_12345',
             'Accept'        => 'application/json',
-        ])->getJson('/api/user?client_id=2');
+        ])->getJson('/api/v1/user?client_id=2');
 
         $response->assertStatus(401);
     }

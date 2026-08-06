@@ -97,7 +97,7 @@ class AuthController extends Controller
             $validator = Validator::make($request->all(), [
                 'name'              => 'required|string|max:255',
                 'email'             => 'required|string|email|max:255|unique:users',
-                'password'          => 'required|string|min:8|confirmed',
+                'password'          => ['required', 'string', \Illuminate\Validation\Rules\Password::min(8)->letters()->mixedCase()->numbers()->symbols(), 'confirmed'],
                 'phone'             => 'nullable|string|max:20',
                 'role'              => 'required|string|in:' . implode(',', User::ROLES),
                 'email_verified_at' => 'nullable|date',

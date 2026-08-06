@@ -20,7 +20,7 @@ class AuthController extends Controller
             $validator = Validator::make($request->all(), [
                 'name'     => 'required|string|max:255',
                 'email'    => 'required|string|email|max:255|unique:users',
-                'password' => 'required|string|min:8|confirmed',
+                'password' => ['required', 'string', \Illuminate\Validation\Rules\Password::min(8)->letters()->mixedCase()->numbers()->symbols(), 'confirmed'],
                 'phone'    => 'nullable|string|max:15',
                 'role'     => 'required|in:' . implode(',', User::ROLES),
             ]);
@@ -199,7 +199,7 @@ class AuthController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'client_id'     => 'required|integer',
-            'client_secret' => 'nullable|string',
+            'client_secret' => 'required|string',
             'roles'         => 'required|array',
             'roles.*'       => 'string|max:100',
         ]);
@@ -213,8 +213,8 @@ class AuthController extends Controller
             return response()->json(['success' => false, 'message' => 'Client application not found'], 404);
         }
 
-        // If client_secret is provided, verify it matches
-        if ($request->filled('client_secret') && $client->secret !== $request->client_secret) {
+        // Always verify client_secret
+        if ($client->secret !== $request->client_secret) {
             return response()->json(['success' => false, 'message' => 'Invalid client secret'], 401);
         }
 

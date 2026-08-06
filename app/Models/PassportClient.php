@@ -15,4 +15,12 @@ class PassportClient extends BaseClient
     {
         return true;
     }
+
+    /**
+     * Relasi ke WebhookEndpoint
+     */
+    public function webhookEndpoint()
+    {
+        return $this->hasOne(WebhookEndpoint::class, 'oauth_client_id');
+    }
 }

@@ -185,14 +185,14 @@ class SecurityRbacTest extends TestCase
         \Laravel\Passport\Passport::actingAs($user);
 
         // First check: role is staff
-        $res1 = $this->getJson('/api/user?client_id=2');
+        $res1 = $this->getJson('/api/v1/user?client_id=2');
         $res1->assertStatus(200)->assertJson(['role' => 'staff']);
 
         // Update role in SSO to Manager (Promotion)
         UserClientRole::where('user_id', $user->id)->where('oauth_client_id', 2)->update(['role' => 'manager']);
 
         // Real-time check: role is now manager
-        $res2 = $this->getJson('/api/user?client_id=2');
+        $res2 = $this->getJson('/api/v1/user?client_id=2');
         $res2->assertStatus(200)->assertJson(['role' => 'manager']);
     }
 
@@ -231,6 +231,48 @@ class SecurityRbacTest extends TestCase
         $this->assertDatabaseHas('oauth_clients', [
             'name'     => 'Aplikasi Testing Baru',
             'redirect' => 'http://localhost:8005/auth/callback',
+        ]);
+    }
+
+    /** @test */
+    public function authentication_events_generate_activity_logs()
+    {
+        $password = 'password123';
+        $user = User::factory()->create([
+            'email'    => 'logger@kpi.go.id',
+            'password' => bcrypt($password),
+            'status'   => 'approved',
+        ]);
+
+        // 1. Test Login Success
+        $response = $this->post('/login', [
+            'email'    => $user->email,
+            'password' => $password,
+        ]);
+
+        $response->assertRedirect('/dashboard');
+        $this->assertDatabaseHas('user_activity_logs', [
+            'user_id'  => $user->id,
+            'activity' => 'login_success',
+        ]);
+
+        // 2. Test Logout
+        $logoutResponse = $this->actingAs($user)->post('/logout');
+        $logoutResponse->assertRedirect('/');
+        $this->assertDatabaseHas('user_activity_logs', [
+            'user_id'  => $user->id,
+            'activity' => 'logout',
+        ]);
+
+        // 3. Test Login Failed
+        $failResponse = $this->post('/login', [
+            'email'    => $user->email,
+            'password' => 'wrong_password',
+        ]);
+
+        $this->assertDatabaseHas('user_activity_logs', [
+            'user_id'  => $user->id,
+            'activity' => 'login_failed',
         ]);
     }
 }
