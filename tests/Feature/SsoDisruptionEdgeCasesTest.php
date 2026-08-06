@@ -3,9 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\User;
-use Laravel\Passport\Client;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Laravel\Passport\Client;
 use Tests\TestCase;
 
 class SsoDisruptionEdgeCasesTest extends TestCase
@@ -16,17 +16,17 @@ class SsoDisruptionEdgeCasesTest extends TestCase
     {
         $id = $attributes['id'] ?? 2;
         DB::table('oauth_clients')->insert(array_merge([
-            'id'                     => $id,
-            'name'                   => 'Aplikasi Kepegawaian Test',
-            'secret'                 => 'secret_key_' . $id,
-            'redirect'               => 'http://localhost:8001/callback',
+            'id' => $id,
+            'name' => 'Aplikasi Kepegawaian Test',
+            'secret' => 'secret_key_'.$id,
+            'redirect' => 'http://localhost:8001/callback',
             'personal_access_client' => 0,
-            'password_client'        => 0,
-            'revoked'                => 0,
-            'is_maintenance'         => 0,
-            'is_visible'             => 1,
-            'created_at'             => now(),
-            'updated_at'             => now(),
+            'password_client' => 0,
+            'revoked' => 0,
+            'is_maintenance' => 0,
+            'is_visible' => 1,
+            'created_at' => now(),
+            'updated_at' => now(),
         ], $attributes));
 
         return Client::find($id);
@@ -53,7 +53,7 @@ class SsoDisruptionEdgeCasesTest extends TestCase
     {
         $response = $this->withHeaders([
             'Authorization' => 'Bearer invalid_token_12345',
-            'Accept'        => 'application/json',
+            'Accept' => 'application/json',
         ])->getJson('/api/v1/user?client_id=2');
 
         $response->assertStatus(401);

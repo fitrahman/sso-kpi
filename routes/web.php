@@ -23,10 +23,10 @@ Route::view('/register/pending', 'auth.register-pending')->name('register.pendin
 Route::get('/forgot-password', [\App\Http\Controllers\Web\PasswordResetController::class, 'showLinkRequestForm'])->name('password.request');
 Route::get('/reset-password/{token}', [\App\Http\Controllers\Web\PasswordResetController::class, 'showResetForm'])->name('password.reset');
 
-    // SSO Logout Route (Public, so it can always redirect back even if session expired)
-    Route::get('/sso-logout', [AuthController::class, 'ssoLogout'])->name('sso.logout');
+// SSO Logout Route (Public, so it can always redirect back even if session expired)
+Route::get('/sso-logout', [AuthController::class, 'ssoLogout'])->name('sso.logout');
 
-    // Protected routes
+// Protected routes
 Route::middleware('auth:web')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/sso/gateway', [DashboardController::class, 'appGateway'])->name('app.gateway');
@@ -37,7 +37,7 @@ Route::middleware('auth:web')->group(function () {
         ]);
     })->name('app.maintenance');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-    
+
     // Admin only routes
     Route::middleware('admin')->group(function () {
         Route::get('/admin/stats', [DashboardController::class, 'stats'])->name('admin.stats');
@@ -45,7 +45,7 @@ Route::middleware('auth:web')->group(function () {
         Route::get('/admin/users/{id}/edit', [DashboardController::class, 'editUser'])->name('admin.users.edit');
         Route::put('/admin/users/{id}', [DashboardController::class, 'updateUser'])->name('admin.users.update');
         Route::delete('/admin/users/{id}', [DashboardController::class, 'deleteUser'])->name('admin.users.delete');
-        
+
         // Approval Routes
         Route::post('/admin/users/{id}/approve', [DashboardController::class, 'approveUser'])->name('admin.users.approve');
         Route::delete('/admin/users/{id}/reject', [DashboardController::class, 'rejectUser'])->name('admin.users.reject');

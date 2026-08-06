@@ -1,14 +1,14 @@
 <?php
+
 namespace App\Services;
 
-use App\Models\User;
-use App\Models\UserClientRole;
-use App\Models\PassportClient;
 use App\Mail\UserApprovedMail;
 use App\Mail\UserRejectedMail;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Mail;
+use App\Models\PassportClient;
+use App\Models\User;
+use App\Models\UserClientRole;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 
 class UserService
 {
@@ -19,19 +19,19 @@ class UserService
     {
         $query = User::query();
 
-        if (!empty($filters['search'])) {
+        if (! empty($filters['search'])) {
             $search = $filters['search'];
-            $query->where(function($q) use ($search) {
-                $q->where('name', 'like', '%' . $search . '%')
-                  ->orWhere('email', 'like', '%' . $search . '%');
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', '%'.$search.'%')
+                    ->orWhere('email', 'like', '%'.$search.'%');
             });
         }
 
-        if (!empty($filters['role'])) {
+        if (! empty($filters['role'])) {
             $query->where('role', $filters['role']);
         }
 
-        if (!empty($filters['status'])) {
+        if (! empty($filters['status'])) {
             $query->where('status', $filters['status']);
         }
 
@@ -51,10 +51,10 @@ class UserService
     public function updateUser(User $user, array $validatedData, array $clientIds, array $clientRoles)
     {
         $updateData = [
-            'name'  => $validatedData['name'],
+            'name' => $validatedData['name'],
             'email' => $validatedData['email'],
             'phone' => $validatedData['phone'] ?? null,
-            'role'  => $validatedData['role'],
+            'role' => $validatedData['role'],
         ];
 
         if ($user->role !== 'admin' && $user->id !== Auth::id()) {
@@ -78,10 +78,10 @@ class UserService
                                     'event' => 'user.access_revoked',
                                     'data' => [
                                         'user_id' => $user->id,
-                                        'name'    => $user->name,
-                                        'email'   => $user->email,
-                                        'role'    => 'none',
-                                    ]
+                                        'name' => $user->name,
+                                        'email' => $user->email,
+                                        'role' => 'none',
+                                    ],
                                 ]
                             );
                         }
@@ -97,9 +97,9 @@ class UserService
             ->where('password_client', 0)
             ->pluck('id')
             ->toArray();
-            
+
         $validSelectedClientIds = array_intersect($clientIds, $allClients);
-        
+
         // Remove unselected client access
         $unselectedClients = $user->accessedClients()->wherePivotNotIn('client_id', $validSelectedClientIds)->get();
         foreach ($unselectedClients as $unselectedClient) {
@@ -112,43 +112,47 @@ class UserService
                         'event' => 'user.access_revoked',
                         'data' => [
                             'user_id' => $user->id,
-                            'name'    => $user->name,
-                            'email'   => $user->email,
-                            'role'    => 'none',
-                        ]
+                            'name' => $user->name,
+                            'email' => $user->email,
+                            'role' => 'none',
+                        ],
                     ]
                 );
             }
+            // Instead of detaching, update status and is_active to false
+            $user->accessedClients()->updateExistingPivot($unselectedClient->id, [
+                'status' => 'rejected',
+                'is_active' => false,
+            ]);
         }
 
-        $user->accessedClients()->wherePivotNotIn('client_id', $validSelectedClientIds)->detach();
-
-        // Delete roles for unselected clients
-        UserClientRole::where('user_id', $user->id)
-            ->whereNotIn('oauth_client_id', $validSelectedClientIds)
-            ->delete();
-        
         // Map roles for selected clients
         foreach ($validSelectedClientIds as $cId) {
             $existing = $user->accessedClients()->where('client_id', $cId)->first();
             if ($existing) {
-                $user->accessedClients()->updateExistingPivot($cId, ['status' => 'approved']);
+                $user->accessedClients()->updateExistingPivot($cId, [
+                    'status' => 'approved',
+                    'is_active' => true,
+                ]);
             } else {
-                $user->accessedClients()->attach($cId, ['status' => 'approved']);
+                $user->accessedClients()->attach($cId, [
+                    'status' => 'approved',
+                    'is_active' => true,
+                ]);
             }
-            
+
             $clientModel = PassportClient::find($cId);
             $supportedRoles = [];
-            if ($clientModel && !empty($clientModel->supported_roles)) {
+            if ($clientModel && ! empty($clientModel->supported_roles)) {
                 $supportedRoles = json_decode($clientModel->supported_roles, true);
             }
-            if (empty($supportedRoles) || !is_array($supportedRoles)) {
+            if (empty($supportedRoles) || ! is_array($supportedRoles)) {
                 $supportedRoles = ['admin', 'pengguna'];
             }
 
-            $roleValue = $clientRoles[$cId] ?? $supportedRoles[0];
-            if (!in_array($roleValue, $supportedRoles)) {
-                $roleValue = $supportedRoles[0];
+            $roleValue = $clientRoles[$cId] ?? $supportedRoles[0] ?? 'user';
+            if (! in_array($roleValue, $supportedRoles)) {
+                $roleValue = $supportedRoles[0] ?? 'user';
             }
 
             $clientRoleRecord = UserClientRole::updateOrCreate(
@@ -165,15 +169,15 @@ class UserService
                         'event' => 'user.role_updated',
                         'data' => [
                             'user_id' => $user->id,
-                            'name'    => $user->name,
-                            'email'   => $user->email,
-                            'role'    => $roleValue,
-                        ]
+                            'name' => $user->name,
+                            'email' => $user->email,
+                            'role' => $roleValue,
+                        ],
                     ]
                 );
             }
         }
-        
+
         return $user;
     }
 

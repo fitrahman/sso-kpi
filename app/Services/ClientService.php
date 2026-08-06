@@ -1,14 +1,14 @@
 <?php
+
 namespace App\Services;
 
-use App\Models\User;
-use App\Models\UserClientRole;
 use App\Models\ApplicationActivityLog;
 use App\Models\PassportClient;
+use App\Models\User;
 use App\Models\WebhookEndpoint;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class ClientService
@@ -22,7 +22,7 @@ class ClientService
         $secret = Str::random(40);
 
         $rolesArray = [];
-        if (!empty($validatedData['supported_roles'])) {
+        if (! empty($validatedData['supported_roles'])) {
             $rolesArray = array_map('trim', explode(',', $validatedData['supported_roles']));
             $rolesArray = array_values(array_filter($rolesArray));
         }
@@ -36,27 +36,27 @@ class ClientService
         }
 
         $client = PassportClient::create([
-            'name'                   => $validatedData['name'],
-            'secret'                 => $secret,
-            'redirect'               => $validatedData['redirect'],
+            'name' => $validatedData['name'],
+            'secret' => $secret,
+            'redirect' => $validatedData['redirect'],
             'personal_access_client' => 0,
-            'password_client'        => 0,
-            'revoked'                => 0,
-            'is_maintenance'         => 0,
-            'is_visible'             => isset($validatedData['is_visible']) ? (bool) $validatedData['is_visible'] : true,
-            'description'            => $validatedData['description'] ?? null,
-            'display_order'          => $validatedData['display_order'] ?? 0,
-            'supported_roles'        => json_encode($rolesArray),
-            'logo_path'              => $logoPath,
+            'password_client' => 0,
+            'revoked' => 0,
+            'is_maintenance' => 0,
+            'is_visible' => isset($validatedData['is_visible']) ? (bool) $validatedData['is_visible'] : true,
+            'description' => $validatedData['description'] ?? null,
+            'display_order' => $validatedData['display_order'] ?? 0,
+            'supported_roles' => json_encode($rolesArray),
+            'logo_path' => $logoPath,
         ]);
 
         // Create Webhook Endpoint if supplied
-        if (!empty($validatedData['webhook_url'])) {
+        if (! empty($validatedData['webhook_url'])) {
             WebhookEndpoint::create([
                 'oauth_client_id' => $client->id,
-                'url'             => $validatedData['webhook_url'],
-                'secret'          => $validatedData['webhook_secret'] ?? null,
-                'is_active'       => isset($validatedData['webhook_active']) ? (bool) $validatedData['webhook_active'] : true,
+                'url' => $validatedData['webhook_url'],
+                'secret' => $validatedData['webhook_secret'] ?? null,
+                'is_active' => isset($validatedData['webhook_active']) ? (bool) $validatedData['webhook_active'] : true,
             ]);
         }
 
@@ -64,9 +64,9 @@ class ClientService
         $approvedUsers = User::where('status', 'approved')->get();
         foreach ($approvedUsers as $u) {
             DB::table('client_user_access')->insert([
-                'user_id'    => $u->id,
-                'client_id'  => $client->id,
-                'status'     => 'approved',
+                'user_id' => $u->id,
+                'client_id' => $client->id,
+                'status' => 'approved',
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
@@ -74,14 +74,14 @@ class ClientService
 
         ApplicationActivityLog::create([
             'oauth_client_id' => $client->id,
-            'admin_id'        => $admin->id,
-            'action'          => 'created',
-            'description'     => "Aplikasi baru '{$client->name}' berhasil ditambahkan (Client ID: {$client->id}).",
+            'admin_id' => $admin->id,
+            'action' => 'created',
+            'description' => "Aplikasi baru '{$client->name}' berhasil ditambahkan (Client ID: {$client->id}).",
         ]);
 
         return [
             'client' => $client,
-            'secret' => $secret
+            'secret' => $secret,
         ];
     }
 
@@ -102,7 +102,7 @@ class ClientService
         }
 
         $rolesArray = [];
-        if (!empty($validatedData['supported_roles'])) {
+        if (! empty($validatedData['supported_roles'])) {
             $rolesArray = array_map('trim', explode(',', $validatedData['supported_roles']));
             $rolesArray = array_values(array_filter($rolesArray));
         }
@@ -110,13 +110,13 @@ class ClientService
             $rolesArray = ['Admin', 'Staff', 'pengguna'];
         }
 
-        $client->name                = $validatedData['name'];
-        $client->redirect            = $validatedData['redirect'];
-        $client->description         = $validatedData['description'] ?? null;
-        $client->supported_roles     = json_encode($rolesArray);
+        $client->name = $validatedData['name'];
+        $client->redirect = $validatedData['redirect'];
+        $client->description = $validatedData['description'] ?? null;
+        $client->supported_roles = json_encode($rolesArray);
         $client->maintenance_message = $validatedData['maintenance_message'] ?? null;
-        $client->display_order       = $validatedData['display_order'] ?? 0;
-        $client->is_visible          = isset($validatedData['is_visible']) ? (bool) $validatedData['is_visible'] : true;
+        $client->display_order = $validatedData['display_order'] ?? 0;
+        $client->is_visible = isset($validatedData['is_visible']) ? (bool) $validatedData['is_visible'] : true;
 
         if ($logoFile) {
             if ($client->logo_path) {
@@ -130,12 +130,12 @@ class ClientService
         $client->save();
 
         // Manage Webhook Endpoint
-        if (!empty($validatedData['webhook_url'])) {
+        if (! empty($validatedData['webhook_url'])) {
             $webhook = WebhookEndpoint::updateOrCreate(
                 ['oauth_client_id' => $client->id],
                 [
-                    'url'       => $validatedData['webhook_url'],
-                    'secret'    => $validatedData['webhook_secret'] ?? null,
+                    'url' => $validatedData['webhook_url'],
+                    'secret' => $validatedData['webhook_secret'] ?? null,
                     'is_active' => isset($validatedData['webhook_active']) ? (bool) $validatedData['webhook_active'] : true,
                 ]
             );
@@ -145,12 +145,12 @@ class ClientService
             WebhookEndpoint::where('oauth_client_id', $client->id)->delete();
         }
 
-        if (!empty($changes)) {
+        if (! empty($changes)) {
             ApplicationActivityLog::create([
                 'oauth_client_id' => $client->id,
-                'admin_id'        => $admin->id,
-                'action'          => 'updated',
-                'description'     => implode(', ', $changes),
+                'admin_id' => $admin->id,
+                'action' => 'updated',
+                'description' => implode(', ', $changes),
             ]);
         }
 
@@ -162,14 +162,14 @@ class ClientService
      */
     public function toggleMaintenance(PassportClient $client)
     {
-        $client->is_maintenance = !$client->is_maintenance;
+        $client->is_maintenance = ! $client->is_maintenance;
         $client->save();
 
         ApplicationActivityLog::create([
             'oauth_client_id' => $client->id,
-            'admin_id'        => Auth::id(),
-            'action'          => $client->is_maintenance ? 'maintenance_on' : 'maintenance_off',
-            'description'     => $client->is_maintenance
+            'admin_id' => Auth::id(),
+            'action' => $client->is_maintenance ? 'maintenance_on' : 'maintenance_off',
+            'description' => $client->is_maintenance
                 ? "Mode maintenance diaktifkan untuk '{$client->name}'"
                 : "Mode maintenance dinonaktifkan untuk '{$client->name}'",
         ]);
@@ -182,14 +182,14 @@ class ClientService
      */
     public function toggleVisibility(PassportClient $client)
     {
-        $client->is_visible = !$client->is_visible;
+        $client->is_visible = ! $client->is_visible;
         $client->save();
 
         ApplicationActivityLog::create([
             'oauth_client_id' => $client->id,
-            'admin_id'        => Auth::id(),
-            'action'          => $client->is_visible ? 'visibility_on' : 'visibility_off',
-            'description'     => $client->is_visible
+            'admin_id' => Auth::id(),
+            'action' => $client->is_visible ? 'visibility_on' : 'visibility_off',
+            'description' => $client->is_visible
                 ? "Aplikasi '{$client->name}' ditampilkan kembali di dashboard"
                 : "Aplikasi '{$client->name}' disembunyikan dari dashboard",
         ]);
@@ -220,7 +220,7 @@ class ClientService
      */
     public function deleteClientLogo(PassportClient $client)
     {
-        if (!$client->logo_path) {
+        if (! $client->logo_path) {
             throw new \Exception('Aplikasi ini tidak memiliki gambar.');
         }
 
@@ -230,9 +230,9 @@ class ClientService
 
         ApplicationActivityLog::create([
             'oauth_client_id' => $client->id,
-            'admin_id'        => Auth::id(),
-            'action'          => 'logo_deleted',
-            'description'     => "Gambar kartu aplikasi '{$client->name}' dihapus.",
+            'admin_id' => Auth::id(),
+            'action' => 'logo_deleted',
+            'description' => "Gambar kartu aplikasi '{$client->name}' dihapus.",
         ]);
     }
 }

@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
@@ -42,7 +43,7 @@ class AuthController extends Controller
     {
         try {
             $validator = Validator::make($request->all(), [
-                'email'    => 'required|email',
+                'email' => 'required|email',
                 'password' => 'required',
             ]);
 
@@ -83,7 +84,7 @@ class AuthController extends Controller
 
         } catch (\Exception $e) {
             return back()
-                ->withErrors(['error' => 'Gagal masuk: ' . $e->getMessage()])
+                ->withErrors(['error' => 'Gagal masuk: '.$e->getMessage()])
                 ->withInput();
         }
     }
@@ -95,11 +96,11 @@ class AuthController extends Controller
     {
         try {
             $validator = Validator::make($request->all(), [
-                'name'              => 'required|string|max:255',
-                'email'             => 'required|string|email|max:255|unique:users',
-                'password'          => ['required', 'string', \Illuminate\Validation\Rules\Password::min(8)->letters()->mixedCase()->numbers()->symbols(), 'confirmed'],
-                'phone'             => 'nullable|string|max:20',
-                'role'              => 'required|string|in:' . implode(',', User::ROLES),
+                'name' => 'required|string|max:255',
+                'email' => 'required|string|email|max:255|unique:users',
+                'password' => ['required', 'string', \Illuminate\Validation\Rules\Password::min(8)->letters()->mixedCase()->numbers()->symbols(), 'confirmed'],
+                'phone' => 'nullable|string|max:20',
+                'role' => 'required|string|in:'.implode(',', User::ROLES),
                 'email_verified_at' => 'nullable|date',
             ]);
 
@@ -108,12 +109,12 @@ class AuthController extends Controller
             }
 
             $user = User::create([
-                'name'              => $request->name,
-                'email'             => $request->email,
-                'password'          => Hash::make($request->password),
-                'phone'             => $request->phone,
-                'role'              => $request->role,
-                'status'            => 'pending',
+                'name' => $request->name,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'phone' => $request->phone,
+                'role' => $request->role,
+                'status' => 'pending',
                 'email_verified_at' => $request->email_verified_at ? Carbon::parse($request->email_verified_at) : now(),
             ]);
 
@@ -122,7 +123,7 @@ class AuthController extends Controller
 
         } catch (\Exception $e) {
             return back()
-                ->withErrors(['error' => 'Registration failed: ' . $e->getMessage()])
+                ->withErrors(['error' => 'Registration failed: '.$e->getMessage()])
                 ->withInput();
         }
     }
@@ -142,7 +143,7 @@ class AuthController extends Controller
 
         } catch (\Exception $e) {
             return back()
-                ->withErrors(['error' => 'Logout failed: ' . $e->getMessage()]);
+                ->withErrors(['error' => 'Logout failed: '.$e->getMessage()]);
         }
     }
 
@@ -157,9 +158,10 @@ class AuthController extends Controller
             $request->session()->regenerateToken();
 
             $redirectUrl = $request->query('redirect', route('login'));
+
             return redirect($redirectUrl)->with('success', 'Berhasil logout dari sistem SSO.');
         } catch (\Exception $e) {
-            return redirect()->route('login')->withErrors(['error' => 'Logout gagal: ' . $e->getMessage()]);
+            return redirect()->route('login')->withErrors(['error' => 'Logout gagal: '.$e->getMessage()]);
         }
     }
 }

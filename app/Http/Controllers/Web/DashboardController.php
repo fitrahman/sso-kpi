@@ -1,13 +1,14 @@
 <?php
+
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
-use App\Models\UserActivityLog;
 use App\Models\ApplicationActivityLog;
 use App\Models\PassportClient;
-use App\Services\UserService;
+use App\Models\User;
+use App\Models\UserActivityLog;
 use App\Services\ClientService;
+use App\Services\UserService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -15,6 +16,7 @@ use Illuminate\Support\Facades\DB;
 class DashboardController extends Controller
 {
     protected $userService;
+
     protected $clientService;
 
     public function __construct(UserService $userService, ClientService $clientService)
@@ -33,7 +35,7 @@ class DashboardController extends Controller
             $user->load('clientRoles');
 
             $approvedApps = $user->accessedClients()
-                ->where('client_user_access.status', 'approved')
+                ->where('client_user_access.is_active', true)
                 ->get();
 
             $allClients = PassportClient::where('personal_access_client', 0)
@@ -43,14 +45,14 @@ class DashboardController extends Controller
                 ->get();
 
             return view('dashboard', [
-                'user'         => $user,
+                'user' => $user,
                 'approvedApps' => $approvedApps,
-                'allClients'   => $allClients,
+                'allClients' => $allClients,
             ]);
 
         } catch (\Exception $e) {
             return back()
-                ->withErrors(['error' => config('app.debug') ? 'Failed to load dashboard: ' . $e->getMessage() : 'Failed to load dashboard: Internal Server Error']);
+                ->withErrors(['error' => config('app.debug') ? 'Failed to load dashboard: '.$e->getMessage() : 'Failed to load dashboard: Internal Server Error']);
         }
     }
 
@@ -62,26 +64,26 @@ class DashboardController extends Controller
         try {
             $filters = $request->only(['search', 'role', 'status']);
             $users = $this->userService->getPaginatedUsers($filters, 10);
-            
+
             $totalCount = User::count();
             $pendingCount = User::where('status', 'pending')->count();
             $inactiveCount = User::where('status', 'inactive')->count();
             $rolesList = array_merge(['admin'], User::ROLES);
 
             return view('admin.users', [
-                'users'         => $users,
-                'totalCount'    => $totalCount,
-                'pendingCount'  => $pendingCount,
+                'users' => $users,
+                'totalCount' => $totalCount,
+                'pendingCount' => $pendingCount,
                 'inactiveCount' => $inactiveCount,
-                'search'        => $filters['search'] ?? '',
-                'roleFilter'    => $filters['role'] ?? '',
-                'statusFilter'  => $filters['status'] ?? '',
-                'rolesList'     => $rolesList,
+                'search' => $filters['search'] ?? '',
+                'roleFilter' => $filters['role'] ?? '',
+                'statusFilter' => $filters['status'] ?? '',
+                'rolesList' => $rolesList,
             ]);
 
         } catch (\Exception $e) {
             return back()
-                ->withErrors(['error' => config('app.debug') ? 'Failed to load users: ' . $e->getMessage() : 'Failed to load users: Internal Server Error']);
+                ->withErrors(['error' => config('app.debug') ? 'Failed to load users: '.$e->getMessage() : 'Failed to load users: Internal Server Error']);
         }
     }
 
@@ -93,30 +95,30 @@ class DashboardController extends Controller
         try {
             $user = User::findOrFail($id);
             $roles = array_merge(['admin'], User::ROLES);
-            
+
             $clients = PassportClient::where('personal_access_client', 0)
                 ->where('password_client', 0)
                 ->get();
-                
+
             $userAccessIds = $user->accessedClients()
-                ->where('client_user_access.status', 'approved')
+                ->where('client_user_access.is_active', true)
                 ->pluck('client_id')
                 ->toArray();
 
             $userClientRoles = $user->clientRoles()
                 ->pluck('role', 'oauth_client_id')
                 ->toArray();
-            
+
             return view('admin.edit_user', [
-                'user'            => $user,
-                'roles'           => $roles,
-                'clients'         => $clients,
-                'userAccessIds'   => $userAccessIds,
+                'user' => $user,
+                'roles' => $roles,
+                'clients' => $clients,
+                'userAccessIds' => $userAccessIds,
                 'userClientRoles' => $userClientRoles,
             ]);
         } catch (\Exception $e) {
             return redirect()->route('admin.users')
-                ->withErrors(['error' => config('app.debug') ? 'Failed to find user: ' . $e->getMessage() : 'Failed to find user: Internal Server Error']);
+                ->withErrors(['error' => config('app.debug') ? 'Failed to find user: '.$e->getMessage() : 'Failed to find user: Internal Server Error']);
         }
     }
 
@@ -129,10 +131,10 @@ class DashboardController extends Controller
             $user = User::findOrFail($id);
 
             $rules = [
-                'name'  => 'required|string|max:255',
-                'email' => 'required|string|email|max:255|unique:users,email,' . $id,
+                'name' => 'required|string|max:255',
+                'email' => 'required|string|email|max:255|unique:users,email,'.$id,
                 'phone' => 'nullable|string|min:10|max:15',
-                'role'  => 'required|in:admin,' . implode(',', User::ROLES),
+                'role' => 'required|in:admin,'.implode(',', User::ROLES),
             ];
 
             if ($user->role !== 'admin' && $user->id !== Auth::id()) {
@@ -149,7 +151,7 @@ class DashboardController extends Controller
                 ->with('success', 'Data pengguna berhasil diperbarui!');
 
         } catch (\Exception $e) {
-            return back()->withInput()->withErrors(['error' => config('app.debug') ? 'Failed to update user: ' . $e->getMessage() : 'Failed to update user: Internal Server Error']);
+            return back()->withInput()->withErrors(['error' => config('app.debug') ? 'Failed to update user: '.$e->getMessage() : 'Failed to update user: Internal Server Error']);
         }
     }
 
@@ -158,9 +160,10 @@ class DashboardController extends Controller
         try {
             $user = User::findOrFail($id);
             $this->userService->approveUser($user);
-            return back()->with('success', 'User ' . $user->email . ' berhasil disetujui.');
+
+            return back()->with('success', 'User '.$user->email.' berhasil disetujui.');
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => config('app.debug') ? 'Gagal menyetujui user: ' . $e->getMessage() : 'Gagal menyetujui user: Internal Server Error']);
+            return back()->withErrors(['error' => config('app.debug') ? 'Gagal menyetujui user: '.$e->getMessage() : 'Gagal menyetujui user: Internal Server Error']);
         }
     }
 
@@ -169,9 +172,10 @@ class DashboardController extends Controller
         try {
             $user = User::findOrFail($id);
             $this->userService->rejectUser($user);
+
             return back()->with('success', 'User berhasil ditolak dan dihapus.');
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => config('app.debug') ? 'Gagal menolak user: ' . $e->getMessage() : 'Gagal menolak user: Internal Server Error']);
+            return back()->withErrors(['error' => config('app.debug') ? 'Gagal menolak user: '.$e->getMessage() : 'Gagal menolak user: Internal Server Error']);
         }
     }
 
@@ -180,55 +184,57 @@ class DashboardController extends Controller
         try {
             $user = User::findOrFail($id);
             $this->userService->deleteUser($user);
+
             return back()->with('success', 'Akun berhasil dihapus secara permanen.');
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Gagal menghapus akun: ' . $e->getMessage()]);
+            return back()->withErrors(['error' => 'Gagal menghapus akun: '.$e->getMessage()]);
         }
     }
 
     public function appGateway(Request $request)
     {
         $appName = $request->query('appName');
-        if (!$appName) {
+        if (! $appName) {
             return redirect()->route('dashboard')->withErrors(['error' => 'Aplikasi tidak valid.']);
         }
 
         $client = PassportClient::where('name', $appName)->first();
-        if (!$client) {
+        if (! $client) {
             return redirect()->route('dashboard')->withErrors(['error' => 'Aplikasi tidak ditemukan di sistem.']);
         }
 
         $user = Auth::user();
-        
+
         if ($client->is_maintenance && $user->role !== 'admin') {
             return redirect()->route('app.maintenance', [
                 'appName' => $client->name,
-                'message' => $client->maintenance_message ?? 'Aplikasi sedang dalam pemeliharaan sistem.'
+                'message' => $client->maintenance_message ?? 'Aplikasi sedang dalam pemeliharaan sistem.',
             ]);
         }
-        
+
         if ($user->role === 'admin') {
             $parsedUrl = parse_url($client->redirect);
-            $baseUrl = ($parsedUrl['scheme'] ?? 'http') . '://' . ($parsedUrl['host'] ?? '');
+            $baseUrl = ($parsedUrl['scheme'] ?? 'http').'://'.($parsedUrl['host'] ?? '');
             if (isset($parsedUrl['port'])) {
-                $baseUrl .= ':' . $parsedUrl['port'];
+                $baseUrl .= ':'.$parsedUrl['port'];
             }
-            return redirect($baseUrl . '/login');
+
+            return redirect($baseUrl.'/login');
         }
 
         $access = $user->accessedClients()
             ->where('client_id', $client->id)
-            ->where('client_user_access.status', 'approved')
+            ->where('client_user_access.is_active', true)
             ->first();
 
         if ($access) {
             $parsedUrl = parse_url($client->redirect);
-            $baseUrl = ($parsedUrl['scheme'] ?? 'http') . '://' . ($parsedUrl['host'] ?? '');
+            $baseUrl = ($parsedUrl['scheme'] ?? 'http').'://'.($parsedUrl['host'] ?? '');
             if (isset($parsedUrl['port'])) {
-                $baseUrl .= ':' . $parsedUrl['port'];
+                $baseUrl .= ':'.$parsedUrl['port'];
             }
-            
-            return redirect($baseUrl . '/login');
+
+            return redirect($baseUrl.'/login');
         }
 
         return view('auth.app-denied', ['appName' => $appName]);
@@ -244,12 +250,12 @@ class DashboardController extends Controller
             $totalUsers = User::count();
             $pendingUsers = User::where('status', 'pending')->count();
             $activeClientsCount = PassportClient::where('personal_access_client', 0)->where('password_client', 0)->count();
-            
+
             // Login success today
             $todayLogins = UserActivityLog::where('activity', 'login_success')
                 ->whereDate('created_at', today())
                 ->count();
-                
+
             // Recent user activities
             $recentActivities = UserActivityLog::with('user')
                 ->orderByDesc('created_at')
@@ -269,7 +275,7 @@ class DashboardController extends Controller
                 ->where('password_client', 0)
                 ->get();
 
-            $appsChartData = $clients->map(function($client) use ($days) {
+            $appsChartData = $clients->map(function ($client) use ($days) {
                 $dataPoints = [];
                 foreach ($days as $date) {
                     $count = DB::table('oauth_access_tokens')
@@ -278,23 +284,24 @@ class DashboardController extends Controller
                         ->count();
                     $dataPoints[] = $count;
                 }
+
                 return [
                     'name' => $client->name,
-                    'data' => $dataPoints
+                    'data' => $dataPoints,
                 ];
             });
 
             return view('admin.stats', [
-                'totalUsers'         => $totalUsers,
-                'pendingUsers'       => $pendingUsers,
+                'totalUsers' => $totalUsers,
+                'pendingUsers' => $pendingUsers,
                 'activeClientsCount' => $activeClientsCount,
-                'todayLogins'        => $todayLogins,
-                'recentActivities'   => $recentActivities,
-                'chartDays'          => $chartDays,
-                'appsChartData'      => $appsChartData,
+                'todayLogins' => $todayLogins,
+                'recentActivities' => $recentActivities,
+                'chartDays' => $chartDays,
+                'appsChartData' => $appsChartData,
             ]);
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Gagal memuat statistik & audit: ' . $e->getMessage()]);
+            return back()->withErrors(['error' => 'Gagal memuat statistik & audit: '.$e->getMessage()]);
         }
     }
 
@@ -310,7 +317,7 @@ class DashboardController extends Controller
             $clients->each(function ($client) {
                 $client->user_count = DB::table('client_user_access')
                     ->where('client_id', $client->id)
-                    ->where('status', 'approved')
+                    ->where('is_active', true)
                     ->count();
             });
 
@@ -320,11 +327,11 @@ class DashboardController extends Controller
                 ->get();
 
             return view('admin.apps', [
-                'clients'      => $clients,
+                'clients' => $clients,
                 'activityLogs' => $activityLogs,
             ]);
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Gagal memuat manajemen aplikasi: ' . $e->getMessage()]);
+            return back()->withErrors(['error' => 'Gagal memuat manajemen aplikasi: '.$e->getMessage()]);
         }
     }
 
@@ -332,16 +339,16 @@ class DashboardController extends Controller
     {
         try {
             $validated = $request->validate([
-                'name'            => 'required|string|max:255',
-                'redirect'        => 'required|url|max:500',
-                'description'     => 'nullable|string|max:500',
+                'name' => 'required|string|max:255',
+                'redirect' => 'required|url|max:500',
+                'description' => 'nullable|string|max:500',
                 'supported_roles' => 'nullable|string|max:500',
-                'display_order'   => 'nullable|integer|min:0',
-                'is_visible'      => 'nullable|boolean',
-                'logo'            => 'nullable|image|mimes:png,jpg,jpeg,svg|max:2048',
-                'webhook_url'     => 'nullable|url|max:500',
-                'webhook_secret'  => 'nullable|string|max:255',
-                'webhook_active'  => 'nullable|boolean',
+                'display_order' => 'nullable|integer|min:0',
+                'is_visible' => 'nullable|boolean',
+                'logo' => 'nullable|image|mimes:png,jpg,jpeg,svg|max:2048',
+                'webhook_url' => 'nullable|url|max:500',
+                'webhook_secret' => 'nullable|string|max:255',
+                'webhook_active' => 'nullable|boolean',
             ]);
 
             $result = $this->clientService->createClient($validated, $request->file('logo'));
@@ -352,7 +359,7 @@ class DashboardController extends Controller
                 ->with('new_client_id', $result['client']->id)
                 ->with('new_client_secret', $result['secret']);
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Gagal menambahkan aplikasi: ' . $e->getMessage()]);
+            return back()->withErrors(['error' => 'Gagal menambahkan aplikasi: '.$e->getMessage()]);
         }
     }
 
@@ -362,24 +369,24 @@ class DashboardController extends Controller
             $client = PassportClient::findOrFail($id);
 
             $validated = $request->validate([
-                'name'                => 'required|string|max:255',
-                'redirect'            => 'required|url|max:500',
-                'description'         => 'nullable|string|max:500',
-                'supported_roles'     => 'nullable|string|max:500',
+                'name' => 'required|string|max:255',
+                'redirect' => 'required|url|max:500',
+                'description' => 'nullable|string|max:500',
+                'supported_roles' => 'nullable|string|max:500',
                 'maintenance_message' => 'nullable|string|max:500',
-                'display_order'       => 'nullable|integer|min:0',
-                'is_visible'          => 'nullable|boolean',
-                'logo'                => 'nullable|image|mimes:png,jpg,jpeg,svg|max:2048',
-                'webhook_url'         => 'nullable|url|max:500',
-                'webhook_secret'      => 'nullable|string|max:255',
-                'webhook_active'      => 'nullable|boolean',
+                'display_order' => 'nullable|integer|min:0',
+                'is_visible' => 'nullable|boolean',
+                'logo' => 'nullable|image|mimes:png,jpg,jpeg,svg|max:2048',
+                'webhook_url' => 'nullable|url|max:500',
+                'webhook_secret' => 'nullable|string|max:255',
+                'webhook_active' => 'nullable|boolean',
             ]);
 
             $this->clientService->updateClient($client, $validated, $request->file('logo'));
 
             return back()->with('success', "Aplikasi '{$client->name}' berhasil diperbarui.");
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Gagal memperbarui aplikasi: ' . $e->getMessage()]);
+            return back()->withErrors(['error' => 'Gagal memperbarui aplikasi: '.$e->getMessage()]);
         }
     }
 
@@ -394,7 +401,7 @@ class DashboardController extends Controller
                 : "Aplikasi '{$client->name}' kembali aktif."
             );
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Gagal mengubah status maintenance: ' . $e->getMessage()]);
+            return back()->withErrors(['error' => 'Gagal mengubah status maintenance: '.$e->getMessage()]);
         }
     }
 
@@ -409,7 +416,7 @@ class DashboardController extends Controller
                 : "Aplikasi '{$client->name}' disembunyikan dari dashboard."
             );
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Gagal mengubah visibilitas: ' . $e->getMessage()]);
+            return back()->withErrors(['error' => 'Gagal mengubah visibilitas: '.$e->getMessage()]);
         }
     }
 
@@ -422,7 +429,7 @@ class DashboardController extends Controller
 
             return redirect()->route('admin.clients')->with('success', "Aplikasi '{$clientName}' berhasil dihapus secara permanen.");
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Gagal menghapus aplikasi: ' . $e->getMessage()]);
+            return back()->withErrors(['error' => 'Gagal menghapus aplikasi: '.$e->getMessage()]);
         }
     }
 
@@ -434,7 +441,7 @@ class DashboardController extends Controller
 
             return back()->with('success', "Gambar aplikasi '{$client->name}' berhasil dihapus.");
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Gagal menghapus gambar: ' . $e->getMessage()]);
+            return back()->withErrors(['error' => 'Gagal menghapus gambar: '.$e->getMessage()]);
         }
     }
 
@@ -452,35 +459,35 @@ class DashboardController extends Controller
 
             $usersQuery = User::query();
 
-            if (!empty($search)) {
+            if (! empty($search)) {
                 $usersQuery->where(function ($q) use ($search) {
-                    $q->where('name', 'like', '%' . $search . '%')
-                      ->orWhere('email', 'like', '%' . $search . '%')
-                      ->orWhere('role', 'like', '%' . $search . '%');
+                    $q->where('name', 'like', '%'.$search.'%')
+                        ->orWhere('email', 'like', '%'.$search.'%')
+                        ->orWhere('role', 'like', '%'.$search.'%');
                 });
             }
 
-            if (!empty($roleFilter)) {
+            if (! empty($roleFilter)) {
                 $usersQuery->where('role', $roleFilter);
             }
 
-            if (!empty($accessFilter)) {
+            if (! empty($accessFilter)) {
                 if ($accessFilter === 'approved') {
                     $userIdsWithAccess = DB::table('client_user_access')
                         ->where('client_id', $client->id)
-                        ->where('status', 'approved')
+                        ->where('is_active', true)
                         ->pluck('user_id');
                     $usersQuery->whereIn('id', $userIdsWithAccess);
                 } elseif ($accessFilter === 'no_access') {
                     $userIdsWithAccess = DB::table('client_user_access')
                         ->where('client_id', $client->id)
-                        ->where('status', 'approved')
+                        ->where('is_active', true)
                         ->pluck('user_id');
                     $usersQuery->whereNotIn('id', $userIdsWithAccess);
                 }
             }
 
-            if (!empty($localRoleFilter)) {
+            if (! empty($localRoleFilter)) {
                 if ($localRoleFilter === 'none') {
                     $userIdsWithRole = \App\Models\UserClientRole::where('oauth_client_id', $client->id)
                         ->whereNotNull('role')
@@ -499,7 +506,7 @@ class DashboardController extends Controller
 
             $accessMap = DB::table('client_user_access')
                 ->where('client_id', $client->id)
-                ->pluck('status', 'user_id')
+                ->pluck('is_active', 'user_id')
                 ->toArray();
 
             $localRolesMap = \App\Models\UserClientRole::where('oauth_client_id', $client->id)
@@ -515,20 +522,20 @@ class DashboardController extends Controller
             $rolesList = array_merge(['admin'], User::ROLES);
 
             return view('admin.client_users', [
-                'client'           => $client,
-                'users'            => $users,
-                'accessMap'        => $accessMap,
-                'localRolesMap'    => $localRolesMap,
-                'logs'             => $logs,
-                'search'           => $search,
-                'roleFilter'       => $roleFilter,
-                'accessFilter'     => $accessFilter,
-                'localRoleFilter'  => $localRoleFilter,
-                'rolesList'        => $rolesList,
+                'client' => $client,
+                'users' => $users,
+                'accessMap' => $accessMap,
+                'localRolesMap' => $localRolesMap,
+                'logs' => $logs,
+                'search' => $search,
+                'roleFilter' => $roleFilter,
+                'accessFilter' => $accessFilter,
+                'localRoleFilter' => $localRoleFilter,
+                'rolesList' => $rolesList,
             ]);
         } catch (\Exception $e) {
             return redirect()->route('admin.clients')
-                ->withErrors(['error' => 'Gagal memuat detail pengguna aplikasi: ' . $e->getMessage()]);
+                ->withErrors(['error' => 'Gagal memuat detail pengguna aplikasi: '.$e->getMessage()]);
         }
     }
 
@@ -539,25 +546,20 @@ class DashboardController extends Controller
     {
         try {
             $client = PassportClient::findOrFail($clientId);
-            $user   = User::findOrFail($userId);
+            $user = User::findOrFail($userId);
 
             $validated = $request->validate([
                 'access_status' => 'nullable|in:approved,pending,rejected,none',
-                'has_access'    => 'nullable|boolean',
-                'local_role'    => 'nullable|string|max:50',
+                'has_access' => 'nullable|boolean',
+                'local_role' => 'nullable|string|max:50',
+                'access_submitted' => 'nullable|boolean',
             ]);
 
-            if ($request->has('has_access')) {
-                $status = $request->boolean('has_access') ? 'approved' : 'none';
-            } else {
-                $status = $validated['access_status'] ?? 'none';
-            }
+            // Handle access status
+            if ($request->has('access_submitted')) {
+                $isActive = $request->boolean('has_access');
+                $status = $isActive ? 'approved' : 'rejected';
 
-            $localRole = trim($validated['local_role'] ?? '');
-
-            if ($status === 'none') {
-                $user->accessedClients()->detach($client->id);
-            } else {
                 $exists = DB::table('client_user_access')
                     ->where('user_id', $user->id)
                     ->where('client_id', $client->id)
@@ -567,44 +569,65 @@ class DashboardController extends Controller
                     DB::table('client_user_access')
                         ->where('user_id', $user->id)
                         ->where('client_id', $client->id)
-                        ->update(['status' => $status, 'updated_at' => now()]);
+                        ->update([
+                            'status' => $status,
+                            'is_active' => $isActive,
+                            'updated_at' => now(),
+                        ]);
                 } else {
-                    $user->accessedClients()->attach($client->id, ['status' => $status]);
+                    DB::table('client_user_access')->insert([
+                        'user_id' => $user->id,
+                        'client_id' => $client->id,
+                        'status' => $status,
+                        'is_active' => $isActive,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
                 }
             }
 
-            if (!empty($localRole)) {
+            // Handle local role (independent of access checkbox status)
+            if ($request->has('local_role')) {
+                $localRole = trim($request->input('local_role') ?: 'user');
                 \App\Models\UserClientRole::updateOrCreate(
                     ['user_id' => $user->id, 'oauth_client_id' => $client->id],
                     ['role' => $localRole]
                 );
-            } else {
-                \App\Models\UserClientRole::where('user_id', $user->id)
-                    ->where('oauth_client_id', $client->id)
-                    ->delete();
             }
+
+            // Fetch current role and access status for logging & webhook
+            $currentAccessObj = DB::table('client_user_access')
+                ->where('user_id', $user->id)
+                ->where('client_id', $client->id)
+                ->first();
+            $currentStatus = $currentAccessObj && $currentAccessObj->is_active ? 'approved' : 'rejected';
+
+            $currentRoleObj = \App\Models\UserClientRole::where('user_id', $user->id)
+                ->where('oauth_client_id', $client->id)
+                ->first();
+            $currentRole = $currentRoleObj ? $currentRoleObj->role : 'user';
 
             ApplicationActivityLog::create([
                 'oauth_client_id' => $client->id,
-                'admin_id'        => Auth::id(),
-                'action'          => 'user_access_updated',
-                'description'     => "Akses '{$user->name}' diubah (Status: {$status}, Role: " . ($localRole ?: 'default/none') . ")",
+                'admin_id' => Auth::id(),
+                'action' => 'user_access_updated',
+                'description' => "Akses '{$user->name}' diubah (Status: {$currentStatus}, Role: {$currentRole})",
             ]);
 
             if ($client->redirect) {
                 $webhookUrl = str_replace('/auth/sso/callback', '/api/sso/webhook', $client->redirect);
                 try {
                     \Illuminate\Support\Facades\Http::timeout(2)->post($webhookUrl, [
-                        'event'     => 'user.role_updated',
+                        'event' => 'user.role_updated',
                         'timestamp' => now()->timestamp,
-                        'data'      => [
-                            'email'         => $user->email,
-                            'name'          => $user->name,
-                            'access_status' => $status,
-                            'role'          => $localRole ?: 'none',
-                            'client_id'     => (int) $client->id,
+                        'data' => [
+                            'email' => $user->email,
+                            'name' => $user->name,
+                            'access_status' => $currentStatus,
+                            'role' => $currentRole,
+                            'client_id' => (int) $client->id,
                         ],
-                        'signature' => hash_hmac('sha256', $user->email . ':' . ($localRole ?: 'none'), $client->secret),
+                        'signature' => hash_hmac('sha256', $user->email.':'.$currentRole, $client->secret),
                     ]);
                 } catch (\Exception $e) {
                     // silent webhook failure
@@ -613,7 +636,7 @@ class DashboardController extends Controller
 
             return back()->with('success', "Akses & role lokal '{$user->name}' untuk {$client->name} berhasil diperbarui.");
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Gagal memperbarui akses pengguna: ' . $e->getMessage()]);
+            return back()->withErrors(['error' => 'Gagal memperbarui akses pengguna: '.$e->getMessage()]);
         }
     }
 }

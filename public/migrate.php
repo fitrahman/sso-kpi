@@ -1,4 +1,5 @@
 <?php
+
 if (function_exists('opcache_reset')) {
     opcache_reset();
 }
@@ -11,16 +12,16 @@ $kernel->bootstrap();
 try {
     // Pastikan session driver adalah file saat proses refresh agar tidak error mencari tabel sessions
     config(['session.driver' => 'file']);
-    
+
     Illuminate\Support\Facades\Artisan::call('config:clear');
     Illuminate\Support\Facades\Artisan::call('migrate:fresh', [
         '--seed' => true,
-        '--force' => true
+        '--force' => true,
     ]);
-    
-    echo "<h1>Database sso_kpi Berhasil Di-fresh & Di-seed!</h1>";
-    echo "<pre>" . Illuminate\Support\Facades\Artisan::output() . "</pre>";
+
+    echo '<h1>Database sso_kpi Berhasil Di-fresh & Di-seed!</h1>';
+    echo '<pre>'.Illuminate\Support\Facades\Artisan::output().'</pre>';
 } catch (\Exception $e) {
-    echo "<h1>Terjadi Error:</h1>";
-    echo "<pre>" . $e->getMessage() . "</pre>";
+    echo '<h1>Terjadi Error:</h1>';
+    echo '<pre>'.$e->getMessage().'</pre>';
 }

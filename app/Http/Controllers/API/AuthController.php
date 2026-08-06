@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
@@ -11,47 +12,47 @@ use Laravel\Passport\RefreshTokenRepository;
 
 class AuthController extends Controller
 {
-/**
- * Register a new user
- */
+    /**
+     * Register a new user
+     */
     public function register(Request $request)
     {
         try {
             $validator = Validator::make($request->all(), [
-                'name'     => 'required|string|max:255',
-                'email'    => 'required|string|email|max:255|unique:users',
+                'name' => 'required|string|max:255',
+                'email' => 'required|string|email|max:255|unique:users',
                 'password' => ['required', 'string', \Illuminate\Validation\Rules\Password::min(8)->letters()->mixedCase()->numbers()->symbols(), 'confirmed'],
-                'phone'    => 'nullable|string|max:15',
-                'role'     => 'required|in:' . implode(',', User::ROLES),
+                'phone' => 'nullable|string|max:15',
+                'role' => 'required|in:'.implode(',', User::ROLES),
             ]);
 
             if ($validator->fails()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Validation Error',
-                    'errors'  => $validator->errors(),
+                    'errors' => $validator->errors(),
                 ], 422);
             }
 
             $user = User::create([
-                'name'     => $request->name,
-                'email'    => $request->email,
+                'name' => $request->name,
+                'email' => $request->email,
                 'password' => Hash::make($request->password),
-                'phone'    => $request->phone,
-                'role'     => $request->role,
-                'status'   => 'pending',
+                'phone' => $request->phone,
+                'role' => $request->role,
+                'status' => 'pending',
             ]);
 
             return response()->json([
                 'message' => 'Registration successful! Waiting for approval.',
-                'user'    => $user,
+                'user' => $user,
             ], 201);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Registration failed',
-                'error'   => $e->getMessage(),
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -63,7 +64,7 @@ class AuthController extends Controller
     {
         try {
             $validator = Validator::make($request->all(), [
-                'email'    => 'required|email',
+                'email' => 'required|email',
                 'password' => 'required',
             ]);
 
@@ -71,7 +72,7 @@ class AuthController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'Validation Error',
-                    'errors'  => $validator->errors(),
+                    'errors' => $validator->errors(),
                 ], 422);
             }
 
@@ -96,10 +97,10 @@ class AuthController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Login successful',
-                'data'    => [
-                    'user'         => $user,
+                'data' => [
+                    'user' => $user,
                     'access_token' => $token,
-                    'token_type'   => 'Bearer',
+                    'token_type' => 'Bearer',
                 ],
             ], 200);
 
@@ -107,7 +108,7 @@ class AuthController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Login failed',
-                'error'   => $e->getMessage(),
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -120,40 +121,59 @@ class AuthController extends Controller
         try {
             $user = $request->user();
             $clientId = $request->query('client_id');
-            
-            $role = 'none';
+
+            $role = 'user';
+            $hasAccess = false;
+
+            if ($user->role === 'admin') {
+                $hasAccess = true;
+            }
+
             if ($clientId) {
                 $clientRole = \App\Models\UserClientRole::where('user_id', $user->id)
                     ->where('oauth_client_id', $clientId)
                     ->first();
 
-                if ($clientRole && !empty($clientRole->role)) {
+                if ($clientRole && ! empty($clientRole->role)) {
                     $role = $clientRole->role;
                 } else {
-                    $role = $user->role ?? 'none';
+                    $role = $user->role ?? 'user';
+                }
+
+                if ($user->role !== 'admin') {
+                    $accessObj = \Illuminate\Support\Facades\DB::table('client_user_access')
+                        ->where('user_id', $user->id)
+                        ->where('client_id', $clientId)
+                        ->first();
+                    $hasAccess = $accessObj ? (bool) $accessObj->is_active : false;
                 }
             } else {
-                $role = $user->role ?? 'none';
+                $role = $user->role ?? 'user';
+                if ($user->role !== 'admin') {
+                    // If no client_id, check if user is active/approved globally
+                    $hasAccess = $user->status === 'approved';
+                }
             }
 
             // Target response format requested by the user
             $responsePayload = [
-                'id'    => $user->id,
-                'name'  => $user->name,
+                'id' => $user->id,
+                'name' => $user->name,
                 'email' => $user->email,
-                'role'  => $role,
+                'role' => $role,
+                'has_access' => $hasAccess,
             ];
 
             // Backward compatibility wrapper for SocialiteProviders (expects data.user structure)
             $responsePayload['success'] = true;
             $responsePayload['data'] = [
                 'user' => [
-                    'id'    => $user->id,
-                    'name'  => $user->name,
+                    'id' => $user->id,
+                    'name' => $user->name,
                     'email' => $user->email,
-                    // If client_id is not provided, fallback to the global role for backward compatibility
-                    'role'  => $clientId ? $role : ($user->role ?? 'user'),
-                ]
+                    'role' => $role,
+                    'has_access' => $hasAccess,
+                ],
             ];
 
             return response()->json($responsePayload, 200);
@@ -162,7 +182,7 @@ class AuthController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to fetch user',
-                'error'   => $e->getMessage(),
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -173,21 +193,21 @@ class AuthController extends Controller
     public function getClientRoles(Request $request)
     {
         $clientId = $request->query('client_id');
-        if (!$clientId) {
+        if (! $clientId) {
             return response()->json(['success' => false, 'message' => 'client_id parameter is required'], 400);
         }
 
         $client = \Laravel\Passport\Client::find($clientId);
-        if (!$client) {
+        if (! $client) {
             return response()->json(['success' => false, 'message' => 'Client application not found'], 404);
         }
 
         $supportedRoles = json_decode($client->supported_roles, true) ?? [];
 
         return response()->json([
-            'success'         => true,
-            'client_id'       => $client->id,
-            'client_name'     => $client->name,
+            'success' => true,
+            'client_id' => $client->id,
+            'client_name' => $client->name,
             'supported_roles' => $supportedRoles,
         ]);
     }
@@ -198,10 +218,10 @@ class AuthController extends Controller
     public function syncClientRoles(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'client_id'     => 'required|integer',
+            'client_id' => 'required|integer',
             'client_secret' => 'required|string',
-            'roles'         => 'required|array',
-            'roles.*'       => 'string|max:100',
+            'roles' => 'required|array',
+            'roles.*' => 'string|max:100',
         ]);
 
         if ($validator->fails()) {
@@ -209,7 +229,7 @@ class AuthController extends Controller
         }
 
         $client = \Laravel\Passport\Client::find($request->client_id);
-        if (!$client) {
+        if (! $client) {
             return response()->json(['success' => false, 'message' => 'Client application not found'], 404);
         }
 
@@ -223,9 +243,9 @@ class AuthController extends Controller
         $client->save();
 
         return response()->json([
-            'success'         => true,
-            'message'         => "Roles for '{$client->name}' synchronized successfully.",
-            'client_id'       => $client->id,
+            'success' => true,
+            'message' => "Roles for '{$client->name}' synchronized successfully.",
+            'client_id' => $client->id,
             'supported_roles' => $rolesArray,
         ]);
     }
@@ -252,7 +272,7 @@ class AuthController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Logout failed',
-                'error'   => $e->getMessage(),
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -265,17 +285,17 @@ class AuthController extends Controller
     {
         if ($user->isAdmin()) {
             return [
-                'can_read_users'         => true,
-                'can_write_users'        => true,
-                'can_delete_users'       => true,
+                'can_read_users' => true,
+                'can_write_users' => true,
+                'can_delete_users' => true,
                 'can_access_admin_panel' => true,
             ];
         }
 
         return [
-            'can_read_users'         => false,
-            'can_write_users'        => false,
-            'can_delete_users'       => false,
+            'can_read_users' => false,
+            'can_write_users' => false,
+            'can_delete_users' => false,
             'can_access_admin_panel' => false,
         ];
     }

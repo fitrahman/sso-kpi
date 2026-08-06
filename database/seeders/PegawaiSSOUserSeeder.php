@@ -128,19 +128,19 @@ class PegawaiSSOUserSeeder extends Seeder
 
         foreach ($pegawaiList as $item) {
             $name = $item['nama'];
-            
+
             // Generate clean email
             $cleanName = strtolower(preg_replace('/[^a-zA-Z0-9\s]/', '', $name));
             $emailName = str_replace(' ', '.', trim(preg_replace('/\s+/', ' ', $cleanName)));
-            $email = $emailName . '@kpi.com';
+            $email = $emailName.'@kpi.com';
 
             $user = User::updateOrCreate(
                 ['email' => $email],
                 [
-                    'name'              => $name,
-                    'password'          => Hash::make('password123'),
-                    'role'              => 'Pengawasan Siaran',
-                    'status'            => 'approved',
+                    'name' => $name,
+                    'password' => Hash::make('password123'),
+                    'role' => 'Pengawasan Siaran',
+                    'status' => 'approved',
                     'email_verified_at' => now(),
                 ]
             );
@@ -150,7 +150,8 @@ class PegawaiSSOUserSeeder extends Seeder
                 DB::table('client_user_access')->updateOrInsert(
                     ['user_id' => $user->id, 'client_id' => $client->id],
                     [
-                        'status'     => 'approved',
+                        'status' => 'approved',
+                        'is_active' => true,
                         'created_at' => now(),
                         'updated_at' => now(),
                     ]

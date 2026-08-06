@@ -4,9 +4,9 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use App\Models\UserClientRole;
-use Laravel\Passport\Client;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Laravel\Passport\Client;
 use Tests\TestCase;
 
 class SecurityRbacTest extends TestCase
@@ -17,17 +17,17 @@ class SecurityRbacTest extends TestCase
     {
         $id = $attributes['id'] ?? 2;
         DB::table('oauth_clients')->insert(array_merge([
-            'id'                     => $id,
-            'name'                   => 'Sistem Test ' . $id,
-            'secret'                 => 'secret_key_' . $id,
-            'redirect'               => 'http://localhost:' . (8000 + $id) . '/callback',
+            'id' => $id,
+            'name' => 'Sistem Test '.$id,
+            'secret' => 'secret_key_'.$id,
+            'redirect' => 'http://localhost:'.(8000 + $id).'/callback',
             'personal_access_client' => 0,
-            'password_client'        => 0,
-            'revoked'                => 0,
-            'is_maintenance'         => 0,
-            'is_visible'             => 1,
-            'created_at'             => now(),
-            'updated_at'             => now(),
+            'password_client' => 0,
+            'revoked' => 0,
+            'is_maintenance' => 0,
+            'is_visible' => 1,
+            'created_at' => now(),
+            'updated_at' => now(),
         ], $attributes));
 
         return Client::find($id);
@@ -37,7 +37,7 @@ class SecurityRbacTest extends TestCase
     public function non_admin_cannot_access_admin_routes()
     {
         $user = User::factory()->create([
-            'role'   => 'pengguna',
+            'role' => 'pengguna',
             'status' => 'approved',
         ]);
 
@@ -54,7 +54,7 @@ class SecurityRbacTest extends TestCase
     public function admin_can_access_admin_routes()
     {
         $admin = User::factory()->create([
-            'role'   => 'admin',
+            'role' => 'admin',
             'status' => 'approved',
         ]);
 
@@ -71,7 +71,7 @@ class SecurityRbacTest extends TestCase
     public function user_without_approved_client_access_is_blocked_on_gateway()
     {
         $user = User::factory()->create([
-            'role'   => 'pengguna',
+            'role' => 'pengguna',
             'status' => 'approved',
         ]);
 
@@ -89,14 +89,14 @@ class SecurityRbacTest extends TestCase
     public function user_with_approved_client_access_can_proceed_to_login()
     {
         $user = User::factory()->create([
-            'role'   => 'pengguna',
+            'role' => 'pengguna',
             'status' => 'approved',
         ]);
 
         $client = $this->createClient(['id' => 2, 'name' => 'Sistem 1', 'redirect' => 'http://localhost:8001/callback']);
 
         // Attach approved access
-        $user->accessedClients()->attach($client->id, ['status' => 'approved']);
+        $user->accessedClients()->attach($client->id, ['status' => 'approved', 'is_active' => true]);
 
         $this->actingAs($user);
 
@@ -108,18 +108,18 @@ class SecurityRbacTest extends TestCase
     public function application_maintenance_mode_blocks_regular_user()
     {
         $user = User::factory()->create([
-            'role'   => 'pengguna',
+            'role' => 'pengguna',
             'status' => 'approved',
         ]);
 
         $client = $this->createClient([
-            'id'                  => 2,
-            'name'                => 'Sistem 1',
-            'is_maintenance'      => 1,
+            'id' => 2,
+            'name' => 'Sistem 1',
+            'is_maintenance' => 1,
             'maintenance_message' => 'Sedang pemeliharaan server.',
         ]);
 
-        $user->accessedClients()->attach($client->id, ['status' => 'approved']);
+        $user->accessedClients()->attach($client->id, ['status' => 'approved', 'is_active' => true]);
 
         $this->actingAs($user);
 
@@ -135,15 +135,15 @@ class SecurityRbacTest extends TestCase
     public function admin_can_bypass_maintenance_mode()
     {
         $admin = User::factory()->create([
-            'role'   => 'admin',
+            'role' => 'admin',
             'status' => 'approved',
         ]);
 
         $client = $this->createClient([
-            'id'             => 2,
-            'name'           => 'Sistem 1',
+            'id' => 2,
+            'name' => 'Sistem 1',
             'is_maintenance' => 1,
-            'redirect'       => 'http://localhost:8001/callback',
+            'redirect' => 'http://localhost:8001/callback',
         ]);
 
         $this->actingAs($admin);
@@ -161,11 +161,11 @@ class SecurityRbacTest extends TestCase
         $this->actingAs($admin1);
 
         // Cannot delete self - user still exists in DB
-        $this->from('/admin/users')->delete('/admin/users/' . $admin1->id);
+        $this->from('/admin/users')->delete('/admin/users/'.$admin1->id);
         $this->assertNotNull(User::find($admin1->id));
 
         // Cannot delete other admin - user still exists in DB
-        $this->from('/admin/users')->delete('/admin/users/' . $admin2->id);
+        $this->from('/admin/users')->delete('/admin/users/'.$admin2->id);
         $this->assertNotNull(User::find($admin2->id));
     }
 
@@ -177,9 +177,9 @@ class SecurityRbacTest extends TestCase
 
         // Initial local role: Staff
         UserClientRole::create([
-            'user_id'         => $user->id,
+            'user_id' => $user->id,
             'oauth_client_id' => 2,
-            'role'            => 'staff',
+            'role' => 'staff',
         ]);
 
         \Laravel\Passport\Passport::actingAs($user);
@@ -217,19 +217,19 @@ class SecurityRbacTest extends TestCase
         $this->actingAs($admin);
 
         $response = $this->post('/admin/applications', [
-            'name'            => 'Aplikasi Testing Baru',
-            'redirect'        => 'http://localhost:8005/auth/callback',
-            'description'     => 'Deskripsi aplikasi testing',
+            'name' => 'Aplikasi Testing Baru',
+            'redirect' => 'http://localhost:8005/auth/callback',
+            'description' => 'Deskripsi aplikasi testing',
             'supported_roles' => 'Admin, Operator, Supervisor',
-            'display_order'   => 5,
-            'is_visible'      => 1,
+            'display_order' => 5,
+            'is_visible' => 1,
         ]);
 
         $response->assertRedirect();
         $response->assertSessionHasNoErrors();
 
         $this->assertDatabaseHas('oauth_clients', [
-            'name'     => 'Aplikasi Testing Baru',
+            'name' => 'Aplikasi Testing Baru',
             'redirect' => 'http://localhost:8005/auth/callback',
         ]);
     }
@@ -239,20 +239,20 @@ class SecurityRbacTest extends TestCase
     {
         $password = 'password123';
         $user = User::factory()->create([
-            'email'    => 'logger@kpi.go.id',
+            'email' => 'logger@kpi.go.id',
             'password' => bcrypt($password),
-            'status'   => 'approved',
+            'status' => 'approved',
         ]);
 
         // 1. Test Login Success
         $response = $this->post('/login', [
-            'email'    => $user->email,
+            'email' => $user->email,
             'password' => $password,
         ]);
 
         $response->assertRedirect('/dashboard');
         $this->assertDatabaseHas('user_activity_logs', [
-            'user_id'  => $user->id,
+            'user_id' => $user->id,
             'activity' => 'login_success',
         ]);
 
@@ -260,18 +260,18 @@ class SecurityRbacTest extends TestCase
         $logoutResponse = $this->actingAs($user)->post('/logout');
         $logoutResponse->assertRedirect('/');
         $this->assertDatabaseHas('user_activity_logs', [
-            'user_id'  => $user->id,
+            'user_id' => $user->id,
             'activity' => 'logout',
         ]);
 
         // 3. Test Login Failed
         $failResponse = $this->post('/login', [
-            'email'    => $user->email,
+            'email' => $user->email,
             'password' => 'wrong_password',
         ]);
 
         $this->assertDatabaseHas('user_activity_logs', [
-            'user_id'  => $user->id,
+            'user_id' => $user->id,
             'activity' => 'login_failed',
         ]);
     }

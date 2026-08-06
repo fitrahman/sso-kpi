@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
@@ -24,14 +25,14 @@ class UserController extends Controller
 
             return response()->json([
                 'success' => true,
-                'data'    => $users,
+                'data' => $users,
             ], 200);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to fetch users',
-                'error'   => $e->getMessage(),
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -54,14 +55,14 @@ class UserController extends Controller
 
             return response()->json([
                 'success' => true,
-                'data'    => $user,
+                'data' => $user,
             ], 200);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'User not found',
-                'error'   => $e->getMessage(),
+                'error' => $e->getMessage(),
             ], 404);
         }
     }

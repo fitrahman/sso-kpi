@@ -21,7 +21,7 @@ class DatabaseSeeder extends Seeder
         $users = User::all();
     }
 }
-        // 2. Define Client Applications
+// 2. Define Client Applications
 //         $clients = [
 //             [
 //                 'id'                      => 3,

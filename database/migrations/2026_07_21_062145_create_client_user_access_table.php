@@ -20,7 +20,7 @@ return new class extends Migration
             $table->timestamps();
 
             // Passport oauth_clients id could be char(36) or bigInteger depending on config.
-            // In modern laravel with Passport, it's uuid. 
+            // In modern laravel with Passport, it's uuid.
             // We won't strictly constrain it at DB level to avoid issues if it's different.
         });
     }

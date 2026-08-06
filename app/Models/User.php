@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -10,7 +11,7 @@ use Laravel\Passport\HasApiTokens;
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, HasApiTokens;
+    use HasApiTokens, HasFactory, Notifiable;
 
     const ROLES = ['pengguna', 'Humas', 'Manajerial', 'Kepegawaian', 'Hukum', 'Visualisasi Data', 'Pengawasan Siaran'];
 
@@ -48,7 +49,7 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
-            'password'          => 'hashed',
+            'password' => 'hashed',
         ];
     }
 
@@ -63,8 +64,8 @@ class User extends Authenticatable
     public function accessedClients()
     {
         return $this->belongsToMany(\Laravel\Passport\Client::class, 'client_user_access', 'user_id', 'client_id')
-                    ->withPivot('status')
-                    ->withTimestamps();
+            ->withPivot('status')
+            ->withTimestamps();
     }
 
     /**

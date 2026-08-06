@@ -96,18 +96,85 @@
         </div>
     </aside>
 
+    <!-- Mobile Sidebar Drawer -->
+    <div id="mobileSidebar" class="fixed inset-0 z-40 md:hidden hidden" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity animate-fade-in" onclick="toggleMobileSidebar()"></div>
+        <div class="fixed inset-y-0 left-0 flex max-w-xs w-full bg-white shadow-xl transition-transform transform -translate-x-full duration-300 ease-in-out flex-col" id="mobileSidebarContent">
+            <div class="h-16 flex items-center justify-between px-6 border-b border-slate-200 shrink-0">
+                <div class="flex items-center">
+                    <img src="{{ asset('logoKPI.png') }}" alt="KPI Logo" class="h-8 w-auto mr-3">
+                    <span class="font-bold text-lg text-slate-900 tracking-tight">Admin Portal</span>
+                </div>
+                <button onclick="toggleMobileSidebar()" class="p-2 -mr-2 text-slate-500 hover:text-slate-700 focus:outline-none">
+                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="p-4 flex-grow sidebar-scroll overflow-y-auto">
+                <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 mt-2 px-3">Menu Utama</div>
+                <nav class="space-y-1">
+                    <a href="{{ route('dashboard') }}" class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:text-kpi-700 hover:bg-slate-50 transition-colors">
+                        <svg class="w-5 h-5 mr-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+                        Dashboard SSO
+                    </a>
+                    <a href="{{ route('admin.stats') }}" class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg {{ request()->routeIs('admin.stats*') ? 'bg-kpi-50 text-kpi-700' : 'text-slate-600 hover:text-kpi-700 hover:bg-slate-50' }} transition-colors">
+                        <svg class="w-5 h-5 mr-3 {{ request()->routeIs('admin.stats*') ? 'text-kpi-600' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                        Statistik
+                    </a>
+                    <a href="{{ route('admin.users') }}" class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg {{ request()->routeIs('admin.users*', 'admin.edit*') ? 'bg-kpi-50 text-kpi-700' : 'text-slate-600 hover:text-kpi-700 hover:bg-slate-50' }} transition-colors">
+                        <svg class="w-5 h-5 mr-3 {{ request()->routeIs('admin.users*', 'admin.edit*') ? 'text-kpi-600' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                        <span>Manajemen Pengguna</span>
+                        @if($pendingBadgeCount > 0)
+                            <span class="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{{ $pendingBadgeCount }}</span>
+                        @endif
+                    </a>
+                    <a href="{{ route('admin.clients') }}" class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg {{ request()->routeIs('admin.clients*') ? 'bg-kpi-50 text-kpi-700' : 'text-slate-600 hover:text-kpi-700 hover:bg-slate-50' }} transition-colors">
+                        <svg class="w-5 h-5 mr-3 {{ request()->routeIs('admin.clients*') ? 'text-kpi-600' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+                        Manajemen Aplikasi
+                    </a>
+                </nav>
+            </div>
+            <div class="p-4 border-t border-slate-200 shrink-0">
+                <div class="flex items-center mb-4 px-2">
+                    <div class="w-8 h-8 rounded-full bg-kpi-100 text-kpi-700 flex items-center justify-center font-bold text-sm mr-3">
+                        {{ substr(auth()->user()->name ?? 'A', 0, 1) }}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-bold text-slate-900 truncate">{{ auth()->user()->name ?? 'Admin' }}</p>
+                        <p class="text-xs text-slate-500 truncate">Administrator</p>
+                    </div>
+                </div>
+                <form action="{{ route('logout') }}" method="POST">
+                    @csrf
+                    <button type="submit" class="w-full flex justify-center items-center px-4 py-2 border border-slate-300 shadow-sm text-sm font-medium rounded-lg text-slate-700 bg-white hover:bg-slate-50 transition-colors">
+                        <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                        Keluar
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Main Content Area -->
     <main class="flex-1 flex flex-col min-w-0 overflow-y-auto">
         <!-- Topbar -->
-        <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 sticky top-0 z-20 shadow-sm">
-            <div class="flex items-center gap-2 text-sm">
-                <a href="{{ route('admin.clients') }}" class="text-slate-500 hover:text-kpi-700 font-medium">Manajemen Aplikasi</a>
-                <span class="text-slate-300">/</span>
-                <span class="font-bold text-slate-900">{{ $client->name }}</span>
+        <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 sm:px-6 sticky top-0 z-20 shadow-sm shrink-0">
+            <div class="flex items-center gap-3">
+                <button onclick="toggleMobileSidebar()" class="md:hidden p-2 -ml-2 text-slate-600 hover:text-kpi-700 focus:outline-none" title="Buka Menu">
+                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+                <div class="flex items-center gap-2 text-sm">
+                    <a href="{{ route('admin.clients') }}" class="text-slate-500 hover:text-kpi-700 font-medium hidden sm:inline">Manajemen Aplikasi</a>
+                    <span class="text-slate-300 hidden sm:inline">/</span>
+                    <span class="font-bold text-slate-900 truncate max-w-[150px] sm:max-w-none">{{ $client->name }}</span>
+                </div>
             </div>
             <a href="{{ route('admin.clients') }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-                Kembali
+                <span class="hidden sm:inline">Kembali</span>
             </a>
         </header>
 
@@ -254,11 +321,14 @@
                             @endphp
                             @forelse ($users as $u)
                                 @php
-                                    $currentAccess = $accessMap[$u->id] ?? 'none';
-                                    $currentLocalRole = $localRolesMap[$u->id] ?? '';
+                                    $hasAccess = (bool) ($accessMap[$u->id] ?? false);
+                                    $currentLocalRole = $localRolesMap[$u->id] ?? 'user';
 
-                                    // Build role list including current role if custom
+                                    // Build role list including 'user' and current role if custom
                                     $roleOptions = $supportedRoles;
+                                    if (!in_array('user', $roleOptions)) {
+                                        $roleOptions[] = 'user';
+                                    }
                                     if (!empty($currentLocalRole) && !in_array($currentLocalRole, $roleOptions)) {
                                         $roleOptions[] = $currentLocalRole;
                                     }
@@ -294,11 +364,12 @@
                                         <form action="{{ route('admin.clients.users.update', ['id' => $client->id, 'userId' => $u->id]) }}" method="POST" class="flex justify-center">
                                             @csrf
                                             @method('PUT')
+                                            <input type="hidden" name="access_submitted" value="1">
                                             @if (!empty($currentLocalRole))
                                                 <input type="hidden" name="local_role" value="{{ $currentLocalRole }}">
                                             @endif
                                             <label class="inline-flex items-center justify-center cursor-pointer select-none">
-                                                <input type="checkbox" name="has_access" value="1" {{ $currentAccess === 'approved' ? 'checked' : '' }}
+                                                <input type="checkbox" name="has_access" value="1" {{ $hasAccess ? 'checked' : '' }}
                                                     onchange="this.form.submit()"
                                                     class="h-4 w-4 rounded border-slate-300 text-kpi-600 focus:ring-kpi-500 cursor-pointer">
                                             </label>
@@ -310,11 +381,11 @@
                                         <form action="{{ route('admin.clients.users.update', ['id' => $client->id, 'userId' => $u->id]) }}" method="POST">
                                             @csrf
                                             @method('PUT')
-                                            @if ($currentAccess === 'approved')
+                                            @if ($hasAccess)
                                                 <input type="hidden" name="has_access" value="1">
+                                                <input type="hidden" name="access_submitted" value="1">
                                             @endif
-                                            <select name="local_role" onchange="this.form.submit()" class="w-48 border border-slate-300 rounded-lg px-3 py-1.5 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500 font-medium bg-white cursor-pointer">
-                                                <option value="">Tidak memiliki role</option>
+                                            <select name="local_role" onchange="this.form.submit()" class="w-48 border border-slate-300 rounded-lg px-3 py-1.5 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500 font-medium bg-white {{ !$hasAccess ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer' }}" {{ !$hasAccess ? 'disabled' : '' }}>
                                                 @foreach ($roleOptions as $rOpt)
                                                     <option value="{{ $rOpt }}" {{ $currentLocalRole === $rOpt ? 'selected' : '' }}>
                                                         {{ ucfirst($rOpt) }}
@@ -485,6 +556,21 @@
             document.getElementById('editModal').classList.remove('active');
         }
 
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('mobileSidebar');
+            const content = document.getElementById('mobileSidebarContent');
+            if (sidebar.classList.contains('hidden')) {
+                sidebar.classList.remove('hidden');
+                setTimeout(() => {
+                    content.classList.remove('-translate-x-full');
+                }, 10);
+            } else {
+                content.classList.add('-translate-x-full');
+                setTimeout(() => {
+                    sidebar.classList.add('hidden');
+                }, 300);
+            }
+        }
     </script>
 </body>
 </html>

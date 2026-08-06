@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Middleware;
 
 use Closure;
@@ -17,6 +18,7 @@ class AdminMiddleware
         if (! $request->user() || ! $request->user()->isAdmin()) {
             abort(403, 'Unauthorized. Admin access required.');
         }
+
         return $next($request);
     }
 }

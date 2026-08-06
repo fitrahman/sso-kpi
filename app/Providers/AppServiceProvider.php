@@ -1,11 +1,11 @@
 <?php
+
 namespace App\Providers;
 
+use App\Listeners\AuthEventSubscriber;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Passport\Passport;
-
-use Illuminate\Support\Facades\Event;
-use App\Listeners\AuthEventSubscriber;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -30,12 +30,11 @@ class AppServiceProvider extends ServiceProvider
         Passport::refreshTokensExpireIn(now()->addDays(30));
         Passport::personalAccessTokensExpireIn(now()->addMonths(6));
 
-
         // Define OAuth2 Scopes
         Passport::tokensCan([
             'admin-access' => 'Access admin panel',
-            'user-read'    => 'Read user information',
-            'user-write'   => 'Create, update, and delete users',
+            'user-read' => 'Read user information',
+            'user-write' => 'Create, update, and delete users',
         ]);
 
         // Default scope

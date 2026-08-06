@@ -29,7 +29,9 @@ class DispatchSSOWebhookJob implements ShouldQueue
     public $backoff = 60;
 
     protected $webhookUrl;
+
     protected $secret;
+
     protected $payload;
 
     /**
@@ -56,10 +58,10 @@ class DispatchSSOWebhookJob implements ShouldQueue
 
         $headers = [
             'Content-Type' => 'application/json',
-            'Accept'       => 'application/json',
+            'Accept' => 'application/json',
         ];
 
-        if (!empty($this->secret)) {
+        if (! empty($this->secret)) {
             // Generate HMAC-SHA256 signature using the shared secret
             $signature = hash_hmac('sha256', $jsonPayload, $this->secret);
             $headers['X-SSO-Signature'] = $signature;
@@ -75,7 +77,7 @@ class DispatchSSOWebhookJob implements ShouldQueue
                 $this->fail(new \Exception("Webhook target returned non-2xx status code: {$response->status()}"));
             }
         } catch (\Exception $e) {
-            Log::error("SSO Webhook request error to {$this->webhookUrl}: " . $e->getMessage());
+            Log::error("SSO Webhook request error to {$this->webhookUrl}: ".$e->getMessage());
             throw $e;
         }
     }

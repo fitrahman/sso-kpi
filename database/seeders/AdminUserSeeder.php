@@ -1,4 +1,5 @@
 <?php
+
 namespace Database\Seeders;
 
 use App\Models\User;
@@ -15,39 +16,39 @@ class AdminUserSeeder extends Seeder
         try {
             $testUsers = [
                 [
-                    'name'  => 'Admin User',
+                    'name' => 'Admin User',
                     'email' => 'admin@kpi.com',
-                    'role'  => 'admin',
+                    'role' => 'admin',
                 ],
                 [
-                    'name'  => 'Humas User',
+                    'name' => 'Humas User',
                     'email' => 'humas@kpi.com',
-                    'role'  => 'Humas',
+                    'role' => 'Humas',
                 ],
                 [
-                    'name'  => 'Kepegawaian User',
+                    'name' => 'Kepegawaian User',
                     'email' => 'kepegawaian@kpi.com',
-                    'role'  => 'Kepegawaian',
+                    'role' => 'Kepegawaian',
                 ],
                 [
-                    'name'  => 'Manajerial User',
+                    'name' => 'Manajerial User',
                     'email' => 'manajerial@kpi.com',
-                    'role'  => 'Manajerial',
+                    'role' => 'Manajerial',
                 ],
                 [
-                    'name'  => 'Hukum User',
+                    'name' => 'Hukum User',
                     'email' => 'hukum@kpi.com',
-                    'role'  => 'Hukum',
+                    'role' => 'Hukum',
                 ],
                 [
-                    'name'  => 'Visualisasi Data User',
+                    'name' => 'Visualisasi Data User',
                     'email' => 'visualisasi@kpi.com',
-                    'role'  => 'Visualisasi Data',
+                    'role' => 'Visualisasi Data',
                 ],
                 [
-                    'name'  => 'Pengawasan Siaran User',
+                    'name' => 'Pengawasan Siaran User',
                     'email' => 'pengawasan@kpi.com',
-                    'role'  => 'Pengawasan Siaran',
+                    'role' => 'Pengawasan Siaran',
                 ],
             ];
 
@@ -55,10 +56,10 @@ class AdminUserSeeder extends Seeder
                 User::updateOrCreate(
                     ['email' => $u['email']],
                     [
-                        'name'              => $u['name'],
-                        'password'          => Hash::make('admin123'),
-                        'role'              => $u['role'],
-                        'status'            => 'approved',
+                        'name' => $u['name'],
+                        'password' => Hash::make('admin123'),
+                        'role' => $u['role'],
+                        'status' => 'approved',
                         'email_verified_at' => now(),
                     ]
                 );
@@ -67,7 +68,7 @@ class AdminUserSeeder extends Seeder
             $this->command->info('✅ Test users representing all global roles seeded successfully!');
 
         } catch (\Exception $e) {
-            $this->command->error('❌ Error creating users: ' . $e->getMessage());
+            $this->command->error('❌ Error creating users: '.$e->getMessage());
         }
     }
 }

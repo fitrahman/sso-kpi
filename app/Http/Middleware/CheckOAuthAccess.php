@@ -2,10 +2,10 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\PassportClient;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Models\PassportClient;
 
 class CheckOAuthAccess
 {
@@ -17,7 +17,7 @@ class CheckOAuthAccess
         // Hanya proses rute /oauth/authorize (menggunakan GET karena redirect dari klien)
         if ($request->is('oauth/authorize') && $request->isMethod('get') && Auth::check()) {
             $clientId = $request->query('client_id');
-            
+
             if ($clientId) {
                 $user = Auth::user();
                 $client = PassportClient::find($clientId);
@@ -37,7 +37,7 @@ class CheckOAuthAccess
 
                     $access = $user->accessedClients()->where('client_id', $clientId)->first();
 
-                    if (!$access || $access->pivot->status !== 'approved') {
+                    if (! $access || $access->pivot->status !== 'approved') {
                         // Arahkan ke gateway agar menampilkan halaman request akses / pending
                         return redirect()->route('app.gateway', ['appName' => $client->name]);
                     }

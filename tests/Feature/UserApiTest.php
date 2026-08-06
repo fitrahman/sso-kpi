@@ -4,9 +4,9 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use App\Models\UserClientRole;
-use Laravel\Passport\Passport;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Laravel\Passport\Passport;
 use Tests\TestCase;
 
 class UserApiTest extends TestCase
@@ -25,17 +25,17 @@ class UserApiTest extends TestCase
     public function it_returns_role_none_when_client_role_not_found()
     {
         $user = User::factory()->create(['role' => 'pengguna']);
-        
+
         Passport::actingAs($user);
 
         $response = $this->getJson('/api/v1/user?client_id=999');
 
         $response->assertStatus(200)
             ->assertJson([
-                'id'    => $user->id,
-                'name'  => $user->name,
+                'id' => $user->id,
+                'name' => $user->name,
                 'email' => $user->email,
-                'role'  => 'pengguna',
+                'role' => 'pengguna',
             ]);
     }
 
@@ -43,7 +43,7 @@ class UserApiTest extends TestCase
     public function it_returns_correct_role_when_client_role_is_found()
     {
         $user = User::factory()->create();
-        
+
         // Insert client manually to bypass any missing factory errors
         DB::table('oauth_clients')->insert([
             'id' => 2,
@@ -81,7 +81,7 @@ class UserApiTest extends TestCase
     public function it_returns_role_admin_for_global_admin_users_bypassing_database_lookup()
     {
         $admin = User::factory()->create([
-            'role' => 'admin'
+            'role' => 'admin',
         ]);
 
         Passport::actingAs($admin);
@@ -103,21 +103,21 @@ class UserApiTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
 
         DB::table('oauth_clients')->insert([
-            'id'                     => 4,
-            'name'                   => 'SIMPEG KPI',
-            'secret'                 => 'secret',
-            'redirect'               => 'http://localhost',
+            'id' => 4,
+            'name' => 'SIMPEG KPI',
+            'secret' => 'secret',
+            'redirect' => 'http://localhost',
             'personal_access_client' => 0,
-            'password_client'        => 0,
-            'revoked'                => 0,
-            'created_at'             => now(),
-            'updated_at'             => now(),
+            'password_client' => 0,
+            'revoked' => 0,
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
 
         UserClientRole::create([
-            'user_id'         => $admin->id,
+            'user_id' => $admin->id,
             'oauth_client_id' => 4,
-            'role'            => 'atasan',
+            'role' => 'atasan',
         ]);
 
         Passport::actingAs($admin);
@@ -126,10 +126,10 @@ class UserApiTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJson([
-                'id'    => $admin->id,
-                'name'  => $admin->name,
+                'id' => $admin->id,
+                'name' => $admin->name,
                 'email' => $admin->email,
-                'role'  => 'atasan',
+                'role' => 'atasan',
             ]);
     }
 
@@ -140,38 +140,38 @@ class UserApiTest extends TestCase
         Passport::actingAs($user);
 
         DB::table('oauth_clients')->insert([
-            'id'                     => 10,
-            'name'                   => 'Testing App',
-            'secret'                 => 'secret',
-            'redirect'               => 'http://localhost',
+            'id' => 10,
+            'name' => 'Testing App',
+            'secret' => 'secret',
+            'redirect' => 'http://localhost',
             'personal_access_client' => 0,
-            'password_client'        => 0,
-            'revoked'                => 0,
-            'supported_roles'        => json_encode(['Admin', 'Staff']),
-            'created_at'             => now(),
-            'updated_at'             => now(),
+            'password_client' => 0,
+            'revoked' => 0,
+            'supported_roles' => json_encode(['Admin', 'Staff']),
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
 
         // Test GET /api/v1/client-roles
         $getRes = $this->getJson('/api/v1/client-roles?client_id=10');
         $getRes->assertStatus(200)
             ->assertJson([
-                'success'         => true,
-                'client_id'       => 10,
+                'success' => true,
+                'client_id' => 10,
                 'supported_roles' => ['Admin', 'Staff'],
             ]);
 
         // Test POST /api/v1/client-roles/sync
         $postRes = $this->postJson('/api/v1/client-roles/sync', [
-            'client_id'     => 10,
+            'client_id' => 10,
             'client_secret' => 'secret',
-            'roles'         => ['Admin', 'Supervisor', 'Operator', 'Staff'],
+            'roles' => ['Admin', 'Supervisor', 'Operator', 'Staff'],
         ]);
 
         $postRes->assertStatus(200)
             ->assertJson([
-                'success'         => true,
-                'client_id'       => 10,
+                'success' => true,
+                'client_id' => 10,
                 'supported_roles' => ['Admin', 'Supervisor', 'Operator', 'Staff'],
             ]);
     }
