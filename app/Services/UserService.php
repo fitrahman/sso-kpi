@@ -151,8 +151,9 @@ class UserService
             }
 
             $roleValue = $clientRoles[$cId] ?? $supportedRoles[0] ?? 'user';
-            if (! in_array($roleValue, $supportedRoles)) {
-                $roleValue = $supportedRoles[0] ?? 'user';
+
+            if (! \App\Services\RoleValidationService::isValidRole($cId, $roleValue)) {
+                throw new \InvalidArgumentException("Role '{$roleValue}' tidak valid untuk aplikasi ID {$cId}.");
             }
 
             $clientRoleRecord = UserClientRole::updateOrCreate(

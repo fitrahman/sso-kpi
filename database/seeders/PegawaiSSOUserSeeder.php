@@ -157,18 +157,16 @@ class PegawaiSSOUserSeeder extends Seeder
                     ]
                 );
 
-                // Determine local role for client
-                $localRole = 'pegawai';
-                if ($client->name === 'SIMPEG KPI') {
-                    $localRole = 'pegawai';
-                } else {
-                    $localRole = 'pengguna';
-                }
+                // Determine local role for client yang valid
+                $supportedRoles = json_decode($client->supported_roles, true) ?? [];
+                $localRole = $client->name === 'SIMPEG KPI' ? 'pegawai' : ($supportedRoles[1] ?? $supportedRoles[0] ?? 'user');
 
-                UserClientRole::updateOrCreate(
-                    ['user_id' => $user->id, 'oauth_client_id' => $client->id],
-                    ['role' => $localRole]
-                );
+                if (\App\Services\RoleValidationService::isValidRole($client->id, $localRole)) {
+                    UserClientRole::updateOrCreate(
+                        ['user_id' => $user->id, 'oauth_client_id' => $client->id],
+                        ['role' => $localRole]
+                    );
+                }
             }
 
             $countCreated++;
