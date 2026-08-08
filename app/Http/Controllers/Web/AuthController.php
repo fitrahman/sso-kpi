@@ -134,6 +134,13 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
         try {
+            $user = Auth::user();
+            if ($user) {
+                $user->tokens()->each(function ($token) {
+                    $token->revoke();
+                });
+            }
+
             Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
@@ -153,6 +160,13 @@ class AuthController extends Controller
     public function ssoLogout(Request $request)
     {
         try {
+            $user = Auth::user();
+            if ($user) {
+                $user->tokens()->each(function ($token) {
+                    $token->revoke();
+                });
+            }
+
             Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
