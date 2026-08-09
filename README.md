@@ -2,20 +2,49 @@
 
 Portal Manajemen Identitas dan Autentikasi Single Sign-On (SSO) berbasis **Laravel 12** dan **Laravel Passport (OAuth2)** yang dirancang sebagai portal terpusat untuk mengelola akses pengguna di lingkungan internal Komisi Penyiaran Indonesia (KPI).
 
-Aplikasi ini berfungsi sebagai penyedia identitas pusat (*Identity Provider*) di mana di masa mendatang sistem/aplikasi client lainnya (seperti Sistem Informasi, Aplikasi Sistem Kepegawaian, dll.) dapat diintegrasikan dengan portal ini menggunakan protokol OAuth2.
+Aplikasi ini berfungsi sebagai penyedia identitas pusat (*Identity Provider*) di mana sistem/aplikasi client lainnya (seperti Sistem Informasi, Aplikasi Sistem Kepegawaian, dll.) dapat diintegrasikan dengan portal ini menggunakan protokol OAuth2.
 
 ---
 
 ## 🚀 Fitur Utama
 
-- **Pusat Autentikasi OAuth2 (Laravel Passport)**: Berfungsi sebagai *Identity Provider* terpusat yang siap diintegrasikan dengan berbagai aplikasi klien menggunakan metode OAuth2 Authorization Code Grant.
+- **Pusat Autentikasi OAuth2 (Laravel Passport)**: Berfungsi sebagai *Identity Provider* terpusat menggunakan metode OAuth2 Authorization Code Grant.
 - **Registrasi Akun dengan Persetujuan Admin**: Pengguna baru dapat mendaftar secara mandiri, tetapi akun baru dalam status `pending` dan hanya aktif setelah disetujui oleh Administrator.
-- **Pengisian Sandi yang Aman**: Pendaftaran dan reset kata sandi kini mewajibkan standar kompleksitas tinggi (minimal 8 karakter, huruf besar, huruf kecil, angka, dan simbol).
-- **Perlindungan Brute Force**: Dilengkapi dengan *Rate Limiting* di halaman sensitif (Login, Register, Reset Password) untuk menangkal serangan otomatis.
+- **Pemisahan Logika Akses & Peran (Role)**:
+  - **Akses Portal**: Disimpan di tabel `client_user_access` (kolom `is_active` dan `status`). Menentukan apakah pengguna diizinkan masuk ke aplikasi klien terkait.
+  - **Role Lokal**: Disimpan di tabel `user_client_roles` (kolom `role`). Menentukan hak akses/peran di dalam sistem klien tersebut (selalu memiliki nilai, default `'user'`).
+- **Dynamic Role Discovery**:
+  - SSO Server dapat melakukan sinkronisasi daftar role secara otomatis via HTTP GET ke endpoint `/api/sso/supported-roles` milik masing-masing aplikasi klien yang diamankan dengan `X-SSO-Secret`.
+  - Dilengkapi dengan `RoleDiscoveryService` untuk sinkronisasi otomatis.
+- **Strict Role Validation**:
+  - Validasi ketat menggunakan `RoleValidationService` memastikan tidak ada penyimpanan/perubahan role baru ke tabel `user_client_roles` yang tidak sesuai dengan daftar role resmi (`supported_roles`) masing-masing klien.
 - **SSO Webhooks Asinkronus**: Mengirimkan pemberitahuan instan secara asinkronus (*Laravel Queue*) ke aplikasi klien saat peran pengguna berubah (`user.role_updated`) atau ketika akses dicabut/dinonaktifkan (`user.access_revoked`). Dilengkapi dengan tanda tangan HMAC-SHA256 untuk memverifikasi asal request.
+- **Single Log Out (SLO) yang Andal**:
+  - Ketika user logout dari SSO Portal atau aplikasi klien, seluruh token akses OAuth akan dicabut (*revoked*) secara instan.
+  - Middleware klien mendeteksi status `401 Unauthorized` pada polling sinkronisasi dan otomatis mengeluarkan (logout) sesi lokal klien secara instan (mencegah sesi nyangkut).
 - **Pengajuan Edit Profil dengan Persetujuan Admin**: Pengguna dapat mengajukan perubahan data profil mereka. Perubahan data baru akan diterapkan ke database setelah disetujui oleh Administrator di dashboard.
 - **Pemberitahuan Email**: Sistem mengirimkan email otomatis saat pendaftaran disetujui/ditolak, serta saat pengajuan akses aplikasi disetujui/ditolak.
 - **Manajemen Hak Akses Aplikasi**: Administrator dapat mengelola daftar aplikasi terintegrasi serta menyetujui atau menolak permohonan akses dari pengguna untuk aplikasi tertentu.
+
+---
+
+## 🛠️ CLI Tools (Artisan Commands)
+
+SSO Server menyediakan perintah Artisan khusus untuk audit dan pembersihan data role:
+
+1. **Audit Data**: Membaca data role lokal tanpa mengubah database untuk mencari ketidakcocokan terhadap supported_roles klien.
+   ```bash
+   php artisan audit:invalid-roles
+   ```
+2. **Perbaikan Data**: Memperbaiki data role yang tidak valid dengan role level terendah dari supported_roles secara aman (menggunakan chunking & database transaction).
+   - *Dry-run (hanya preview)*:
+     ```bash
+     php artisan fix:invalid-roles
+     ```
+   - *Eksekusi nyata*:
+     ```bash
+     php artisan fix:invalid-roles --apply
+     ```
 
 ---
 

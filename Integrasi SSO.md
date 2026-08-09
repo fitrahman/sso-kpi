@@ -1,6 +1,6 @@
 # 📖 Panduan Lengkap Integrasi Aplikasi Lokal dengan SSO Server KPI
 
-Dokumen ini adalah **panduan standar dari awal hingga akhir** untuk menyambungkan aplikasi lokal baru (Laravel) dengan **SSO Server KPI (`sso-kpi.test`)**, menggunakan metode **Socialite / OAuth2 Passport** dan **Sinkronisasi Role Berkala Real-time (CheckLocalRole Middleware - Tanpa Perlu Logout)** seperti yang diterapkan pada **Sistem 1, Sistem 2, dan Sistem 3**.
+Dokumen ini adalah **panduan standar dari awal hingga akhir** untuk menyambungkan aplikasi lokal baru (Laravel) dengan **SSO Server KPI (`sso-kpi.test`)**, menggunakan metode **Socialite / OAuth2 Passport**, **Single Log Out (SLO)**, dan **Role Discovery API**.
 
 ---
 
@@ -10,24 +10,26 @@ Dokumen ini adalah **panduan standar dari awal hingga akhir** untuk menyambungka
 |---------|------|------|
 | 1 | **SSO Admin Portal** | Tambah aplikasi baru → Dapatkan Client ID & Secret |
 | 2 | `config/services.php` | Daftarkan driver `laravelpassport` |
-| 3 | `app/Providers/AppServiceProvider.php` | Daftarkan Socialite listener & auto-sync role saat boot |
-| 4 | `app/Http/Middleware/CheckLocalRole.php` | Buat middleware polling role berkala (tiap 15 detik) |
-| 5 | `bootstrap/app.php` | Daftarkan alias middleware `local.role` |
-| 6 | `app/Http/Controllers/AuthController.php` | Buat controller login, callback (Socialite), & single logout |
-| 7 | `routes/web.php` | Daftarkan rute `/login`, `/auth/sso/callback`, `/logout`, & proteksi rute |
-| 8 | `.env` | Tambahkan variabel SSO (`SSO_CLIENT_ID`, `SSO_CLIENT_SECRET`, dll.) |
+| 3 | `app/Providers/AppServiceProvider.php` | Daftarkan Socialite listener |
+| 4 | `app/Http/Middleware/CheckLocalRole.php` | Buat middleware polling role & SLO handling |
+| 5 | `bootstrap/app.php` | Daftarkan alias middleware `local.role` & `sso.secret` |
+| 6 | `app/Http/Middleware/VerifySsoSecret.php` | Buat middleware pengaman Discovery API |
+| 7 | `app/Http/Controllers/AuthController.php` | Buat controller login, callback, & single logout |
+| 8 | `routes/web.php` | Daftarkan rute `/login`, `/auth/sso/callback`, `/logout`, & Discovery API |
+| 9 | `.env` | Tambahkan variabel SSO (`SSO_CLIENT_ID`, `SSO_CLIENT_SECRET`, dll.) |
 
 ---
 
 ## 📌 Langkah 1: Daftarkan Aplikasi di SSO Admin Portal
 
 1. Buka browser, akses: **`http://sso-kpi.test/admin/applications`**
-2. Login sebagai Admin SSO (`admin@kpi.com` / `admin123`).
+2. Login sebagai Admin SSO (`admin@kpi.com` / `password123`).
 3. Klik tombol **"+ Tambah Aplikasi"** di pojok kanan atas.
 4. Isi formulir:
    - **Nama Aplikasi:** Nama aplikasi Anda (misal: `Sistem 1`)
    - **Redirect URI / Callback URL:** `http://sistem1.test/auth/sso/callback`
-   - **Role Lokal yang Didukung:** Pisahkan dengan koma (misal: `admin, atasan, pegawai`)
+   - **Supported Roles Discovery URL (Opsional):** `http://sistem1.test/api/sso/supported-roles`
+   - **SSO Discovery Secret (Opsional):** String rahasia yang sama dengan `.env` aplikasi Anda.
 5. Klik **Simpan & Buat Aplikasi**.
 6. **Salin Client ID dan Client Secret** dari notifikasi yang muncul.
 
@@ -50,7 +52,7 @@ Daftarkan provider `laravelpassport` pada file `config/services.php` aplikasi lo
 
 ## 📌 Langkah 3: AppServiceProvider (`app/Providers/AppServiceProvider.php`)
 
-Tambahkan listener Socialite `laravelpassport` dan sinkronisasi role otomatis saat aplikasi di-boot:
+Tambahkan listener Socialite `laravelpassport` agar Socialite mengenali driver OAuth2 SSO Server:
 
 ```php
 <?php
@@ -59,43 +61,24 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Http;
 
 class AppServiceProvider extends ServiceProvider
 {
-    public function register(): void
-    {
-        //
-    }
-
     public function boot(): void
     {
-        // 1. Register Socialite Provider Laravel Passport
+        // Register Socialite Provider Laravel Passport
         Event::listen(function (\SocialiteProviders\Manager\SocialiteWasCalled $event) {
             $event->extendSocialite('laravelpassport', \SocialiteProviders\LaravelPassport\Provider::class);
         });
-
-        // 2. Auto-sync daftar role lokal ke SSO Server
-        if (env('SSO_HOST') && env('SSO_CLIENT_ID')) {
-            try {
-                Http::timeout(3)->post(env('SSO_HOST') . '/api/client-roles/sync', [
-                    'client_id'     => (int) env('SSO_CLIENT_ID'),
-                    'client_secret' => env('SSO_CLIENT_SECRET'),
-                    'roles'         => ['admin', 'atasan', 'pegawai'], // Sesuaikan dengan role lokal Anda
-                ]);
-            } catch (\Exception $e) {
-                // Ignore jika SSO Server offline
-            }
-        }
     }
 }
 ```
 
 ---
 
-## 📌 Langkah 4: Middleware Sinkronisasi Berkala (`app/Http/Middleware/CheckLocalRole.php`)
+## 📌 Langkah 4: Middleware Polling & SLO (`app/Http/Middleware/CheckLocalRole.php`)
 
-Middleware ini secara otomatis mengecek perubahan role ke SSO Server **setiap 15 detik** tanpa mengganggu kecepatan aplikasi, dan langsung melakukan **force logout** jika hak akses dicabut:
+Middleware ini secara otomatis mengecek status keaktifan user ke SSO Server **setiap 15 detik**. Jika respons SSO mengembalikan `401 Unauthorized` (karena user logout dari SSO Portal/token dicabut), middleware akan langsung **mengeluarkan (logout) sesi lokal klien secara instan**:
 
 ```php
 <?php
@@ -115,14 +98,13 @@ class CheckLocalRole
         if (Auth::check()) {
             $user = Auth::user();
             
-            // Sinkronisasi berkala dengan SSO Server tiap 15 detik
             $lastSync = session('last_sso_sync');
             $accessToken = session('sso_access_token');
             
             if ($accessToken && (!$lastSync || now()->diffInSeconds($lastSync) > 15)) {
                 try {
-                    $ssoHost = config('services.laravelpassport.host', env('SSO_HOST', 'http://sso-kpi.test'));
-                    $clientId = config('services.laravelpassport.client_id', env('SSO_CLIENT_ID'));
+                    $ssoHost = config('services.laravelpassport.host', 'http://sso-kpi.test');
+                    $clientId = config('services.laravelpassport.client_id');
                     
                     $response = Http::withToken($accessToken)
                         ->timeout(3)
@@ -142,15 +124,22 @@ class CheckLocalRole
                         }
                         
                         // Perbarui data lokal jika role berubah di SSO
-                        $newRole = strtolower($apiUser['role']);
-                        if ($user->role !== $newRole || $user->name !== $apiUser['name']) {
+                        $newRole = ucfirst($apiUser['role']);
+                        if ($user->global_role !== $apiUser['role'] || $user->local_role !== $newRole) {
                             $user->update([
                                 'name' => $apiUser['name'],
-                                'role' => $newRole,
+                                'global_role' => $apiUser['role'],
+                                'local_role' => $newRole,
                             ]);
                         }
                         
                         session(['last_sso_sync' => now()]);
+                    } elseif ($response->status() === 401) {
+                        // Jika token tidak valid / sudah dicabut di SSO Portal (SLO)
+                        Auth::logout();
+                        $request->session()->invalidate();
+                        $request->session()->regenerateToken();
+                        return redirect()->route('login')->with('error', 'Sesi SSO Anda telah berakhir. Silakan login kembali.');
                     }
                 } catch (\Exception $e) {
                     // Abaikan koneksi jika offline
@@ -167,21 +156,57 @@ class CheckLocalRole
 
 ## 📌 Langkah 5: Registrasi Middleware (`bootstrap/app.php`)
 
-Daftarkan alias middleware `local.role` di `bootstrap/app.php` (Laravel 11):
+Daftarkan alias middleware `local.role` dan `sso.secret` di `bootstrap/app.php` (Laravel 11/12):
 
 ```php
 ->withMiddleware(function (Middleware $middleware) {
     $middleware->alias([
         'local.role' => \App\Http\Middleware\CheckLocalRole::class,
+        'sso.secret' => \App\Http\Middleware\VerifySsoSecret::class,
     ]);
 })
 ```
 
 ---
 
-## 📌 Langkah 6: Controller Otentikasi (`app/Http/Controllers/AuthController.php`)
+## 📌 Langkah 6: Middleware Pengaman Discovery API (`app/Http/Middleware/VerifySsoSecret.php`)
 
-Buat `AuthController.php` untuk mengurus Socialite Login, Callback, & Single Logout:
+Buat middleware untuk membatasi endpoint Supported Roles agar hanya bisa dibaca oleh SSO Server:
+
+```php
+<?php
+
+namespace App\Http\Middleware;
+
+use Closure;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
+
+class VerifySsoSecret
+{
+    public function handle(Request $request, Closure $next): Response
+    {
+        $secret = env('SSO_DISCOVERY_SECRET');
+        $headerSecret = $request->header('X-SSO-Secret');
+
+        if (!$secret || $headerSecret !== $secret) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized. Invalid SSO Secret.',
+            ], 401);
+        }
+
+        return $next($request);
+    }
+}
+```
+
+---
+
+## 📌 Langkah 7: Controller Otentikasi (`app/Http/Controllers/AuthController.php`)
+
+Buat `AuthController.php` untuk mengurus Socialite Login, Callback, & Single Logout.
+*PENTING: Jangan gunakan `guest` middleware pada route `/login` atau `/auth/sso/callback` agar re-login berganti akun dari SSO Portal berjalan mulus.*
 
 ```php
 <?php
@@ -198,17 +223,11 @@ use Illuminate\Support\Facades\Http;
 
 class AuthController extends Controller
 {
-    /**
-     * 1. Redirect ke SSO Server via Socialite
-     */
     public function ssoRedirect()
     {
         return Socialite::driver('laravelpassport')->redirect();
     }
 
-    /**
-     * 2. Handle Callback dari SSO Server
-     */
     public function ssoCallback(Request $request)
     {
         if ($request->has('error')) {
@@ -216,14 +235,12 @@ class AuthController extends Controller
         }
 
         try {
-            // Ambil user dari Socialite driver
             $ssoUser = Socialite::driver('laravelpassport')->user();
             $accessToken = $ssoUser->token;
 
             $ssoHost = config('services.laravelpassport.host', env('SSO_HOST'));
-            $clientId = config('services.laravelpassport.client_id', env('SSO_CLIENT_ID'));
+            $clientId = config('services.laravelpassport.client_id');
 
-            // Request informasi user & role dari SSO API
             $response = Http::withToken($accessToken)
                 ->timeout(5)
                 ->get($ssoHost . '/api/user', [
@@ -236,24 +253,24 @@ class AuthController extends Controller
 
             $apiUser = $response->json();
 
-            // Verifikasi hak akses (role tidak boleh 'none')
-            if (!isset($apiUser['role']) || $apiUser['role'] === 'none') {
+            // Verifikasi apakah user memiliki hak akses aktif (has_access must be true)
+            $hasAccess = isset($apiUser['has_access']) ? (bool) $apiUser['has_access'] : false;
+            if (!$hasAccess) {
                 return redirect()->route('access.denied')->with('error', 'Anda tidak memiliki hak akses untuk aplikasi ini.');
             }
 
-            $roleLokal = strtolower($apiUser['role']);
-
-            // Update atau buat user di DB lokal
+            // Simpan role ke database lokal
             $user = User::updateOrCreate(
                 ['email' => $apiUser['email']],
                 [
-                    'name'     => $apiUser['name'],
-                    'role'     => $roleLokal,
-                    'password' => Hash::make(Str::random(16)),
+                    'name'        => $apiUser['name'],
+                    'sso_user_id' => $apiUser['id'],
+                    'global_role' => $apiUser['role'] ?? 'user',
+                    'local_role'  => ucfirst($apiUser['role'] ?? 'user'),
+                    'password'    => Hash::make(Str::random(16)),
                 ]
             );
 
-            // Login user & simpan token + waktu sync
             Auth::login($user);
             $request->session()->put('sso_access_token', $accessToken);
             $request->session()->put('last_sso_sync', now());
@@ -266,9 +283,6 @@ class AuthController extends Controller
         }
     }
 
-    /**
-     * 3. Single Logout (SLO)
-     */
     public function logout(Request $request)
     {
         Auth::logout();
@@ -284,9 +298,9 @@ class AuthController extends Controller
 
 ---
 
-## 📌 Langkah 7: Rute Otentikasi & Proteksi (`routes/web.php`)
+## 📌 Langkah 8: Rute Otentikasi & Discovery API (`routes/web.php` atau `routes/api.php`)
 
-Daftarkan rute SSO dan proteksi rute aplikasi lokal:
+Daftarkan rute SSO dan endpoint Discovery API di file rute aplikasi lokal Anda:
 
 ```php
 use App\Http\Controllers\AuthController;
@@ -297,7 +311,19 @@ Route::get('/auth/sso/callback', [AuthController::class, 'ssoCallback']);
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::get('/access-denied', fn () => view('access_denied'))->name('access.denied');
 
-// ── Protected Routes (Menggunakan auth + local.role untuk polling sync) ─────
+// ── SSO Supported Roles Discovery API ───────────────────────────────────────
+Route::middleware('sso.secret')->get('/api/sso/supported-roles', function () {
+    return response()->json([
+        'app_name' => 'Sistem 1', // Ganti dengan nama aplikasi Anda
+        'roles' => [
+            ['key' => 'Admin', 'label' => 'Admin', 'level' => 3],
+            ['key' => 'Atasan', 'label' => 'Atasan', 'level' => 2],
+            ['key' => 'Pegawai', 'label' => 'Pegawai', 'level' => 1]
+        ]
+    ]);
+});
+
+// ── Protected Routes ────────────────────────────────────────────────────────
 Route::middleware(['auth', 'local.role'])->group(function () {
     Route::get('/dashboard', fn () => view('dashboard'))->name('dashboard');
 });
@@ -305,16 +331,17 @@ Route::middleware(['auth', 'local.role'])->group(function () {
 
 ---
 
-## 📌 Langkah 8: Konfigurasi Environment (`.env`)
+## 📌 Langkah 9: Konfigurasi Environment (`.env`)
 
 Tambahkan variabel SSO ke file `.env` aplikasi lokal Anda:
 
 ```env
 # ── Konfigurasi SSO Passport Server ──────────────────────────────────────────
 SSO_HOST="http://sso-kpi.test"
-SSO_CLIENT_ID="1"                                        # ← Dari SSO Admin Portal (Langkah 1)
-SSO_CLIENT_SECRET="fX3dwIDhoAMRoOP40E7hW1ih5okJFcUu9Wbe4lao" # ← Dari SSO Admin Portal (Langkah 1)
-SSO_REDIRECT_URI="http://sistem1.test/auth/sso/callback" # ← Sesuaikan dengan domain lokal Anda
+SSO_CLIENT_ID="1"                                              # ← Dari SSO Admin Portal (Langkah 1)
+SSO_CLIENT_SECRET="fX3dwIDhoAMRoOP40E7hW1ih5okJFcUu9Wbe4lao"       # ← Dari SSO Admin Portal (Langkah 1)
+SSO_REDIRECT_URI="http://sistem1.test/auth/sso/callback"       # ← Sesuaikan dengan domain lokal Anda
+SSO_DISCOVERY_SECRET="super_secret_discovery_key_2026"         # ← Sesuai dengan yang diisi di Langkah 1
 ```
 
 Setelah mengisi `.env`, jalankan:
@@ -323,93 +350,3 @@ Setelah mengisi `.env`, jalankan:
 php artisan config:clear
 php artisan cache:clear
 ```
-
----
-
-## 📌 Langkah 9: Real-time SSO Webhook (Opsi Optimal - Asinkronus)
-
-Setiap kali Administrator di portal SSO melakukan **pembaruan role** atau **pencabutan hak akses** pengguna, SSO Server akan mengirimkan HTTP POST request asinkronus langsung ke **Webhook URL** aplikasi klien Anda.
-
-### 1. Struktur Payload Webhook
-
-Webhook dikirim dengan format JSON sebagai berikut:
-
-```json
-{
-  "event": "user.role_updated", // atau "user.access_revoked"
-  "timestamp": 1799988222,
-  "data": {
-    "user_id": 42,
-    "email": "nama.pegawai@kpi.go.id",
-    "name": "Nama Pegawai",
-    "role": "pegawai" // "none" jika akses dicabut
-  }
-}
-```
-
-### 2. Verifikasi Tanda Tangan Webhook (HMAC-SHA256)
-
-Untuk memastikan request benar-benar berasal dari SSO Server KPI, SSO Server mengirimkan header `X-SSO-Signature`. Header ini adalah tanda tangan HMAC-SHA256 dari JSON string payload menggunakan **Webhook Secret** yang Anda daftarkan di SSO Admin Portal.
-
-Contoh middleware verifikasi webhook di aplikasi klien Anda:
-
-```php
-<?php
-
-namespace App\Http\Middleware;
-
-use Closure;
-use Illuminate\Http\Request;
-
-class VerifyWebhookSignature
-{
-    public function handle(Request $request, Closure $next)
-    {
-        $signature = $request->header('X-SSO-Signature');
-        $secret = env('SSO_WEBHOOK_SECRET');
-
-        if (!$signature || !$secret) {
-            return response()->json(['message' => 'Signature or Secret missing'], 401);
-        }
-
-        $computedSignature = hash_hmac('sha256', $request->getContent(), $secret);
-
-        if (!hash_equals($signature, $computedSignature)) {
-            return response()->json(['message' => 'Invalid signature'], 401);
-        }
-
-        return $next($request);
-    }
-}
-```
-
-Daftarkan rute webhook di `routes/api.php` aplikasi klien Anda:
-
-```php
-Route::post('/api/sso-webhook', [AuthController::class, 'handleSSOWebhook'])
-    ->middleware(\App\Http\Middleware\VerifyWebhookSignature::class);
-```
-
----
-
-## ✅ Checklist Akhir
-
-- [ ] Aplikasi sudah terdaftar di SSO Admin Portal (Langkah 1)
-- [ ] Driver `laravelpassport` dikonfigurasi di `config/services.php`
-- [ ] `AppServiceProvider` mendaftarkan Socialite listener & sync role saat boot
-- [ ] Middleware `CheckLocalRole` dibuat & didaftarkan di `bootstrap/app.php`
-- [ ] `AuthController` dibuat dengan Socialite redirect, callback, & single logout
-- [ ] Rute diproteksi dengan `middleware(['auth', 'local.role'])`
-- [ ] `.env` diisi dengan `SSO_HOST`, `SSO_CLIENT_ID`, `SSO_CLIENT_SECRET`, `SSO_REDIRECT_URI`
-- [ ] `php artisan config:clear` sudah dijalankan
-
----
-
-## 🧪 Uji Coba
-
-1. Akses URL aplikasi lokal (misal `http://sistem1.test`).
-2. Browser dialihkan ke SSO Server (`http://sso-kpi.test/login`).
-3. Login dengan akun SSO.
-4. Pengguna berhasil masuk ke dashboard aplikasi lokal.
-5. Ubah role pengguna di **SSO Admin Portal** (`/admin/applications/{id}/users`).
-6. Pindah halaman di aplikasi lokal → role pengguna otomatis ter-update dalam 15 detik **tanpa perlu logout**!
