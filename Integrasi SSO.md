@@ -76,9 +76,9 @@ class AppServiceProvider extends ServiceProvider
 
 ---
 
-## 📌 Langkah 4: Middleware Polling & SLO (`app/Http/Middleware/CheckLocalRole.php`)
+## 📌 Langkah 4: Middleware Redis Session Caching & Webhooks (Tanpa Synchronous Polling)
 
-Middleware ini secara otomatis mengecek status keaktifan user ke SSO Server **setiap 15 detik**. Jika respons SSO mengembalikan `401 Unauthorized` (karena user logout dari SSO Portal/token dicabut), middleware akan langsung **mengeluarkan (logout) sesi lokal klien secara instan**:
+Untuk menghindari latensi HTTP *synchronous polling* di setiap request web, manfaatkan **Cache/Redis** lokal dengan *TTL (Time-To-Live)* singkat (misal 60 detik) atau gunakan *Back-channel Logout Webhook*:
 
 ```php
 <?php
@@ -90,6 +90,7 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Cache;
 
 class CheckLocalRole
 {
@@ -97,52 +98,59 @@ class CheckLocalRole
     {
         if (Auth::check()) {
             $user = Auth::user();
-            
-            $lastSync = session('last_sso_sync');
             $accessToken = session('sso_access_token');
             
-            if ($accessToken && (!$lastSync || now()->diffInSeconds($lastSync) > 15)) {
-                try {
-                    $ssoHost = config('services.laravelpassport.host', 'http://sso-kpi.test');
-                    $clientId = config('services.laravelpassport.client_id');
-                    
-                    $response = Http::withToken($accessToken)
-                        ->timeout(3)
-                        ->get($ssoHost . '/api/user', [
-                            'client_id' => $clientId
-                        ]);
+            if ($accessToken) {
+                $cacheKey = 'sso_user_status_' . $user->id;
+
+                // Cache status user selama 60 detik di Redis/Cache lokal untuk performa tinggi
+                $apiUser = Cache::remember($cacheKey, 60, function () use ($accessToken) {
+                    try {
+                        $ssoHost = config('services.laravelpassport.host', 'http://sso-kpi.test');
+                        $clientId = config('services.laravelpassport.client_id');
                         
-                    if ($response->successful()) {
-                        $apiUser = $response->json();
-                        
-                        // Jika role = 'none', akses dicabut oleh Admin SSO! Force logout.
-                        if (!isset($apiUser['role']) || $apiUser['role'] === 'none') {
-                            Auth::logout();
-                            $request->session()->invalidate();
-                            $request->session()->regenerateToken();
-                            return redirect()->route('access.denied')->with('error', 'Akses Anda ke aplikasi ini telah dicabut oleh Administrator.');
-                        }
-                        
-                        // Perbarui data lokal jika role berubah di SSO
-                        $newRole = ucfirst($apiUser['role']);
-                        if ($user->global_role !== $apiUser['role'] || $user->local_role !== $newRole) {
-                            $user->update([
-                                'name' => $apiUser['name'],
-                                'global_role' => $apiUser['role'],
-                                'local_role' => $newRole,
+                        $response = Http::withToken($accessToken)
+                            ->timeout(2)
+                            ->get($ssoHost . '/api/v1/user', [
+                                'client_id' => $clientId
                             ]);
+                            
+                        if ($response->successful()) {
+                            return $response->json();
+                        } elseif ($response->status() === 401) {
+                            return 'unauthorized';
                         }
-                        
-                        session(['last_sso_sync' => now()]);
-                    } elseif ($response->status() === 401) {
-                        // Jika token tidak valid / sudah dicabut di SSO Portal (SLO)
+                    } catch (\Exception $e) {
+                        return null; // Fallback jika SSO offline
+                    }
+                    return null;
+                });
+
+                if ($apiUser === 'unauthorized') {
+                    Cache::forget($cacheKey);
+                    Auth::logout();
+                    $request->session()->invalidate();
+                    $request->session()->regenerateToken();
+                    return redirect()->route('login')->with('error', 'Sesi SSO Anda telah berakhir.');
+                }
+
+                if (is_array($apiUser)) {
+                    if (!isset($apiUser['role']) || $apiUser['role'] === 'none' || !(bool)($apiUser['has_access'] ?? true)) {
+                        Cache::forget($cacheKey);
                         Auth::logout();
                         $request->session()->invalidate();
                         $request->session()->regenerateToken();
-                        return redirect()->route('login')->with('error', 'Sesi SSO Anda telah berakhir. Silakan login kembali.');
+                        return redirect()->route('access.denied')->with('error', 'Akses Anda telah dicabut.');
                     }
-                } catch (\Exception $e) {
-                    // Abaikan koneksi jika offline
+
+                    $newRole = ucfirst($apiUser['role']);
+                    if ($user->global_role !== $apiUser['role'] || $user->local_role !== $newRole) {
+                        $user->update([
+                            'name' => $apiUser['name'],
+                            'global_role' => $apiUser['role'],
+                            'local_role' => $newRole,
+                        ]);
+                    }
                 }
             }
         }
@@ -243,7 +251,7 @@ class AuthController extends Controller
 
             $response = Http::withToken($accessToken)
                 ->timeout(5)
-                ->get($ssoHost . '/api/user', [
+                ->get($ssoHost . '/api/v1/user', [
                     'client_id' => $clientId
                 ]);
 

@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
         ]);
         $middleware->web(append: [
+            \App\Http\Middleware\SecurityHeadersMiddleware::class,
             \App\Http\Middleware\CheckOAuthAccess::class,
         ]);
     })
