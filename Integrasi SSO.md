@@ -24,7 +24,7 @@ Dokumen ini adalah **panduan standar dari awal hingga akhir** untuk menyambungka
 
 1. Buka browser, akses: **`http://sso-kpi.test/admin/applications`**
 2. Login sebagai Admin SSO (`admin@kpi.com` / `password123`).
-3. Klik tombol **"+ Tambah Aplikasi"** di pojok kanan atas.
+3. Klik tombol **"Tambah Aplikasi"** di pojok kanan atas.
 4. Isi formulir:
    - **Nama Aplikasi:** Nama aplikasi Anda (misal: `Sistem 1`)
    - **Redirect URI / Callback URL:** `http://sistem1.test/auth/sso/callback`
