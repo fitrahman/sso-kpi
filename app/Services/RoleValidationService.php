@@ -11,6 +11,11 @@ class RoleValidationService
      */
     public static function isValidRole($oauthClientId, string $role): bool
     {
+        $roleTrimmed = strtolower(trim($role));
+        if (in_array($roleTrimmed, ['user', 'pengguna'])) {
+            return true;
+        }
+
         $client = PassportClient::find($oauthClientId);
         if (! $client) {
             return false;
@@ -26,6 +31,6 @@ class RoleValidationService
 
         $supportedLower = array_map('strtolower', $supported);
 
-        return in_array(strtolower(trim($role)), $supportedLower);
+        return in_array($roleTrimmed, $supportedLower);
     }
 }

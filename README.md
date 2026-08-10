@@ -95,9 +95,9 @@ Pastikan folder diletakkan di dalam direktori root Laragon Anda (`C:\laragon\www
 
 ## 🔑 Akun Kredensial untuk Pengujian
 
-Gunakan akun tes berikut untuk masuk dan menguji alur sistem:
+Gunakan akun berikut untuk masuk dan menguji alur sistem:
 
-### 1. Akun Administrator (SSO Portal)
+### Akun Administrator (SSO Portal)
 * **Email**: `admin@kpi.com`
 * **Kata Sandi**: `password123`
 * **Peran**: Administrator (Memiliki akses ke panel persetujuan pengguna baru, persetujuan perubahan profil, dan permohonan akses aplikasi).

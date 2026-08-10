@@ -270,10 +270,19 @@
                                                      if (empty($supportedRoles) || !is_array($supportedRoles)) {
                                                          $supportedRoles = ['admin', 'pengguna'];
                                                      }
+
+                                                     $currentLocalRole = $userClientRoles[$client->id] ?? 'user';
+                                                     $roleOptions = $supportedRoles;
+                                                     if (!in_array('user', $roleOptions)) {
+                                                         $roleOptions[] = 'user';
+                                                     }
+                                                     if (!empty($currentLocalRole) && !in_array($currentLocalRole, $roleOptions)) {
+                                                         $roleOptions[] = $currentLocalRole;
+                                                     }
                                                  @endphp
                                                  <select name="client_roles[{{ $client->id }}]" class="appearance-none w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-kpi-500 bg-white text-slate-750 font-medium pr-8">
-                                                     @foreach ($supportedRoles as $role)
-                                                         <option value="{{ $role }}" {{ ($userClientRoles[$client->id] ?? $supportedRoles[0]) === $role ? 'selected' : '' }}>
+                                                     @foreach ($roleOptions as $role)
+                                                         <option value="{{ $role }}" {{ $currentLocalRole === $role ? 'selected' : '' }}>
                                                              {{ ucfirst($role) }}
                                                          </option>
                                                      @endforeach
