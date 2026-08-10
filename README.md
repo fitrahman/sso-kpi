@@ -19,7 +19,7 @@ Aplikasi ini berfungsi sebagai penyedia identitas pusat (*Identity Provider*) di
 - **Strict Role Validation**:
   - Validasi ketat menggunakan `RoleValidationService` memastikan tidak ada penyimpanan/perubahan role baru ke tabel `user_client_roles` yang tidak sesuai dengan daftar role resmi (`supported_roles`) masing-masing klien.
 - **SSO Webhooks Asinkronus**: Mengirimkan pemberitahuan instan secara asinkronus (*Laravel Queue*) ke aplikasi klien saat peran pengguna berubah (`user.role_updated`) atau ketika akses dicabut/dinonaktifkan (`user.access_revoked`). Dilengkapi dengan tanda tangan HMAC-SHA256 untuk memverifikasi asal request.
-- **Single Log Out (SLO) yang Andal**:
+- **Single Log Out (SLO)**:
   - Ketika user logout dari SSO Portal atau aplikasi klien, seluruh token akses OAuth akan dicabut (*revoked*) secara instan.
   - Middleware klien mendeteksi status `401 Unauthorized` pada polling sinkronisasi dan otomatis mengeluarkan (logout) sesi lokal klien secara instan (mencegah sesi nyangkut).
 - **Pengajuan Edit Profil dengan Persetujuan Admin**: Pengguna dapat mengajukan perubahan data profil mereka. Perubahan data baru akan diterapkan ke database setelah disetujui oleh Administrator di dashboard.
