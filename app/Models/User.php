@@ -63,8 +63,8 @@ class User extends Authenticatable
      */
     public function accessedClients()
     {
-        return $this->belongsToMany(\Laravel\Passport\Client::class, 'client_user_access', 'user_id', 'client_id')
-            ->withPivot('status')
+        return $this->belongsToMany(PassportClient::class, 'client_user_access', 'user_id', 'client_id')
+            ->withPivot('status', 'is_active')
             ->withTimestamps();
     }
 

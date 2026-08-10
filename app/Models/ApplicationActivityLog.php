@@ -6,9 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class ApplicationActivityLog extends Model
 {
-    public $timestamps = false;
+    public $timestamps = true;
 
-    public $updated_at = false;
+    const UPDATED_AT = null;
 
     protected $fillable = [
         'oauth_client_id',

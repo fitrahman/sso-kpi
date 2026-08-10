@@ -60,16 +60,20 @@ class ClientService
             ]);
         }
 
-        // Auto-grant access to all approved users
-        $approvedUsers = User::where('status', 'approved')->get();
-        foreach ($approvedUsers as $u) {
-            DB::table('client_user_access')->insert([
-                'user_id' => $u->id,
+        // Auto-grant access to all approved users in bulk
+        $approvedUserIds = User::where('status', 'approved')->pluck('id');
+        if ($approvedUserIds->isNotEmpty()) {
+            $now = now();
+            $accessRecords = $approvedUserIds->map(fn ($userId) => [
+                'user_id' => $userId,
                 'client_id' => $client->id,
                 'status' => 'approved',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+                'is_active' => true,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ])->toArray();
+
+            DB::table('client_user_access')->insert($accessRecords);
         }
 
         ApplicationActivityLog::create([

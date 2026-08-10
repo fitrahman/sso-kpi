@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Jobs\DispatchSSOWebhookJob;
 use App\Mail\UserApprovedMail;
 use App\Mail\UserRejectedMail;
 use App\Models\PassportClient;
@@ -62,16 +63,14 @@ class UserService
                 $updateData['status'] = $validatedData['status'];
 
                 if ($validatedData['status'] === 'inactive') {
-                    $user->tokens()->each(function ($token) {
-                        $token->revoke();
-                    });
+                    $this->revokeUserTokens($user);
 
                     // Dispatch webhook for user deactivation
                     $assignedClients = $user->accessedClients()->get();
                     foreach ($assignedClients as $assignedClient) {
                         $clientModel = PassportClient::find($assignedClient->id);
                         if ($clientModel && $clientModel->webhookEndpoint && $clientModel->webhookEndpoint->is_active) {
-                            \App\Jobs\DispatchSSOWebhookJob::dispatch(
+                            DispatchSSOWebhookJob::dispatch(
                                 $clientModel->webhookEndpoint->url,
                                 $clientModel->webhookEndpoint->secret,
                                 [
@@ -105,7 +104,7 @@ class UserService
         foreach ($unselectedClients as $unselectedClient) {
             $clientModel = PassportClient::find($unselectedClient->id);
             if ($clientModel && $clientModel->webhookEndpoint && $clientModel->webhookEndpoint->is_active) {
-                \App\Jobs\DispatchSSOWebhookJob::dispatch(
+                DispatchSSOWebhookJob::dispatch(
                     $clientModel->webhookEndpoint->url,
                     $clientModel->webhookEndpoint->secret,
                     [
@@ -152,18 +151,18 @@ class UserService
 
             $roleValue = $clientRoles[$cId] ?? $supportedRoles[0] ?? 'user';
 
-            if (! \App\Services\RoleValidationService::isValidRole($cId, $roleValue)) {
+            if (! RoleValidationService::isValidRole($cId, $roleValue)) {
                 throw new \InvalidArgumentException("Role '{$roleValue}' tidak valid untuk aplikasi ID {$cId}.");
             }
 
-            $clientRoleRecord = UserClientRole::updateOrCreate(
+            UserClientRole::updateOrCreate(
                 ['user_id' => $user->id, 'oauth_client_id' => $cId],
                 ['role' => $roleValue]
             );
 
             // Dispatch webhook if client has configured active webhook
             if ($clientModel && $clientModel->webhookEndpoint && $clientModel->webhookEndpoint->is_active) {
-                \App\Jobs\DispatchSSOWebhookJob::dispatch(
+                DispatchSSOWebhookJob::dispatch(
                     $clientModel->webhookEndpoint->url,
                     $clientModel->webhookEndpoint->secret,
                     [
@@ -233,10 +232,18 @@ class UserService
             throw new \Exception('Anda tidak dapat menghapus akun Anda sendiri.');
         }
 
+        $this->revokeUserTokens($user);
+
+        $user->delete();
+    }
+
+    /**
+     * Revoke all OAuth tokens for a user
+     */
+    public function revokeUserTokens(User $user): void
+    {
         $user->tokens()->each(function ($token) {
             $token->revoke();
         });
-
-        $user->delete();
     }
 }

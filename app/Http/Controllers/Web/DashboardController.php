@@ -7,11 +7,14 @@ use App\Models\ApplicationActivityLog;
 use App\Models\PassportClient;
 use App\Models\User;
 use App\Models\UserActivityLog;
+use App\Models\UserClientRole;
 use App\Services\ClientService;
+use App\Services\RoleValidationService;
 use App\Services\UserService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 
 class DashboardController extends Controller
 {
@@ -270,19 +273,32 @@ class DashboardController extends Controller
                 $chartDays[] = now()->subDays($i)->format('d M');
             }
 
-            // Get clients and query daily token counts (logins)
+            // Get clients
             $clients = PassportClient::where('personal_access_client', 0)
                 ->where('password_client', 0)
                 ->get();
 
-            $appsChartData = $clients->map(function ($client) use ($days) {
+            $clientIds = $clients->pluck('id')->toArray();
+            $startDate = now()->subDays(6)->startOfDay();
+            $endDate = now()->endOfDay();
+
+            // Query daily token counts for all clients in a single aggregate query (No N+1)
+            $rawCounts = DB::table('oauth_access_tokens')
+                ->selectRaw('client_id, DATE(created_at) as date, COUNT(*) as total_count')
+                ->whereIn('client_id', $clientIds)
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->groupBy('client_id', DB::raw('DATE(created_at)'))
+                ->get();
+
+            $countsMap = [];
+            foreach ($rawCounts as $row) {
+                $countsMap[$row->client_id][$row->date] = $row->total_count;
+            }
+
+            $appsChartData = $clients->map(function ($client) use ($days, $countsMap) {
                 $dataPoints = [];
                 foreach ($days as $date) {
-                    $count = DB::table('oauth_access_tokens')
-                        ->where('client_id', $client->id)
-                        ->whereDate('created_at', $date)
-                        ->count();
-                    $dataPoints[] = $count;
+                    $dataPoints[] = $countsMap[$client->id][$date] ?? 0;
                 }
 
                 return [
@@ -308,18 +324,13 @@ class DashboardController extends Controller
     public function clients()
     {
         try {
-            $clients = PassportClient::with('webhookEndpoint')->where('personal_access_client', 0)
+            $clients = PassportClient::with('webhookEndpoint')
+                ->withCount('activeUsers as user_count')
+                ->where('personal_access_client', 0)
                 ->where('password_client', 0)
                 ->orderBy('display_order')
                 ->orderBy('id')
                 ->get();
-
-            $clients->each(function ($client) {
-                $client->user_count = DB::table('client_user_access')
-                    ->where('client_id', $client->id)
-                    ->where('is_active', true)
-                    ->count();
-            });
 
             $activityLogs = ApplicationActivityLog::with('admin')
                 ->orderByDesc('created_at')
@@ -446,6 +457,56 @@ class DashboardController extends Controller
     }
 
     /**
+     * Build user filter query for a client application
+     */
+    private function buildClientUsersQuery(PassportClient $client, ?string $search, ?string $roleFilter, ?string $accessFilter, ?string $localRoleFilter)
+    {
+        $usersQuery = User::query();
+
+        if (! empty($search)) {
+            $usersQuery->where(function ($q) use ($search) {
+                $q->where('name', 'like', '%'.$search.'%')
+                    ->orWhere('email', 'like', '%'.$search.'%')
+                    ->orWhere('role', 'like', '%'.$search.'%');
+            });
+        }
+
+        if (! empty($roleFilter)) {
+            $usersQuery->where('role', $roleFilter);
+        }
+
+        if (! empty($accessFilter)) {
+            $userIdsWithAccess = DB::table('client_user_access')
+                ->where('client_id', $client->id)
+                ->where('is_active', true)
+                ->pluck('user_id');
+
+            if ($accessFilter === 'approved') {
+                $usersQuery->whereIn('id', $userIdsWithAccess);
+            } elseif ($accessFilter === 'no_access') {
+                $usersQuery->whereNotIn('id', $userIdsWithAccess);
+            }
+        }
+
+        if (! empty($localRoleFilter)) {
+            if ($localRoleFilter === 'none') {
+                $userIdsWithRole = UserClientRole::where('oauth_client_id', $client->id)
+                    ->whereNotNull('role')
+                    ->where('role', '!=', '')
+                    ->pluck('user_id');
+                $usersQuery->whereNotIn('id', $userIdsWithRole);
+            } else {
+                $userIdsWithRole = UserClientRole::where('oauth_client_id', $client->id)
+                    ->where('role', $localRoleFilter)
+                    ->pluck('user_id');
+                $usersQuery->whereIn('id', $userIdsWithRole);
+            }
+        }
+
+        return $usersQuery;
+    }
+
+    /**
      * Show detail of an application along with all users and their local roles (Admin only)
      */
     public function clientUsers(Request $request, $id)
@@ -457,51 +518,7 @@ class DashboardController extends Controller
             $accessFilter = $request->get('access');
             $localRoleFilter = $request->get('local_role');
 
-            $usersQuery = User::query();
-
-            if (! empty($search)) {
-                $usersQuery->where(function ($q) use ($search) {
-                    $q->where('name', 'like', '%'.$search.'%')
-                        ->orWhere('email', 'like', '%'.$search.'%')
-                        ->orWhere('role', 'like', '%'.$search.'%');
-                });
-            }
-
-            if (! empty($roleFilter)) {
-                $usersQuery->where('role', $roleFilter);
-            }
-
-            if (! empty($accessFilter)) {
-                if ($accessFilter === 'approved') {
-                    $userIdsWithAccess = DB::table('client_user_access')
-                        ->where('client_id', $client->id)
-                        ->where('is_active', true)
-                        ->pluck('user_id');
-                    $usersQuery->whereIn('id', $userIdsWithAccess);
-                } elseif ($accessFilter === 'no_access') {
-                    $userIdsWithAccess = DB::table('client_user_access')
-                        ->where('client_id', $client->id)
-                        ->where('is_active', true)
-                        ->pluck('user_id');
-                    $usersQuery->whereNotIn('id', $userIdsWithAccess);
-                }
-            }
-
-            if (! empty($localRoleFilter)) {
-                if ($localRoleFilter === 'none') {
-                    $userIdsWithRole = \App\Models\UserClientRole::where('oauth_client_id', $client->id)
-                        ->whereNotNull('role')
-                        ->where('role', '!=', '')
-                        ->pluck('user_id');
-                    $usersQuery->whereNotIn('id', $userIdsWithRole);
-                } else {
-                    $userIdsWithRole = \App\Models\UserClientRole::where('oauth_client_id', $client->id)
-                        ->where('role', $localRoleFilter)
-                        ->pluck('user_id');
-                    $usersQuery->whereIn('id', $userIdsWithRole);
-                }
-            }
-
+            $usersQuery = $this->buildClientUsersQuery($client, $search, $roleFilter, $accessFilter, $localRoleFilter);
             $users = $usersQuery->orderBy('name')->paginate(10)->withQueryString();
 
             $accessMap = DB::table('client_user_access')
@@ -509,7 +526,7 @@ class DashboardController extends Controller
                 ->pluck('is_active', 'user_id')
                 ->toArray();
 
-            $localRolesMap = \App\Models\UserClientRole::where('oauth_client_id', $client->id)
+            $localRolesMap = UserClientRole::where('oauth_client_id', $client->id)
                 ->pluck('role', 'user_id')
                 ->toArray();
 
@@ -590,11 +607,11 @@ class DashboardController extends Controller
             if ($request->has('local_role')) {
                 $localRole = trim($request->input('local_role') ?: 'user');
 
-                if (! \App\Services\RoleValidationService::isValidRole($client->id, $localRole)) {
+                if (! RoleValidationService::isValidRole($client->id, $localRole)) {
                     return back()->withErrors(['error' => "Role '{$localRole}' tidak valid untuk aplikasi {$client->name}."]);
                 }
 
-                \App\Models\UserClientRole::updateOrCreate(
+                UserClientRole::updateOrCreate(
                     ['user_id' => $user->id, 'oauth_client_id' => $client->id],
                     ['role' => $localRole]
                 );
@@ -607,7 +624,7 @@ class DashboardController extends Controller
                 ->first();
             $currentStatus = $currentAccessObj && $currentAccessObj->is_active ? 'approved' : 'rejected';
 
-            $currentRoleObj = \App\Models\UserClientRole::where('user_id', $user->id)
+            $currentRoleObj = UserClientRole::where('user_id', $user->id)
                 ->where('oauth_client_id', $client->id)
                 ->first();
             $currentRole = $currentRoleObj ? $currentRoleObj->role : 'user';
@@ -622,7 +639,7 @@ class DashboardController extends Controller
             if ($client->redirect) {
                 $webhookUrl = str_replace('/auth/sso/callback', '/api/sso/webhook', $client->redirect);
                 try {
-                    \Illuminate\Support\Facades\Http::timeout(2)->post($webhookUrl, [
+                    Http::timeout(2)->post($webhookUrl, [
                         'event' => 'user.role_updated',
                         'timestamp' => now()->timestamp,
                         'data' => [
@@ -676,51 +693,7 @@ class DashboardController extends Controller
                 $accessFilter = $request->input('access');
                 $localRoleFilter = $request->input('local_role');
 
-                $usersQuery = User::query();
-
-                if (! empty($search)) {
-                    $usersQuery->where(function ($q) use ($search) {
-                        $q->where('name', 'like', '%'.$search.'%')
-                            ->orWhere('email', 'like', '%'.$search.'%')
-                            ->orWhere('role', 'like', '%'.$search.'%');
-                    });
-                }
-
-                if (! empty($roleFilter)) {
-                    $usersQuery->where('role', $roleFilter);
-                }
-
-                if (! empty($accessFilter)) {
-                    if ($accessFilter === 'approved') {
-                        $userIdsWithAccess = DB::table('client_user_access')
-                            ->where('client_id', $client->id)
-                            ->where('is_active', true)
-                            ->pluck('user_id');
-                        $usersQuery->whereIn('id', $userIdsWithAccess);
-                    } elseif ($accessFilter === 'no_access') {
-                        $userIdsWithAccess = DB::table('client_user_access')
-                            ->where('client_id', $client->id)
-                            ->where('is_active', true)
-                            ->pluck('user_id');
-                        $usersQuery->whereNotIn('id', $userIdsWithAccess);
-                    }
-                }
-
-                if (! empty($localRoleFilter)) {
-                    if ($localRoleFilter === 'none') {
-                        $userIdsWithRole = \App\Models\UserClientRole::where('oauth_client_id', $client->id)
-                            ->whereNotNull('role')
-                            ->where('role', '!=', '')
-                            ->pluck('user_id');
-                        $usersQuery->whereNotIn('id', $userIdsWithRole);
-                    } else {
-                        $userIdsWithRole = \App\Models\UserClientRole::where('oauth_client_id', $client->id)
-                            ->where('role', $localRoleFilter)
-                            ->pluck('user_id');
-                        $usersQuery->whereIn('id', $userIdsWithRole);
-                    }
-                }
-
+                $usersQuery = $this->buildClientUsersQuery($client, $search, $roleFilter, $accessFilter, $localRoleFilter);
                 $userIds = $usersQuery->pluck('id')->toArray();
             } else {
                 $userIds = $request->input('user_ids');
@@ -732,7 +705,7 @@ class DashboardController extends Controller
 
             if ($action === 'change_role') {
                 $roleToSet = trim($localRole ?: 'user');
-                if (! \App\Services\RoleValidationService::isValidRole($client->id, $roleToSet)) {
+                if (! RoleValidationService::isValidRole($client->id, $roleToSet)) {
                     return back()->withErrors(['error' => "Role '{$roleToSet}' tidak valid untuk aplikasi {$client->name}."]);
                 }
             }
@@ -740,8 +713,11 @@ class DashboardController extends Controller
             $updatedCount = 0;
             $logsDetails = [];
 
+            // Batch query users to avoid N+1 queries in loop
+            $usersMap = User::whereIn('id', $userIds)->get()->keyBy('id');
+
             foreach ($userIds as $userId) {
-                $user = User::find($userId);
+                $user = $usersMap->get($userId);
                 if (! $user) continue;
 
                 if ($action === 'enable_access') {
@@ -798,7 +774,7 @@ class DashboardController extends Controller
                     $logsDetails[] = "Akses '{$user->name}' dinonaktifkan";
                 } elseif ($action === 'change_role') {
                     $roleToSet = trim($localRole ?: 'user');
-                    \App\Models\UserClientRole::updateOrCreate(
+                    UserClientRole::updateOrCreate(
                         ['user_id' => $user->id, 'oauth_client_id' => $client->id],
                         ['role' => $roleToSet]
                     );
@@ -813,14 +789,14 @@ class DashboardController extends Controller
                         ->first();
                     $currentStatus = $currentAccessObj && $currentAccessObj->is_active ? 'approved' : 'rejected';
 
-                    $currentRoleObj = \App\Models\UserClientRole::where('user_id', $user->id)
+                    $currentRoleObj = UserClientRole::where('user_id', $user->id)
                         ->where('oauth_client_id', $client->id)
                         ->first();
                     $currentRole = $currentRoleObj ? $currentRoleObj->role : 'user';
 
                     $webhookUrl = str_replace('/auth/sso/callback', '/api/sso/webhook', $client->redirect);
                     try {
-                        \Illuminate\Support\Facades\Http::timeout(2)->post($webhookUrl, [
+                        Http::timeout(2)->post($webhookUrl, [
                             'event' => 'user.role_updated',
                             'timestamp' => now()->timestamp,
                             'data' => [

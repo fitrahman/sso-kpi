@@ -25,3 +25,8 @@ Route::prefix('v1')->group(function () {
         Route::get('/users/{id}', [UserController::class, 'show']);
     });
 });
+
+// Alias for /api/user without v1 prefix
+Route::middleware('auth:api')->group(function () {
+    Route::get('/user', [AuthController::class, 'user']);
+});

@@ -37,7 +37,7 @@ class CheckOAuthAccess
 
                     $access = $user->accessedClients()->where('client_id', $clientId)->first();
 
-                    if (! $access || $access->pivot->status !== 'approved') {
+                    if (! $access || $access->pivot->status !== 'approved' || ! $access->pivot->is_active) {
                         // Arahkan ke gateway agar menampilkan halaman request akses / pending
                         return redirect()->route('app.gateway', ['appName' => $client->name]);
                     }

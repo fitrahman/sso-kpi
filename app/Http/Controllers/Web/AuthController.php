@@ -61,17 +61,13 @@ class AuthController extends Controller
 
             $user = Auth::user();
             if ($user->status === 'pending') {
-                Auth::logout();
-                $request->session()->invalidate();
-                $request->session()->regenerateToken();
+                $this->performLogout($request);
 
                 return back()
                     ->withErrors(['email' => 'Akun Anda masih menunggu persetujuan dari Administrator.'])
                     ->withInput();
             } elseif ($user->status === 'inactive') {
-                Auth::logout();
-                $request->session()->invalidate();
-                $request->session()->regenerateToken();
+                $this->performLogout($request);
 
                 return back()
                     ->withErrors(['email' => 'Akun Anda telah dinonaktifkan oleh Administrator.'])
@@ -134,16 +130,7 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
         try {
-            $user = Auth::user();
-            if ($user) {
-                $user->tokens()->each(function ($token) {
-                    $token->revoke();
-                });
-            }
-
-            Auth::logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
+            $this->performLogout($request);
 
             return redirect()->route('login')
                 ->with('success', 'Logged out successfully!');
@@ -160,16 +147,7 @@ class AuthController extends Controller
     public function ssoLogout(Request $request)
     {
         try {
-            $user = Auth::user();
-            if ($user) {
-                $user->tokens()->each(function ($token) {
-                    $token->revoke();
-                });
-            }
-
-            Auth::logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
+            $this->performLogout($request);
 
             $redirectUrl = $request->query('redirect', route('login'));
 
@@ -177,5 +155,22 @@ class AuthController extends Controller
         } catch (\Exception $e) {
             return redirect()->route('login')->withErrors(['error' => 'Logout gagal: '.$e->getMessage()]);
         }
+    }
+
+    /**
+     * Helper to invalidate session and revoke user tokens
+     */
+    private function performLogout(Request $request): void
+    {
+        $user = Auth::user();
+        if ($user) {
+            $user->tokens()->each(function ($token) {
+                $token->revoke();
+            });
+        }
+
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
     }
 }

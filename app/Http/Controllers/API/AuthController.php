@@ -3,11 +3,15 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Models\PassportClient;
 use App\Models\User;
+use App\Models\UserClientRole;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rules\Password;
 use Laravel\Passport\RefreshTokenRepository;
 
 class AuthController extends Controller
@@ -21,7 +25,7 @@ class AuthController extends Controller
             $validator = Validator::make($request->all(), [
                 'name' => 'required|string|max:255',
                 'email' => 'required|string|email|max:255|unique:users',
-                'password' => ['required', 'string', \Illuminate\Validation\Rules\Password::min(8)->letters()->mixedCase()->numbers()->symbols(), 'confirmed'],
+                'password' => ['required', 'string', Password::min(8)->letters()->mixedCase()->numbers()->symbols(), 'confirmed'],
                 'phone' => 'nullable|string|max:15',
                 'role' => 'required|in:'.implode(',', User::ROLES),
             ]);
@@ -130,7 +134,7 @@ class AuthController extends Controller
             }
 
             if ($clientId) {
-                $clientRole = \App\Models\UserClientRole::where('user_id', $user->id)
+                $clientRole = UserClientRole::where('user_id', $user->id)
                     ->where('oauth_client_id', $clientId)
                     ->first();
 
@@ -141,7 +145,7 @@ class AuthController extends Controller
                 }
 
                 if ($user->role !== 'admin') {
-                    $accessObj = \Illuminate\Support\Facades\DB::table('client_user_access')
+                    $accessObj = DB::table('client_user_access')
                         ->where('user_id', $user->id)
                         ->where('client_id', $clientId)
                         ->first();
@@ -197,7 +201,7 @@ class AuthController extends Controller
             return response()->json(['success' => false, 'message' => 'client_id parameter is required'], 400);
         }
 
-        $client = \Laravel\Passport\Client::find($clientId);
+        $client = PassportClient::find($clientId);
         if (! $client) {
             return response()->json(['success' => false, 'message' => 'Client application not found'], 404);
         }
@@ -228,7 +232,7 @@ class AuthController extends Controller
             return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
         }
 
-        $client = \Laravel\Passport\Client::find($request->client_id);
+        $client = PassportClient::find($request->client_id);
         if (! $client) {
             return response()->json(['success' => false, 'message' => 'Client application not found'], 404);
         }
@@ -275,28 +279,5 @@ class AuthController extends Controller
                 'error' => $e->getMessage(),
             ], 500);
         }
-    }
-
-    /**
-     * Get user permissions based on role
-     * This is a custom implementation instead of OAuth scopes
-     */
-    private function getUserPermissions($user)
-    {
-        if ($user->isAdmin()) {
-            return [
-                'can_read_users' => true,
-                'can_write_users' => true,
-                'can_delete_users' => true,
-                'can_access_admin_panel' => true,
-            ];
-        }
-
-        return [
-            'can_read_users' => false,
-            'can_write_users' => false,
-            'can_delete_users' => false,
-            'can_access_admin_panel' => false,
-        ];
     }
 }
