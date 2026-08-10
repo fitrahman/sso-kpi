@@ -180,6 +180,24 @@
 
         <div class="p-4 sm:p-8 max-w-6xl w-full mx-auto space-y-6">
 
+            @if (session('success') && !str_contains(session('success'), 'secara massal'))
+                <div class="bg-green-50 border border-green-200 p-4 rounded-xl flex items-start gap-3 shadow-sm">
+                    <svg class="h-5 w-5 text-green-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p class="text-sm font-medium text-green-800">{{ session('success') }}</p>
+                </div>
+            @endif
+
+            @if ($errors->any())
+                <div class="bg-red-50 border border-red-200 p-4 rounded-xl flex items-start gap-3 shadow-sm">
+                    <svg class="h-5 w-5 text-red-600 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                    </svg>
+                    <p class="text-sm font-medium text-red-800">{{ $errors->first() }}</p>
+                </div>
+            @endif
+
 
 
             <!-- Application Banner / Overview Card -->
@@ -220,10 +238,20 @@
 
             <!-- Filter & Search Card Panel -->
             <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 pb-4 border-b border-slate-100">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 pb-4 border-b border-slate-100">
                     <div>
                         <h2 class="text-lg font-bold text-slate-900">Daftar Pengguna & Role Lokal</h2>
                         <p class="text-xs text-slate-500 mt-0.5">Kelola status akses dan role khusus pengguna di aplikasi {{ $client->name }}.</p>
+                    </div>
+
+                    <!-- Mode Toggle (Cari vs Setting) -->
+                    <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
+                        <button type="button" id="btn-mode-cari" onclick="switchMode('cari')" class="px-4 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm bg-white text-slate-800">
+                            Cari & Filter
+                        </button>
+                        <button type="button" id="btn-mode-setting" onclick="switchMode('setting')" class="px-4 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-600 hover:text-slate-800">
+                            Pengaturan
+                        </button>
                     </div>
 
                     @if (!empty($search) || !empty(request('role')) || !empty(request('access')) || !empty(request('local_role')))
@@ -234,6 +262,7 @@
                     @endif
                 </div>
 
+                <!-- Form Mode Cari -->
                 <form id="searchAppUsersForm" method="GET" action="{{ route('admin.clients.users', $client->id) }}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <!-- Filter Role Global -->
                     <div>
@@ -292,6 +321,61 @@
                         </div>
                     </div>
                 </form>
+
+                <!-- Form Mode Setting (Bulk Action) -->
+                <form id="bulkActionForm" method="POST" action="{{ route('admin.clients.users.bulk', $client->id) }}" class="hidden">
+                    @csrf
+                    <!-- Pass search/filter parameters to query all users when selecting all pages -->
+                    <input type="hidden" name="search" value="{{ $search }}">
+                    <input type="hidden" name="role" value="{{ request('role') }}">
+                    <input type="hidden" name="access" value="{{ request('access') }}">
+                    <input type="hidden" name="local_role" value="{{ request('local_role') }}">
+                    <input type="hidden" name="select_all_pages" id="select-all-pages-input" value="0">
+
+                    <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 shadow-inner">
+                        <!-- Select All Pages Banner -->
+                        <div id="select-all-pages-banner" class="hidden mb-3 p-2.5 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-800 flex items-center justify-between">
+                            <span>
+                                Terpilih <strong><span id="selected-count">{{ $users->count() }}</span></strong> pengguna di halaman ini. 
+                                <button type="button" id="btn-select-all-pages" onclick="setSelectAllPages(true)" class="font-bold underline text-blue-900 hover:text-blue-950">
+                                    Pilih seluruh {{ $users->total() }} pengguna di aplikasi ini.
+                                </button>
+                                <span id="all-pages-selected-msg" class="hidden font-bold">Seluruh {{ $users->total() }} pengguna terpilih.</span>
+                            </span>
+                            <button type="button" id="btn-clear-select-all-pages" onclick="setSelectAllPages(false)" class="hidden text-[11px] font-bold text-red-600 hover:underline">
+                                Batalkan Pilihan Semua Halaman
+                            </button>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Pilih Tindakan Massal</label>
+                                <select id="bulk-action-select" name="bulk_action" onchange="toggleBulkRoleDropdown()" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-kpi-500 bg-white cursor-pointer" required>
+                                    <option value="">-- Pilih Tindakan --</option>
+                                    <option value="enable_access">Aktifkan Akses Portal</option>
+                                    <option value="disable_access">Nonaktifkan Akses Portal</option>
+                                    <option value="change_role">Ubah Role Lokal</option>
+                                </select>
+                            </div>
+
+                            <div id="bulk-local-role-container" class="hidden">
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Pilih Role Lokal</label>
+                                <select name="bulk_local_role" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-kpi-500 bg-white cursor-pointer">
+                                    @foreach ($supportedRolesList as $lRole)
+                                        <option value="{{ $lRole }}">{{ ucfirst($lRole) }}</option>
+                                    @endforeach
+                                    <option value="user">User (Default)</option>
+                                </select>
+                            </div>
+
+                            <div class="flex gap-2">
+                                <button type="submit" onclick="return confirmBulkAction(event)" class="px-4 py-2 bg-kpi-600 hover:bg-kpi-700 text-white rounded-xl text-xs font-bold shadow-sm transition-colors flex-1 text-center">
+                                    Simpan Perubahan Massal
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
             </div>
 
             <!-- Users Table Card -->
@@ -302,7 +386,12 @@
                     <table class="w-full text-sm text-left">
                         <thead class="bg-slate-50 text-xs uppercase tracking-wider text-slate-500 font-semibold border-b border-slate-100">
                             <tr>
-                                <th class="w-12 px-4 py-3.5 bg-slate-50 text-center">No</th>
+                                <th class="w-12 px-4 py-3.5 bg-slate-50 text-center col-header-no">No</th>
+                                <th class="w-12 px-4 py-3.5 bg-slate-50 text-center col-header-checkbox hidden">
+                                    <label class="inline-flex items-center justify-center cursor-pointer select-none">
+                                        <input type="checkbox" id="select-all-users" onchange="toggleSelectAll(this)" class="h-4 w-4 rounded border-slate-300 text-kpi-600 focus:ring-kpi-500 cursor-pointer">
+                                    </label>
+                                </th>
                                 <th class="px-6 py-3.5 bg-slate-50">Pengguna</th>
                                 <th class="px-6 py-3.5 bg-slate-50">Role Global</th>
                                 <th class="px-6 py-3.5 bg-slate-50 text-center">Akses Portal</th>
@@ -334,9 +423,14 @@
                                     }
                                 @endphp
                                 <tr class="user-app-row hover:bg-slate-50/80 transition-colors">
-                                    <!-- No -->
-                                    <td class="px-4 py-4 text-center text-xs font-semibold text-slate-400 whitespace-nowrap">
+                                    <!-- No / Checkbox -->
+                                    <td class="px-4 py-4 text-center text-xs font-semibold text-slate-400 whitespace-nowrap col-cell-no">
                                         {{ $users->firstItem() + $loop->index }}
+                                    </td>
+                                    <td class="px-4 py-4 text-center text-xs font-semibold text-slate-400 whitespace-nowrap col-cell-checkbox hidden">
+                                        <label class="inline-flex items-center justify-center cursor-pointer select-none">
+                                            <input type="checkbox" name="user_ids[]" value="{{ $u->id }}" form="bulkActionForm" class="user-checkbox h-4 w-4 rounded border-slate-300 text-kpi-600 focus:ring-kpi-500 cursor-pointer">
+                                        </label>
                                     </td>
 
                                     <!-- User Info -->
@@ -455,89 +549,93 @@
     <!-- Edit Application Modal -->
     <div id="editModal" class="modal fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4" aria-modal="true">
         <div class="fixed inset-0 bg-slate-900/60" onclick="closeEditModal()"></div>
-        <div class="modal-content bg-white rounded-2xl shadow-2xl w-full max-w-lg relative z-10">
-            <div class="flex justify-between items-center px-6 py-5 border-b border-slate-100">
+        <div class="modal-content bg-white rounded-2xl shadow-2xl w-full max-w-lg relative z-10 my-8">
+            <div class="flex justify-between items-center px-6 py-5 border-b border-slate-100 sticky top-0 bg-white rounded-t-2xl z-20">
                 <h3 class="text-lg font-bold text-slate-900">Edit Info Aplikasi</h3>
                 <button onclick="closeEditModal()" class="text-slate-400 hover:text-slate-600">
                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
             </div>
 
-            <form action="{{ route('admin.clients.update', $client->id) }}" method="POST" enctype="multipart/form-data" class="p-6 space-y-5">
-                @csrf
-                @method('PUT')
+            <div class="max-h-[calc(100vh-8rem)] overflow-y-auto">
+                <form action="{{ route('admin.clients.update', $client->id) }}" method="POST" enctype="multipart/form-data" class="p-6 space-y-5">
+                    @csrf
+                    @method('PUT')
 
-                <div>
-                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">Nama Aplikasi <span class="text-red-500">*</span></label>
-                    <input type="text" name="name" value="{{ $client->name }}" required
-                        class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500">
-                </div>
-
-                <div>
-                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">Deskripsi</label>
-                    <textarea name="description" rows="2"
-                        class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500 resize-none"
-                        placeholder="Deskripsi singkat aplikasi...">{{ $client->description }}</textarea>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">Pesan Maintenance (opsional)</label>
-                    <textarea name="maintenance_message" rows="2"
-                        class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500 resize-none"
-                        placeholder="Contoh: Sedang upgrade server...">{{ $client->maintenance_message }}</textarea>
-                </div>
-
-                <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">Urutan Tampil</label>
-                        <input type="number" name="display_order" value="{{ $client->display_order }}" min="0"
+                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">Nama Aplikasi <span class="text-red-500">*</span></label>
+                        <input type="text" name="name" value="{{ $client->name }}" required
                             class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500">
                     </div>
+
                     <div>
-                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">Tampil di Dashboard</label>
-                        <select name="is_visible"
-                            class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500">
-                            <option value="1" {{ $client->is_visible ? 'selected' : '' }}>Ya (Tampil)</option>
-                            <option value="0" {{ !$client->is_visible ? 'selected' : '' }}>Tidak (Sembunyikan)</option>
-                        </select>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">Deskripsi</label>
+                        <textarea name="description" rows="2"
+                            class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500 resize-none"
+                            placeholder="Deskripsi singkat aplikasi...">{{ $client->description }}</textarea>
                     </div>
-                </div>
 
-                <div>
-                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">Gambar Kartu Aplikasi</label>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">Pesan Maintenance (opsional)</label>
+                        <textarea name="maintenance_message" rows="2"
+                            class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500 resize-none"
+                            placeholder="Contoh: Sedang upgrade server...">{{ $client->maintenance_message }}</textarea>
+                    </div>
 
-                    @if ($client->logo_path)
-                        <div class="mb-3 p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between gap-3">
-                            <div class="flex items-center gap-3">
-                                <img src="{{ Storage::url($client->logo_path) }}" alt="Gambar saat ini" class="h-12 w-20 object-cover rounded-lg border border-slate-200">
-                                <div>
-                                    <p class="text-xs font-semibold text-slate-700">Gambar Aktif</p>
-                                    <p class="text-[11px] text-slate-400">Terpasang sebagai background kartu</p>
-                                </div>
-                            </div>
-                            <button type="button" onclick="document.getElementById('deleteLogoForm').submit()"
-                                class="px-2.5 py-1.5 bg-red-50 text-red-700 border border-red-200 text-xs font-semibold rounded-lg hover:bg-red-100">
-                                Hapus
-                            </button>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1.5">Urutan Tampil</label>
+                            <input type="number" name="display_order" value="{{ $client->display_order }}" min="0"
+                                class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500">
                         </div>
-                    @endif
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1.5">Tampil di Dashboard</label>
+                            <select name="is_visible"
+                                class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500">
+                                <option value="1" {{ $client->is_visible ? 'selected' : '' }}>Ya (Tampil)</option>
+                                <option value="0" {{ !$client->is_visible ? 'selected' : '' }}>Tidak (Sembunyikan)</option>
+                            </select>
+                        </div>
+                    </div>
 
-                    <input type="file" name="logo" accept="image/png,image/jpeg,image/jpg,image/svg+xml"
-                        class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-slate-100 file:text-slate-700 file:font-semibold hover:file:bg-slate-200 cursor-pointer">
-                    <p class="text-xs text-slate-400 mt-1">Format: PNG, JPG, SVG. Maks. 2MB.</p>
-                </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">Gambar Kartu Aplikasi</label>
 
-                <div class="flex gap-3 pt-2">
-                    <button type="button" onclick="closeEditModal()"
-                        class="flex-1 py-2.5 border border-slate-300 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
-                        Batal
-                    </button>
-                    <button type="submit"
-                        class="flex-1 py-2.5 bg-kpi-600 text-white rounded-xl text-sm font-semibold hover:bg-kpi-700 transition-colors shadow-sm">
-                        Simpan Perubahan
-                    </button>
-                </div>
-            </form>
+                        @if ($client->logo_path)
+                            <div class="mb-3 p-3 bg-slate-50 rounded-xl border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                                <div class="flex items-center gap-3">
+                                    <img src="{{ Storage::url($client->logo_path) }}" alt="Gambar saat ini" class="h-12 w-20 object-cover rounded-lg border border-slate-200">
+                                    <div>
+                                        <p class="text-xs font-semibold text-slate-700">Gambar Aktif</p>
+                                        <p class="text-[11px] text-slate-400">Terpasang sebagai background kartu</p>
+                                    </div>
+                                </div>
+                                <button type="button" onclick="document.getElementById('deleteLogoForm').submit()"
+                                    class="w-full sm:w-auto px-2.5 py-1.5 bg-red-50 text-red-700 border border-red-200 text-xs font-semibold rounded-lg hover:bg-red-100">
+                                    Hapus
+                                </button>
+                            </div>
+                        @endif
+
+                        <input type="file" name="logo" accept="image/png,image/jpeg,image/jpg,image/svg+xml"
+                            class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-slate-100 file:text-slate-700 file:font-semibold hover:file:bg-slate-200 cursor-pointer">
+                        <p class="text-xs text-slate-400 mt-1">Format: PNG, JPG, SVG. Maks. 2MB.</p>
+                    </div>
+
+                    <div class="flex gap-3 pt-4 border-t border-slate-100 sticky bottom-0 bg-white py-4 rounded-b-2xl z-20">
+                        <button type="button" onclick="closeEditModal()"
+                            class="flex-1 py-2.5 border border-slate-300 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
+                            Batal
+                        </button>
+                        <button type="submit"
+                            class="flex-1 py-2.5 bg-kpi-600 text-white rounded-xl text-sm font-semibold hover:bg-kpi-700 transition-colors shadow-sm">
+                            Simpan Perubahan
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
             @if ($client->logo_path)
                 <form id="deleteLogoForm" action="{{ route('admin.clients.logo.delete', $client->id) }}" method="POST" class="hidden">
@@ -548,7 +646,247 @@
         </div>
     </div>
 
+    <!-- Reusable Action Confirmation Modal (SSO Style) -->
+    <div id="actionConfirmModal" class="modal fixed inset-0 z-50 flex items-center justify-center p-4">
+        <!-- Backdrop -->
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeConfirmModal()"></div>
+        
+        <!-- Modal Content -->
+        <div class="modal-content relative bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col p-6 text-center z-10">
+            <!-- Normal Content -->
+            <div id="confirm-normal-content">
+                <div id="confirmIconContainer" class="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
+                    <!-- Icon dynamically injected -->
+                </div>
+                
+                <h3 class="text-lg font-bold text-slate-900 mb-1" id="confirmTitle">Konfirmasi</h3>
+                <p class="text-sm text-slate-500 mb-6 leading-relaxed px-2" id="confirmDescription">
+                    Apakah Anda yakin ingin melanjutkan tindakan ini?
+                </p>
+                
+                <div class="flex gap-3">
+                    <button type="button" id="confirmCancelBtn" onclick="closeConfirmModal()"
+                        class="flex-1 py-2.5 border border-slate-300 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
+                        Batal
+                    </button>
+                    <button type="button" id="confirmSubmitBtn" onclick="submitBulkActionForm()"
+                        class="flex-1 py-2.5 text-white rounded-xl text-xs font-semibold transition-colors shadow-sm bg-kpi-600 hover:bg-kpi-700">
+                        Ya, Lanjutkan
+                    </button>
+                </div>
+            </div>
+
+            <!-- Loading Content -->
+            <div id="confirm-loading-content" class="hidden py-8">
+                <div class="flex flex-col items-center justify-center">
+                    <!-- Elegant Spinner -->
+                    <div class="relative w-16 h-16 mb-4">
+                        <div class="absolute inset-0 rounded-full border-4 border-slate-100"></div>
+                        <div class="absolute inset-0 rounded-full border-4 border-t-kpi-600 animate-spin"></div>
+                    </div>
+                    <h4 class="text-base font-bold text-slate-900 mb-1">Memproses Tindakan Massal</h4>
+                    <p class="text-xs text-slate-500 max-w-xs px-4">Harap tunggu, sistem sedang memperbarui status akses dan role pengguna. Jangan menutup halaman ini.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
+        function switchMode(mode) {
+            const btnCari = document.getElementById('btn-mode-cari');
+            const btnSetting = document.getElementById('btn-mode-setting');
+            const formCari = document.getElementById('searchAppUsersForm');
+            const formSetting = document.getElementById('bulkActionForm');
+
+            // Columns headers and cells
+            const colHeadersNo = document.querySelectorAll('.col-header-no');
+            const colHeadersCheckbox = document.querySelectorAll('.col-header-checkbox');
+            const colCellsNo = document.querySelectorAll('.col-cell-no');
+            const colCellsCheckbox = document.querySelectorAll('.col-cell-checkbox');
+
+            if (mode === 'cari') {
+                btnCari.className = "px-4 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm bg-white text-slate-800";
+                btnSetting.className = "px-4 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-600 hover:text-slate-800";
+                formCari.classList.remove('hidden');
+                formSetting.classList.add('hidden');
+
+                colHeadersNo.forEach(el => el.classList.remove('hidden'));
+                colHeadersCheckbox.forEach(el => el.classList.add('hidden'));
+                colCellsNo.forEach(el => el.classList.remove('hidden'));
+                colCellsCheckbox.forEach(el => el.classList.add('hidden'));
+            } else {
+                btnSetting.className = "px-4 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm bg-white text-slate-800";
+                btnCari.className = "px-4 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-600 hover:text-slate-800";
+                formCari.classList.add('hidden');
+                formSetting.classList.remove('hidden');
+
+                colHeadersNo.forEach(el => el.classList.add('hidden'));
+                colHeadersCheckbox.forEach(el => el.classList.remove('hidden'));
+                colCellsNo.forEach(el => el.classList.add('hidden'));
+                colCellsCheckbox.forEach(el => el.classList.remove('hidden'));
+            }
+        }
+
+        function toggleBulkRoleDropdown() {
+            const actionSelect = document.getElementById('bulk-action-select');
+            const roleContainer = document.getElementById('bulk-local-role-container');
+            if (actionSelect.value === 'change_role') {
+                roleContainer.classList.remove('hidden');
+            } else {
+                roleContainer.classList.add('hidden');
+            }
+        }
+
+        function toggleSelectAll(masterCheckbox) {
+            const checkboxes = document.querySelectorAll('.user-checkbox');
+            checkboxes.forEach(cb => {
+                cb.checked = masterCheckbox.checked;
+            });
+            updateSelectAllPagesBanner();
+        }
+
+        function updateSelectAllPagesBanner() {
+            const totalUsersTotal = {{ $users->total() }};
+            const currentPageCount = {{ $users->count() }};
+            const banner = document.getElementById('select-all-pages-banner');
+            const selectedCountSpan = document.getElementById('selected-count');
+            const btnSelectAllPages = document.getElementById('btn-select-all-pages');
+            const allPagesSelectedMsg = document.getElementById('all-pages-selected-msg');
+            const btnClearSelectAllPages = document.getElementById('btn-clear-select-all-pages');
+            const selectAllPagesInput = document.getElementById('select-all-pages-input');
+
+            const selectedCheckboxes = document.querySelectorAll('.user-checkbox:checked');
+
+            if (selectedCheckboxes.length === currentPageCount && totalUsersTotal > currentPageCount) {
+                banner.classList.remove('hidden');
+                selectedCountSpan.textContent = selectedCheckboxes.length;
+                if (selectAllPagesInput.value === '1') {
+                    btnSelectAllPages.classList.add('hidden');
+                    allPagesSelectedMsg.classList.remove('hidden');
+                    btnClearSelectAllPages.classList.remove('hidden');
+                } else {
+                    btnSelectAllPages.classList.remove('hidden');
+                    allPagesSelectedMsg.classList.add('hidden');
+                    btnClearSelectAllPages.classList.add('hidden');
+                }
+            } else {
+                banner.classList.add('hidden');
+                setSelectAllPages(false);
+            }
+        }
+
+        function setSelectAllPages(value) {
+            const selectAllPagesInput = document.getElementById('select-all-pages-input');
+            const btnSelectAllPages = document.getElementById('btn-select-all-pages');
+            const allPagesSelectedMsg = document.getElementById('all-pages-selected-msg');
+            const btnClearSelectAllPages = document.getElementById('btn-clear-select-all-pages');
+
+            if (value) {
+                selectAllPagesInput.value = '1';
+                btnSelectAllPages.classList.add('hidden');
+                allPagesSelectedMsg.classList.remove('hidden');
+                btnClearSelectAllPages.classList.remove('hidden');
+            } else {
+                selectAllPagesInput.value = '0';
+                btnSelectAllPages.classList.remove('hidden');
+                allPagesSelectedMsg.classList.add('hidden');
+                btnClearSelectAllPages.classList.add('hidden');
+            }
+        }
+
+        // Add change listener to checkboxes to dynamically update banner
+        document.addEventListener('DOMContentLoaded', () => {
+            const checkboxes = document.querySelectorAll('.user-checkbox');
+            checkboxes.forEach(cb => {
+                cb.addEventListener('change', updateSelectAllPagesBanner);
+            });
+        });
+
+        function showStyledAlert(title, message) {
+            const iconContainer = document.getElementById('confirmIconContainer');
+            const submitBtn = document.getElementById('confirmSubmitBtn');
+            const cancelBtn = document.getElementById('confirmCancelBtn');
+
+            // Hide cancel button since it's just an alert info/error, not a confirmation
+            cancelBtn.classList.add('hidden');
+
+            // Styled error icon (Red) for alert
+            iconContainer.className = 'w-14 h-14 rounded-2xl bg-red-50 border border-red-100 text-red-600 flex items-center justify-center mx-auto mb-4 shadow-sm';
+            iconContainer.innerHTML = `<svg class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>`;
+            
+            // Adjust submit button to act as OK / Close button
+            submitBtn.className = 'flex-1 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-semibold hover:bg-slate-800 transition-colors shadow-sm';
+            submitBtn.textContent = 'OK';
+            submitBtn.onclick = closeConfirmModal;
+
+            document.getElementById('confirmTitle').textContent = title;
+            document.getElementById('confirmDescription').textContent = message;
+            document.getElementById('actionConfirmModal').classList.add('active');
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('actionConfirmModal').classList.remove('active');
+            // Reset modal styles and bindings back to normal confirmation state
+            setTimeout(() => {
+                const cancelBtn = document.getElementById('confirmCancelBtn');
+                const submitBtn = document.getElementById('confirmSubmitBtn');
+                cancelBtn.classList.remove('hidden');
+                submitBtn.onclick = submitBulkActionForm;
+            }, 300);
+        }
+
+        function submitBulkActionForm() {
+            const normalContent = document.getElementById('confirm-normal-content');
+            const loadingContent = document.getElementById('confirm-loading-content');
+
+            // Hide normal content and show elegant full-modal loading state
+            normalContent.classList.add('hidden');
+            loadingContent.classList.remove('hidden');
+
+            document.getElementById('bulkActionForm').submit();
+        }
+
+        function confirmBulkAction(event) {
+            const actionSelect = document.getElementById('bulk-action-select');
+            if (!actionSelect.value) {
+                showStyledAlert('Pilih Tindakan', 'Silakan pilih tindakan massal terlebih dahulu.');
+                event.preventDefault();
+                return false;
+            }
+
+            const selectedUsers = document.querySelectorAll('.user-checkbox:checked');
+            if (selectedUsers.length === 0) {
+                showStyledAlert('Pilih Pengguna', 'Silakan pilih minimal satu pengguna untuk melakukan tindakan massal.');
+                event.preventDefault();
+                return false;
+            }
+
+            const isAllPages = document.getElementById('select-all-pages-input').value === '1';
+            let confirmMessage = '';
+            
+            if (isAllPages) {
+                confirmMessage = `PERINGATAN: Anda memilih seluruh ${ {{ $users->total() }} } pengguna di semua halaman. Apakah Anda yakin ingin melakukan tindakan massal ini?`;
+            } else {
+                confirmMessage = `Apakah Anda yakin ingin melakukan tindakan massal ini pada ${selectedUsers.length} pengguna terpilih?`;
+            }
+
+            const iconContainer = document.getElementById('confirmIconContainer');
+            const submitBtn = document.getElementById('confirmSubmitBtn');
+
+            // Styled warning icon (Orange/Amber) for bulk confirmation
+            iconContainer.className = 'w-14 h-14 rounded-2xl bg-amber-50 border border-amber-100 text-amber-600 flex items-center justify-center mx-auto mb-4 shadow-sm';
+            iconContainer.innerHTML = `<svg class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>`;
+            submitBtn.className = 'flex-1 py-2.5 bg-kpi-600 text-white rounded-xl text-xs font-semibold hover:bg-kpi-700 transition-colors shadow-sm';
+            submitBtn.textContent = 'Ya, Lanjutkan';
+
+            document.getElementById('confirmTitle').textContent = 'Konfirmasi Tindakan Massal';
+            document.getElementById('confirmDescription').textContent = confirmMessage;
+            document.getElementById('actionConfirmModal').classList.add('active');
+
+            event.preventDefault();
+            return false;
+        }
+
         function openEditModal() {
             document.getElementById('editModal').classList.add('active');
         }

@@ -503,114 +503,118 @@
     <!-- Edit Application Modal -->
     <div id="editModal" class="modal fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4" aria-modal="true">
         <div class="fixed inset-0 bg-slate-900/60" onclick="closeEditModal()"></div>
-        <div class="modal-content bg-white rounded-2xl shadow-2xl w-full max-w-lg relative z-10">
-            <div class="flex justify-between items-center px-6 py-4 border-b border-slate-100">
+        <div class="modal-content bg-white rounded-2xl shadow-2xl w-full max-w-lg relative z-10 my-8">
+            <div class="flex justify-between items-center px-6 py-4 border-b border-slate-100 sticky top-0 bg-white rounded-t-2xl z-20">
                 <h3 class="text-lg font-bold text-slate-900">Edit Aplikasi</h3>
                 <button onclick="closeEditModal()" class="text-slate-400 hover:text-slate-600">
-                    <svg class="w-5 h-5" fill="none" viewBox="0 0 18 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
             </div>
 
-            <form id="editForm" method="POST" enctype="multipart/form-data" class="p-6 pt-4 space-y-4">
-                @csrf
-                @method('PUT')
+            <div class="max-h-[calc(100vh-8rem)] overflow-y-auto">
+                <form id="editForm" method="POST" enctype="multipart/form-data" class="p-6 pt-4 space-y-4">
+                    @csrf
+                    @method('PUT')
 
-                <div>
-                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">Nama Aplikasi <span class="text-red-500">*</span></label>
-                    <input type="text" name="name" id="edit-name" required
-                        class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500 focus:border-transparent">
-                </div>
-
-                <div>
-                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">Redirect URI / Callback URL <span class="text-red-500">*</span></label>
-                    <input type="url" name="redirect" id="edit-redirect" required
-                        class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500 focus:border-transparent">
-                    <p class="text-xs text-slate-400 mt-1">URL Callback tempat server SSO mengirimkan OAuth authorization code.</p>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">Deskripsi</label>
-                    <textarea name="description" id="edit-description" rows="2"
-                        class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500 focus:border-transparent resize-none"
-                        placeholder="Deskripsi singkat aplikasi..."></textarea>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">Role Lokal yang Didukung (Pisahkan dengan koma)</label>
-                    <input type="text" name="supported_roles" id="edit-supported-roles" placeholder="Contoh: Admin, Staff, pengguna"
-                        class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500 focus:border-transparent">
-                    <p class="text-xs text-slate-400 mt-1">Role spesifik aplikasi yang bisa dipilih Admin saat pemetaan peran pengguna.</p>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">Pesan Maintenance (opsional)</label>
-                    <textarea name="maintenance_message" id="edit-maintenance-message" rows="2"
-                        class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500 focus:border-transparent resize-none"
-                        placeholder="Contoh: Sedang upgrade server, estimasi selesai pukul 17.00 WIB."></textarea>
-                </div>
-
-                <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">Urutan Tampil</label>
-                        <input type="number" name="display_order" id="edit-display-order" min="0"
+                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">Nama Aplikasi <span class="text-red-500">*</span></label>
+                        <input type="text" name="name" id="edit-name" required
                             class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500 focus:border-transparent">
                     </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">Tampil di Dashboard</label>
-                        <select name="is_visible" id="edit-is-visible"
-                            class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500">
-                            <option value="1">Ya (Tampil)</option>
-                            <option value="0">Tidak (Sembunyikan)</option>
-                        </select>
-                    </div>
-                </div>
 
-                <div>
-                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">Logo Aplikasi</label>
-                    <input type="file" name="logo" accept="image/png,image/jpeg,image/jpg,image/svg+xml"
-                        class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-slate-100 file:text-slate-700 file:font-semibold hover:file:bg-slate-200 cursor-pointer">
-                    <p class="text-xs text-slate-400 mt-1">Format: PNG, JPG, SVG. Maks. 2MB.</p>
-                </div>
-
-                <div class="border-t border-slate-100 pt-4 space-y-4">
-                    <h4 class="text-sm font-bold text-slate-900">Konfigurasi SSO Webhook</h4>
                     <div>
-                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">Webhook URL</label>
-                        <input type="url" name="webhook_url" id="edit-webhook-url" placeholder="Contoh: https://client-app.test/api/sso-webhook"
+                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">Redirect URI / Callback URL <span class="text-red-500">*</span></label>
+                        <input type="url" name="redirect" id="edit-redirect" required
                             class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500 focus:border-transparent">
+                        <p class="text-xs text-slate-400 mt-1">URL Callback tempat server SSO mengirimkan OAuth authorization code.</p>
                     </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">Webhook Secret (Kunci HMAC)</label>
-                        <input type="text" name="webhook_secret" id="edit-webhook-secret" placeholder="Masukkan secret key"
-                            class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500 focus:border-transparent">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">Status Webhook</label>
-                        <select name="webhook_active" id="edit-webhook-active"
-                            class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500">
-                            <option value="1">Aktif</option>
-                            <option value="0">Nonaktif</option>
-                        </select>
-                    </div>
-                </div>
 
-                <div class="flex items-center justify-between gap-3 pt-3 border-t border-slate-100">
-                    <button type="button" onclick="deleteCurrentEditApp()"
-                        class="px-3.5 py-2.5 bg-white border border-red-200 text-red-600 rounded-xl text-xs font-semibold hover:bg-red-50 transition-colors">
-                        Hapus Aplikasi
-                    </button>
-                    <div class="flex gap-2">
-                        <button type="button" onclick="closeEditModal()"
-                            class="px-4 py-2.5 border border-slate-300 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
-                            Batal
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">Deskripsi</label>
+                        <textarea name="description" id="edit-description" rows="2"
+                            class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500 focus:border-transparent resize-none"
+                            placeholder="Deskripsi singkat aplikasi..."></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">Role Lokal yang Didukung (Pisahkan dengan koma)</label>
+                        <input type="text" name="supported_roles" id="edit-supported-roles" placeholder="Contoh: Admin, Staff, pengguna"
+                            class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500 focus:border-transparent">
+                        <p class="text-xs text-slate-400 mt-1">Role spesifik aplikasi yang bisa dipilih Admin saat pemetaan peran pengguna.</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">Pesan Maintenance (opsional)</label>
+                        <textarea name="maintenance_message" id="edit-maintenance-message" rows="2"
+                            class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500 focus:border-transparent resize-none"
+                            placeholder="Contoh: Sedang upgrade server, estimasi selesai pukul 17.00 WIB."></textarea>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1.5">Urutan Tampil</label>
+                            <input type="number" name="display_order" id="edit-display-order" min="0"
+                                class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500 focus:border-transparent">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1.5">Tampil di Dashboard</label>
+                            <select name="is_visible" id="edit-is-visible"
+                                class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500">
+                                <option value="1">Ya (Tampil)</option>
+                                <option value="0">Tidak (Sembunyikan)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">Logo Aplikasi</label>
+                        <input type="file" name="logo" accept="image/png,image/jpeg,image/jpg,image/svg+xml"
+                            class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-slate-100 file:text-slate-700 file:font-semibold hover:file:bg-slate-200 cursor-pointer">
+                        <p class="text-xs text-slate-400 mt-1">Format: PNG, JPG, SVG. Maks. 2MB.</p>
+                    </div>
+
+                    <div class="border-t border-slate-100 pt-4 space-y-4">
+                        <h4 class="text-sm font-bold text-slate-900">Konfigurasi SSO Webhook</h4>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1.5">Webhook URL</label>
+                            <input type="url" name="webhook_url" id="edit-webhook-url" placeholder="Contoh: https://client-app.test/api/sso-webhook"
+                                class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500 focus:border-transparent">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1.5">Webhook Secret (Kunci HMAC)</label>
+                            <input type="text" name="webhook_secret" id="edit-webhook-secret" placeholder="Masukkan secret key"
+                                class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500 focus:border-transparent">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1.5">Status Webhook</label>
+                            <select name="webhook_active" id="edit-webhook-active"
+                                class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500">
+                                <option value="1">Aktif</option>
+                                <option value="0">Nonaktif</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between gap-3 pt-4 border-t border-slate-100 sticky bottom-0 bg-white py-4 rounded-b-2xl z-20">
+                        <button type="button" onclick="deleteCurrentEditApp()"
+                            class="px-3.5 py-2.5 bg-white border border-red-200 text-red-600 rounded-xl text-xs font-semibold hover:bg-red-50 transition-colors">
+                            Hapus Aplikasi
                         </button>
-                        <button type="submit"
-                            class="px-4 py-2.5 bg-kpi-600 text-white rounded-xl text-xs font-semibold hover:bg-kpi-700 transition-colors shadow-sm">
-                            Simpan Perubahan
-                        </button>
+                        <div class="flex gap-2">
+                            <button type="button" onclick="closeEditModal()"
+                                class="px-4 py-2.5 border border-slate-300 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
+                                Batal
+                            </button>
+                            <button type="submit"
+                                class="px-4 py-2.5 bg-kpi-600 text-white rounded-xl text-xs font-semibold hover:bg-kpi-700 transition-colors shadow-sm">
+                                Simpan Perubahan
+                            </button>
+                        </div>
                     </div>
-                </div>
-            </form>
+                </form>
+            </div>
+        </div>
+    </div>
         </div>
     </div>
 

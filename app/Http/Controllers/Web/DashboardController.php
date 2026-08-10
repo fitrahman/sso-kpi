@@ -644,4 +644,223 @@ class DashboardController extends Controller
             return back()->withErrors(['error' => 'Gagal memperbarui akses pengguna: '.$e->getMessage()]);
         }
     }
+
+    /**
+     * Bulk update users' access status or local role for a specific application (Admin only)
+     */
+    public function bulkUpdateClientUsers(Request $request, $clientId)
+    {
+        try {
+            $client = PassportClient::findOrFail($clientId);
+
+            $validated = $request->validate([
+                'user_ids' => 'required|array',
+                'user_ids.*' => 'exists:users,id',
+                'bulk_action' => 'required|in:enable_access,disable_access,change_role',
+                'bulk_local_role' => 'nullable|string|max:50',
+                'select_all_pages' => 'nullable|boolean',
+                'search' => 'nullable|string',
+                'role' => 'nullable|string',
+                'access' => 'nullable|string',
+                'local_role' => 'nullable|string',
+            ]);
+
+            $action = $request->input('bulk_action');
+            $localRole = $request->input('bulk_local_role');
+            $selectAllPages = $request->boolean('select_all_pages');
+
+            // If select_all_pages is true, fetch all user IDs matching the current query filters
+            if ($selectAllPages) {
+                $search = $request->input('search');
+                $roleFilter = $request->input('role');
+                $accessFilter = $request->input('access');
+                $localRoleFilter = $request->input('local_role');
+
+                $usersQuery = User::query();
+
+                if (! empty($search)) {
+                    $usersQuery->where(function ($q) use ($search) {
+                        $q->where('name', 'like', '%'.$search.'%')
+                            ->orWhere('email', 'like', '%'.$search.'%')
+                            ->orWhere('role', 'like', '%'.$search.'%');
+                    });
+                }
+
+                if (! empty($roleFilter)) {
+                    $usersQuery->where('role', $roleFilter);
+                }
+
+                if (! empty($accessFilter)) {
+                    if ($accessFilter === 'approved') {
+                        $userIdsWithAccess = DB::table('client_user_access')
+                            ->where('client_id', $client->id)
+                            ->where('is_active', true)
+                            ->pluck('user_id');
+                        $usersQuery->whereIn('id', $userIdsWithAccess);
+                    } elseif ($accessFilter === 'no_access') {
+                        $userIdsWithAccess = DB::table('client_user_access')
+                            ->where('client_id', $client->id)
+                            ->where('is_active', true)
+                            ->pluck('user_id');
+                        $usersQuery->whereNotIn('id', $userIdsWithAccess);
+                    }
+                }
+
+                if (! empty($localRoleFilter)) {
+                    if ($localRoleFilter === 'none') {
+                        $userIdsWithRole = \App\Models\UserClientRole::where('oauth_client_id', $client->id)
+                            ->whereNotNull('role')
+                            ->where('role', '!=', '')
+                            ->pluck('user_id');
+                        $usersQuery->whereNotIn('id', $userIdsWithRole);
+                    } else {
+                        $userIdsWithRole = \App\Models\UserClientRole::where('oauth_client_id', $client->id)
+                            ->where('role', $localRoleFilter)
+                            ->pluck('user_id');
+                        $usersQuery->whereIn('id', $userIdsWithRole);
+                    }
+                }
+
+                $userIds = $usersQuery->pluck('id')->toArray();
+            } else {
+                $userIds = $request->input('user_ids');
+            }
+
+            if (empty($userIds)) {
+                return back()->withErrors(['error' => 'Tidak ada pengguna yang terpilih.']);
+            }
+
+            if ($action === 'change_role') {
+                $roleToSet = trim($localRole ?: 'user');
+                if (! \App\Services\RoleValidationService::isValidRole($client->id, $roleToSet)) {
+                    return back()->withErrors(['error' => "Role '{$roleToSet}' tidak valid untuk aplikasi {$client->name}."]);
+                }
+            }
+
+            $updatedCount = 0;
+            $logsDetails = [];
+
+            foreach ($userIds as $userId) {
+                $user = User::find($userId);
+                if (! $user) continue;
+
+                if ($action === 'enable_access') {
+                    $exists = DB::table('client_user_access')
+                        ->where('user_id', $user->id)
+                        ->where('client_id', $client->id)
+                        ->exists();
+
+                    if ($exists) {
+                        DB::table('client_user_access')
+                            ->where('user_id', $user->id)
+                            ->where('client_id', $client->id)
+                            ->update([
+                                'status' => 'approved',
+                                'is_active' => true,
+                                'updated_at' => now(),
+                            ]);
+                    } else {
+                        DB::table('client_user_access')->insert([
+                            'user_id' => $user->id,
+                            'client_id' => $client->id,
+                            'status' => 'approved',
+                            'is_active' => true,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                    }
+                    $logsDetails[] = "Akses '{$user->name}' diaktifkan";
+                } elseif ($action === 'disable_access') {
+                    $exists = DB::table('client_user_access')
+                        ->where('user_id', $user->id)
+                        ->where('client_id', $client->id)
+                        ->exists();
+
+                    if ($exists) {
+                        DB::table('client_user_access')
+                            ->where('user_id', $user->id)
+                            ->where('client_id', $client->id)
+                            ->update([
+                                'status' => 'rejected',
+                                'is_active' => false,
+                                'updated_at' => now(),
+                            ]);
+                    } else {
+                        DB::table('client_user_access')->insert([
+                            'user_id' => $user->id,
+                            'client_id' => $client->id,
+                            'status' => 'rejected',
+                            'is_active' => false,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                    }
+                    $logsDetails[] = "Akses '{$user->name}' dinonaktifkan";
+                } elseif ($action === 'change_role') {
+                    $roleToSet = trim($localRole ?: 'user');
+                    \App\Models\UserClientRole::updateOrCreate(
+                        ['user_id' => $user->id, 'oauth_client_id' => $client->id],
+                        ['role' => $roleToSet]
+                    );
+                    $logsDetails[] = "Role lokal '{$user->name}' diubah ke '{$roleToSet}'";
+                }
+
+                // Webhook trigger per user
+                if ($client->redirect) {
+                    $currentAccessObj = DB::table('client_user_access')
+                        ->where('user_id', $user->id)
+                        ->where('client_id', $client->id)
+                        ->first();
+                    $currentStatus = $currentAccessObj && $currentAccessObj->is_active ? 'approved' : 'rejected';
+
+                    $currentRoleObj = \App\Models\UserClientRole::where('user_id', $user->id)
+                        ->where('oauth_client_id', $client->id)
+                        ->first();
+                    $currentRole = $currentRoleObj ? $currentRoleObj->role : 'user';
+
+                    $webhookUrl = str_replace('/auth/sso/callback', '/api/sso/webhook', $client->redirect);
+                    try {
+                        \Illuminate\Support\Facades\Http::timeout(2)->post($webhookUrl, [
+                            'event' => 'user.role_updated',
+                            'timestamp' => now()->timestamp,
+                            'data' => [
+                                'email' => $user->email,
+                                'name' => $user->name,
+                                'access_status' => $currentStatus,
+                                'role' => $currentRole,
+                                'client_id' => (int) $client->id,
+                            ],
+                            'signature' => hash_hmac('sha256', $user->email.':'.$currentRole, $client->secret),
+                        ]);
+                    } catch (\Exception $e) {
+                        // silent webhook failure
+                    }
+                }
+
+                $updatedCount++;
+            }
+
+            if ($updatedCount > 0) {
+                $descriptionText = "Bulk action '{$action}': " . implode(', ', array_slice($logsDetails, 0, 3));
+                if (count($logsDetails) > 3) {
+                    $descriptionText .= " dan " . (count($logsDetails) - 3) . " pengguna lainnya";
+                }
+
+                ApplicationActivityLog::create([
+                    'oauth_client_id' => $client->id,
+                    'admin_id' => Auth::id(),
+                    'action' => 'user_access_bulk_updated',
+                    'description' => $descriptionText,
+                ]);
+            }
+
+            $successMessage = $selectAllPages 
+                ? "Berhasil memperbarui seluruh {$updatedCount} pengguna secara massal di semua halaman."
+                : "Berhasil memperbarui {$updatedCount} pengguna secara massal.";
+
+            return back()->with('success', $successMessage);
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Gagal melakukan pembaruan massal: '.$e->getMessage()]);
+        }
+    }
 }
