@@ -38,23 +38,23 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropIndex(['status']);
-            $table->dropIndex(['role']);
+            $table->dropIndex(['users_status_index']);
+            $table->dropIndex(['users_role_index']);
         });
 
         Schema::table('user_activity_logs', function (Blueprint $table) {
-            $table->dropIndex(['activity']);
-            $table->dropIndex(['created_at']);
+            $table->dropIndex(['user_activity_logs_activity_index']);
+            $table->dropIndex(['user_activity_logs_created_at_index']);
         });
 
         Schema::table('client_user_access', function (Blueprint $table) {
-            $table->dropIndex(['client_id', 'is_active']);
-            $table->dropIndex(['user_id', 'client_id']);
+            $table->dropIndex(['client_user_access_client_id_is_active_index']);
+            $table->dropIndex(['client_user_access_user_id_client_id_index']);
         });
 
         Schema::table('application_activity_logs', function (Blueprint $table) {
-            $table->dropIndex(['oauth_client_id']);
-            $table->dropIndex(['created_at']);
+            $table->dropIndex(['application_activity_logs_oauth_client_id_index']);
+            $table->dropIndex(['application_activity_logs_created_at_index']);
         });
     }
 };

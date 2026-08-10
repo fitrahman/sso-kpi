@@ -22,7 +22,6 @@ Aplikasi ini berfungsi sebagai penyedia identitas pusat (*Identity Provider*) di
 - **Single Log Out (SLO)**:
   - Ketika user logout dari SSO Portal atau aplikasi klien, seluruh token akses OAuth akan dicabut (*revoked*) secara instan.
   - Middleware klien mendeteksi status `401 Unauthorized` pada polling sinkronisasi dan otomatis mengeluarkan (logout) sesi lokal klien secara instan (mencegah sesi nyangkut).
-- **Pengajuan Edit Profil dengan Persetujuan Admin**: Pengguna dapat mengajukan perubahan data profil mereka. Perubahan data baru akan diterapkan ke database setelah disetujui oleh Administrator di dashboard.
 - **Pemberitahuan Email**: Sistem mengirimkan email otomatis saat pendaftaran disetujui/ditolak, serta saat pengajuan akses aplikasi disetujui/ditolak.
 - **Manajemen Hak Akses Aplikasi**: Administrator dapat mengelola daftar aplikasi terintegrasi serta menyetujui atau menolak permohonan akses dari pengguna untuk aplikasi tertentu.
 
@@ -103,10 +102,8 @@ Gunakan akun tes berikut untuk masuk dan menguji alur sistem:
 * **Kata Sandi**: `password123`
 * **Peran**: Administrator (Memiliki akses ke panel persetujuan pengguna baru, persetujuan perubahan profil, dan permohonan akses aplikasi).
 
-### 2. Akun Pengguna Biasa
-* **Email**: `humas@kpi.com`
-* **Kata Sandi**: `password123`
-* **Peran**: Humas (Memiliki akses ke Dashboard User, dapat melakukan pengajuan edit profil, dan mengajukan akses ke aplikasi).
+> [!NOTE]
+> Akun pengguna biasa tidak ditambahkan secara default melalui seeder. Anda dapat mendaftarkan akun baru secara mandiri melalui tombol **Registrasi** pada halaman login utama, lalu menyetujuinya (*approve*) melalui Dashboard Admin (`admin@kpi.com`).
 
 ---
 

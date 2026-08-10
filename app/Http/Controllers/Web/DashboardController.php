@@ -395,7 +395,7 @@ class DashboardController extends Controller
 
             $this->clientService->updateClient($client, $validated, $request->file('logo'));
 
-            return back()->with('success', "Aplikasi '{$client->name}' berhasil diperbarui.");
+            return back();
         } catch (\Exception $e) {
             return back()->withErrors(['error' => 'Gagal memperbarui aplikasi: '.$e->getMessage()]);
         }
@@ -407,10 +407,7 @@ class DashboardController extends Controller
             $client = PassportClient::findOrFail($id);
             $this->clientService->toggleMaintenance($client);
 
-            return back()->with('success', $client->is_maintenance
-                ? "Aplikasi '{$client->name}' sekarang dalam mode maintenance."
-                : "Aplikasi '{$client->name}' kembali aktif."
-            );
+            return back();
         } catch (\Exception $e) {
             return back()->withErrors(['error' => 'Gagal mengubah status maintenance: '.$e->getMessage()]);
         }
@@ -422,10 +419,7 @@ class DashboardController extends Controller
             $client = PassportClient::findOrFail($id);
             $this->clientService->toggleVisibility($client);
 
-            return back()->with('success', $client->is_visible
-                ? "Aplikasi '{$client->name}' kini tampil di dashboard."
-                : "Aplikasi '{$client->name}' disembunyikan dari dashboard."
-            );
+            return back();
         } catch (\Exception $e) {
             return back()->withErrors(['error' => 'Gagal mengubah visibilitas: '.$e->getMessage()]);
         }
@@ -450,7 +444,7 @@ class DashboardController extends Controller
             $client = PassportClient::findOrFail($id);
             $this->clientService->deleteClientLogo($client);
 
-            return back()->with('success', "Gambar aplikasi '{$client->name}' berhasil dihapus.");
+            return back();
         } catch (\Exception $e) {
             return back()->withErrors(['error' => 'Gagal menghapus gambar: '.$e->getMessage()]);
         }
@@ -656,7 +650,7 @@ class DashboardController extends Controller
                 }
             }
 
-            return back()->with('success', "Akses & role lokal '{$user->name}' untuk {$client->name} berhasil diperbarui.");
+            return back();
         } catch (\Exception $e) {
             return back()->withErrors(['error' => 'Gagal memperbarui akses pengguna: '.$e->getMessage()]);
         }
@@ -830,11 +824,7 @@ class DashboardController extends Controller
                 ]);
             }
 
-            $successMessage = $selectAllPages 
-                ? "Berhasil memperbarui seluruh {$updatedCount} pengguna secara massal di semua halaman."
-                : "Berhasil memperbarui {$updatedCount} pengguna secara massal.";
-
-            return back()->with('success', $successMessage);
+            return back();
         } catch (\Exception $e) {
             return back()->withErrors(['error' => 'Gagal melakukan pembaruan massal: '.$e->getMessage()]);
         }

@@ -20,36 +20,36 @@ class AdminUserSeeder extends Seeder
                     'email' => 'admin@kpi.com',
                     'role' => 'admin',
                 ],
-                [
-                    'name' => 'Humas User',
-                    'email' => 'humas@kpi.com',
-                    'role' => 'Humas',
-                ],
-                [
-                    'name' => 'Kepegawaian User',
-                    'email' => 'kepegawaian@kpi.com',
-                    'role' => 'Kepegawaian',
-                ],
-                [
-                    'name' => 'Manajerial User',
-                    'email' => 'manajerial@kpi.com',
-                    'role' => 'Manajerial',
-                ],
-                [
-                    'name' => 'Hukum User',
-                    'email' => 'hukum@kpi.com',
-                    'role' => 'Hukum',
-                ],
-                [
-                    'name' => 'Visualisasi Data User',
-                    'email' => 'visualisasi@kpi.com',
-                    'role' => 'Visualisasi Data',
-                ],
-                [
-                    'name' => 'Pengawasan Siaran User',
-                    'email' => 'pengawasan@kpi.com',
-                    'role' => 'Pengawasan Siaran',
-                ],
+                // [
+                //     'name' => 'Humas User',
+                //     'email' => 'humas@kpi.com',
+                //     'role' => 'Humas',
+                // ],
+                // [
+                //     'name' => 'Kepegawaian User',
+                //     'email' => 'kepegawaian@kpi.com',
+                //     'role' => 'Kepegawaian',
+                // ],
+                // [
+                //     'name' => 'Manajerial User',
+                //     'email' => 'manajerial@kpi.com',
+                //     'role' => 'Manajerial',
+                // ],
+                // [
+                //     'name' => 'Hukum User',
+                //     'email' => 'hukum@kpi.com',
+                //     'role' => 'Hukum',
+                // ],
+                // [
+                //     'name' => 'Visualisasi Data User',
+                //     'email' => 'visualisasi@kpi.com',
+                //     'role' => 'Visualisasi Data',
+                // ],
+                // [
+                //     'name' => 'Pengawasan Siaran User',
+                //     'email' => 'pengawasan@kpi.com',
+                //     'role' => 'Pengawasan Siaran',
+                // ],
             ];
 
             foreach ($testUsers as $u) {
