@@ -190,7 +190,7 @@
             <div class="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Manajemen Aplikasi</h1>
-                    <p class="text-slate-500 mt-1 text-sm">Kelola nama, deskripsi, logo, status maintenance, dan visibilitas setiap aplikasi.</p>
+                    <p class="text-slate-500 mt-1 text-sm">Kelola nama, deskripsi, logo, status pemeliharaan, dan visibilitas setiap aplikasi.</p>
                 </div>
                 <button onclick="openCreateModal()" class="inline-flex items-center gap-2 px-4 py-2.5 bg-kpi-700 hover:bg-kpi-800 text-white rounded-xl font-semibold text-sm transition-colors shadow-sm cursor-pointer w-fit">
                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -263,7 +263,7 @@
                                     <h3 class="font-bold text-slate-900 text-base truncate group-hover:text-kpi-700 transition-colors">{{ $client->name }}</h3>
                                     @if ($client->is_maintenance)
                                         <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">
-                                            <span class="w-1.5 h-1.5 bg-amber-500 rounded-full"></span> Maintenance
+                                            <span class="w-1.5 h-1.5 bg-amber-500 rounded-full"></span> Pemeliharaan
                                         </span>
                                     @endif
                                     @if (!$client->is_visible)
@@ -322,7 +322,7 @@
                                 <button type="submit" class="w-full inline-flex justify-center items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold border transition-colors
                                     {{ $client->is_maintenance ? 'bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100' : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50' }}">
                                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                                    {{ $client->is_maintenance ? 'Nonaktifkan' : 'Maintenance' }}
+                                    {{ $client->is_maintenance ? 'Nonaktifkan' : 'Pemeliharaan' }}
                                 </button>
                             </form>
 
@@ -546,7 +546,7 @@
                     </div>
 
                     <div>
-                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">Pesan Maintenance (opsional)</label>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">Pesan Pemeliharaan (opsional)</label>
                         <textarea name="maintenance_message" id="edit-maintenance-message" rows="2"
                             class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500 focus:border-transparent resize-none"
                             placeholder="Contoh: Sedang upgrade server, estimasi selesai pukul 17.00 WIB."></textarea>

@@ -215,7 +215,7 @@
                             <h1 class="text-2xl font-extrabold text-slate-900">{{ $client->name }}</h1>
                             @if ($client->is_maintenance)
                                 <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700 border border-amber-200">
-                                    Maintenance
+                                    Pemeliharaan
                                 </span>
                             @endif
                             @if (!$client->is_visible)
@@ -576,7 +576,7 @@
                     </div>
 
                     <div>
-                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">Pesan Maintenance (opsional)</label>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">Pesan Pemeliharaan (opsional)</label>
                         <textarea name="maintenance_message" rows="2"
                             class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500 resize-none"
                             placeholder="Contoh: Sedang upgrade server...">{{ $client->maintenance_message }}</textarea>

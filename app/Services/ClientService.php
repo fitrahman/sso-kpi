@@ -174,8 +174,8 @@ class ClientService
             'admin_id' => Auth::id(),
             'action' => $client->is_maintenance ? 'maintenance_on' : 'maintenance_off',
             'description' => $client->is_maintenance
-                ? "Mode maintenance diaktifkan untuk '{$client->name}'"
-                : "Mode maintenance dinonaktifkan untuk '{$client->name}'",
+                ? "Mode pemeliharaan diaktifkan untuk '{$client->name}'"
+                : "Mode pemeliharaan dinonaktifkan untuk '{$client->name}'",
         ]);
 
         return $client;

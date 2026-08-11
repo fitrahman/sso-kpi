@@ -409,7 +409,7 @@ class DashboardController extends Controller
 
             return back();
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Gagal mengubah status maintenance: '.$e->getMessage()]);
+            return back()->withErrors(['error' => 'Gagal mengubah status pemeliharaan: '.$e->getMessage()]);
         }
     }
 
