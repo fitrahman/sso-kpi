@@ -33,6 +33,40 @@
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
             border-color: #fca5a5; /* red-300 */
         }
+
+        /* CSS Variables for profile modal theme */
+        :root {
+            --profile-brand-gradient: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+            --profile-focus-ring: 0 0 0 3px rgba(220, 38, 38, 0.4);
+            --profile-chip-shadow-hover: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        /* Profile Modal Animasi & Transisi */
+        #profileModal {
+            transition: opacity 0.2s ease-out, visibility 0.2s ease-out;
+        }
+        #profileModal.modal-visible {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+        #profileModal .modal-content-panel {
+            transform: scale(0.95) translateY(15px);
+            transition: transform 0.2s ease-out;
+        }
+        #profileModal.modal-visible .modal-content-panel {
+            transform: scale(1) translateY(0);
+        }
+
+        /* Hover state badge portal chip */
+        .portal-chip {
+            transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        }
+        .portal-chip:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--profile-chip-shadow-hover);
+        }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
@@ -401,86 +435,277 @@
     </footer>
 
     <!-- Profile & Edit Request Modal -->
-    <div id="profileModal" class="fixed inset-0 z-50 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <!-- Background overlay -->
-            <div class="fixed inset-0 bg-slate-500/75 transition-opacity" aria-hidden="true" onclick="toggleModal('profileModal')"></div>
+    @php
+        $lastLoginLog = auth()->user()->activityLogs()->where('activity', 'login_success')->latest()->first();
+        $lastLoginTime = $lastLoginLog ? $lastLoginLog->created_at->translatedFormat('d M Y, H:i') . ' WIB' : '-';
+        $photoUrl = $user->photo_url ?? null;
+        $initials = strtoupper(substr($user->name ?? 'U', 0, 1));
+    @endphp
+    <div id="profileModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-all duration-200 ease-out hidden" role="dialog" aria-modal="true" aria-labelledby="profile-modal-title">
+        <!-- Background overlay -->
+        <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="toggleModal('profileModal')"></div>
 
-            <!-- Modal panel -->
-            <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                
-                <!-- View Profile Mode -->
-                <div id="profileViewContainer" class="p-6">
-                    <div class="flex justify-between items-start mb-6">
-                        <h3 class="text-lg font-bold text-slate-900" id="modal-title">Profil Saya</h3>
-                        <button onclick="toggleModal('profileModal')" class="text-slate-400 hover:text-slate-600">
-                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+        <!-- Modal panel -->
+        <div class="modal-content-panel bg-white rounded-2xl shadow-2xl w-full max-w-md relative z-10 overflow-hidden transform scale-95 transition-all duration-200 ease-out" style="max-height: 90vh; display: flex; flex-direction: column;">
+            
+            <!-- Non-scrollable Header (Cover Banner + Avatar + User Info) -->
+            <div class="relative shrink-0 bg-white">
+                <!-- Cover Banner (Gradient) -->
+                <div class="h-24 bg-gradient-to-r from-red-600 to-red-500 w-full relative">
+                    <!-- Title -->
+                    <div class="absolute top-4 left-4 z-20">
+                        <h3 class="text-white text-base font-bold tracking-tight" id="profile-modal-title">Profil Saya</h3>
+                    </div>
+                    <!-- Close Button (X) -->
+                    <div class="absolute top-4 right-4 z-20">
+                        <button onclick="toggleModal('profileModal')" class="text-white/85 hover:text-white bg-slate-900/20 hover:bg-slate-900/40 rounded-full p-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-white" aria-label="Tutup detail profil">
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                         </button>
-                    </div>
-
-                    <div class="flex flex-col items-center mb-6">
-                        <div class="w-20 h-20 rounded-full bg-kpi-50 text-kpi-600 border border-kpi-100 shadow-sm flex items-center justify-center text-3xl font-bold uppercase mb-3">
-                            {{ substr(auth()->user()->name ?? 'U', 0, 1) }}
-                        </div>
-                        <h4 class="text-xl font-bold text-slate-900">{{ auth()->user()->name }}</h4>
-                        <span class="text-sm font-semibold text-slate-500">{{ auth()->user()->role }}</span>
-                    </div>
-
-                    <div class="border-t border-slate-100 py-4 space-y-3">
-                        <div class="flex justify-between text-sm">
-                            <span class="text-slate-500 font-medium">Alamat Email</span>
-                            <span class="text-slate-900 font-bold">{{ auth()->user()->email }}</span>
-                        </div>
-                        <div class="flex justify-between text-sm">
-                            <span class="text-slate-500 font-medium">Nomor Telepon</span>
-                            <span class="text-slate-900 font-bold">{{ auth()->user()->phone ?? '-' }}</span>
-                        </div>
-                        <div class="flex justify-between text-sm">
-                            <span class="text-slate-500 font-medium">Status Akun</span>
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-50 text-green-700 border border-green-100">
-                                {{ auth()->user()->status === 'approved' ? 'Aktif' : (auth()->user()->status === 'inactive' ? 'Nonaktif' : 'Menunggu Persetujuan') }}
-                            </span>
-                        </div>
-                    </div>
-
-                    <!-- Hak Akses Portal Aplikasi -->
-                    <div class="border-t border-slate-100 py-4">
-                        <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Akses Portal Aplikasi</span>
-                        @if (auth()->user()->isAdmin())
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-100">
-                                Semua Portal (Administrator)
-                            </span>
-                        @else
-                            <div class="flex flex-wrap gap-1.5">
-                                @forelse ($approvedApps as $app)
-                                    @php
-                                        $clientRole = $user->clientRoles->where('oauth_client_id', $app->id)->first()?->role ?? 'pengguna';
-                                    @endphp
-                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-green-50 text-green-700 border border-green-100">
-                                        {{ $app->name }} ({{ ucfirst($clientRole) }})
-                                    </span>
-                                @empty
-                                    <span class="text-xs font-medium text-slate-400 italic">Belum memiliki akses portal apa pun. Hubungi Administrator.</span>
-                                @endforelse
-                            </div>
-                        @endif
-                    </div>
-
-                    <div class="mt-6 flex justify-end">
-                        <button onclick="toggleModal('profileModal')" class="px-5 py-2.5 bg-kpi-700 text-white rounded-xl text-sm font-semibold hover:bg-kpi-800 transition-colors shadow-sm cursor-pointer">Tutup</button>
                     </div>
                 </div>
 
+                <!-- Avatar and User Info (Overlapping the banner) -->
+                <div class="flex flex-col items-center -mt-10 pb-4 relative z-10">
+                    @if (!empty($photoUrl))
+                        <img src="{{ $photoUrl }}" alt="{{ $user->name }}" class="w-20 h-20 rounded-full border-4 border-white shadow-md object-cover">
+                    @else
+                        <div class="w-20 h-20 rounded-full bg-red-100 text-red-600 border-4 border-white shadow-md flex items-center justify-center text-3xl font-extrabold uppercase">
+                            {{ $initials }}
+                        </div>
+                    @endif
+                    <h4 class="text-xl font-extrabold text-slate-900 mt-3 leading-tight text-center px-4">{{ $user->name }}</h4>
+                    <span class="text-sm font-semibold text-slate-500 mt-1">{{ $user->role }}</span>
+                </div>
+            </div>
+
+            <!-- Scrollable Content -->
+            <div class="overflow-y-auto px-6 pb-6 pt-2 flex-grow" id="profileModalScrollable">
+                <!-- Info Kontak Section -->
+                <div class="space-y-4">
+                    <h5 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Informasi Kontak</h5>
+                    
+                    <div class="bg-slate-50 rounded-2xl p-4 border border-slate-100 space-y-3.5">
+                        <!-- Email -->
+                        <div class="flex items-center justify-between text-sm">
+                            <div class="flex items-center gap-3 text-slate-600 min-w-0">
+                                <svg class="h-4 w-4 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                                <span class="font-medium truncate" id="profileEmail">{{ $user->email }}</span>
+                            </div>
+                            <button onclick="copyToClipboardText('profileEmail', this)" class="text-slate-400 hover:text-red-600 transition-colors p-1" aria-label="Salin alamat email">
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m-5 5h6m-6 4h6m-6 4h5" /></svg>
+                            </button>
+                        </div>
+
+                        <!-- No Telp -->
+                        <div class="flex items-center justify-between text-sm">
+                            <div class="flex items-center gap-3 text-slate-600 min-w-0">
+                                <svg class="h-4 w-4 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.94.725l.548 2.2a1 1 0 01-.321.988l-1.305.98a10.582 10.582 0 004.872 4.872l.98-1.305a1 1 0 01.988-.321l2.2.548a1 1 0 01.725.94V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
+                                <span class="font-medium truncate" id="profilePhone">{{ $user->phone ?? '-' }}</span>
+                            </div>
+                            @if(!empty($user->phone))
+                            <button onclick="copyToClipboardText('profilePhone', this)" class="text-slate-400 hover:text-red-600 transition-colors p-1" aria-label="Salin nomor telepon">
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m-5 5h6m-6 4h6m-6 4h5" /></svg>
+                            </button>
+                            @endif
+                        </div>
+
+                        <!-- ID Pegawai / NIP -->
+                        <div class="flex items-center gap-3 text-sm text-slate-600">
+                            <svg class="h-4 w-4 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 014 0m-9 3h14m-11 4h2m-2 4h5" /></svg>
+                            <div class="flex-1 flex justify-between">
+                                <span class="font-medium">NIP / ID Pegawai</span>
+                                <span class="font-bold text-slate-900">KPI-{{ str_pad($user->id, 4, '0', STR_PAD_LEFT) }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Status Akun -->
+                        <div class="flex items-center gap-3 text-sm text-slate-600">
+                            <svg class="h-4 w-4 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                            <div class="flex-1 flex justify-between items-center">
+                                <span class="font-medium">Status Akun</span>
+                                @if($user->status === 'approved')
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-50 text-green-700 border border-green-100 shadow-sm">Aktif</span>
+                                @else
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-50 text-red-700 border border-red-100 shadow-sm">Nonaktif</span>
+                                @endif
+                            </div>
+                        </div>
+
+                        <!-- Login Terakhir -->
+                        <div class="flex items-center gap-3 text-sm text-slate-600">
+                            <svg class="h-4 w-4 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            <div class="flex-1 flex justify-between">
+                                <span class="font-medium">Login Terakhir</span>
+                                <span class="font-semibold text-slate-700">{{ $lastLoginTime }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Akses Portal Aplikasi Section -->
+                <div class="mt-6">
+                    <h5 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Akses Portal Aplikasi</h5>
+                    @if ($user->isAdmin())
+                        <div class="p-3 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-2.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-red-600 shrink-0 animate-pulse"></span>
+                            <span class="text-xs font-bold text-red-800">Semua Portal Terbuka (Administrator Utama)</span>
+                        </div>
+                    @else
+                        <div class="flex flex-wrap gap-2.5">
+                            @forelse ($approvedApps as $app)
+                                @php
+                                    $clientRole = $user->clientRoles->where('oauth_client_id', $app->id)->first()?->role ?? 'pengguna';
+                                    
+                                    // Generate different colored tags based on application ID for nice aesthetics
+                                    $colorClasses = match($app->id % 4) {
+                                        0 => 'bg-indigo-50 text-indigo-700 border-indigo-150 hover:bg-indigo-100',
+                                        1 => 'bg-teal-50 text-teal-700 border-teal-150 hover:bg-teal-100',
+                                        2 => 'bg-amber-50 text-amber-700 border-amber-150 hover:bg-amber-100',
+                                        default => 'bg-rose-50 text-rose-700 border-rose-150 hover:bg-rose-100'
+                                    };
+                                @endphp
+                                <a href="{{ $app->redirect }}" target="_blank" rel="noopener noreferrer" 
+                                   class="portal-chip inline-flex flex-col px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all duration-150 {{ $colorClasses }}" 
+                                   aria-label="Buka aplikasi {{ $app->name }}">
+                                    <span class="font-extrabold text-slate-900">{{ $app->name }}</span>
+                                    <span class="text-[10px] opacity-75 mt-0.5">Role: {{ ucfirst($clientRole) }}</span>
+                                </a>
+                            @empty
+                                <span class="text-xs text-slate-400 italic font-medium">Belum memiliki akses ke sistem apa pun. Hubungi Administrator.</span>
+                            @endforelse
+                        </div>
+                    @endif
+                </div>
+            </div>
+
+            <!-- Footer Actions -->
+            <div class="p-6 border-t border-slate-100 bg-slate-50 shrink-0">
+                <button onclick="toggleModal('profileModal')" class="w-full py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-semibold transition-colors shadow-md focus:outline-none focus:ring-2 focus:ring-red-400" aria-label="Tutup modal profil">
+                    Tutup
+                </button>
             </div>
         </div>
     </div>
 
     <script>
+        let previouslyFocusedElement = null;
+
         function toggleModal(id) {
             const modal = document.getElementById(id);
-            modal.classList.toggle('hidden');
+            if (!modal) return;
+            
+            if (modal.classList.contains('hidden') || !modal.classList.contains('modal-visible')) {
+                // Open modal
+                previouslyFocusedElement = document.activeElement;
+                modal.classList.remove('hidden');
+                
+                // Allow browser to register class removal before starting animation
+                setTimeout(() => {
+                    modal.classList.add('modal-visible');
+                    setupFocusTrap(id);
+                    // Focus on the first close button or primary button
+                    const focusable = modal.querySelectorAll('button, [href]');
+                    if (focusable.length > 0) {
+                        focusable[0].focus();
+                    }
+                }, 10);
+            } else {
+                // Close modal
+                modal.classList.remove('modal-visible');
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                    if (previouslyFocusedElement) {
+                        previouslyFocusedElement.focus();
+                    }
+                }, 200);
+            }
+        }
+
+        // Close modal when Escape key is pressed
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('profileModal');
+                if (modal && modal.classList.contains('modal-visible')) {
+                    toggleModal('profileModal');
+                }
+            }
+        });
+
+        // Focus trap helper
+        function setupFocusTrap(modalId) {
+            const modal = document.getElementById(modalId);
+            if (!modal) return;
+            
+            const focusableElements = modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+            if (focusableElements.length === 0) return;
+
+            const firstElement = focusableElements[0];
+            const lastElement = focusableElements[focusableElements.length - 1];
+
+            // Remove existing listener if any
+            if (modal._focusTrapListener) {
+                modal.removeEventListener('keydown', modal._focusTrapListener);
+            }
+
+            modal._focusTrapListener = function(e) {
+                if (e.key !== 'Tab') return;
+
+                if (e.shiftKey) {
+                    if (document.activeElement === firstElement) {
+                        lastElement.focus();
+                        e.preventDefault();
+                    }
+                } else {
+                    if (document.activeElement === lastElement) {
+                        firstElement.focus();
+                        e.preventDefault();
+                    }
+                }
+            };
+
+            modal.addEventListener('keydown', modal._focusTrapListener);
+        }
+
+        // Copy value to clipboard helper
+        function copyToClipboardText(elementId, btn) {
+            const text = document.getElementById(elementId).innerText.trim();
+            
+            const animateSuccess = () => {
+                const originalSvg = btn.innerHTML;
+                btn.innerHTML = `<svg class="h-4 w-4 text-green-600 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>`;
+                setTimeout(() => {
+                    btn.innerHTML = originalSvg;
+                }, 2000);
+            };
+
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text)
+                    .then(animateSuccess)
+                    .catch(err => {
+                        console.error('Failed to copy using clipboard API: ', err);
+                        fallbackCopyToClipboard(text, animateSuccess);
+                    });
+            } else {
+                fallbackCopyToClipboard(text, animateSuccess);
+            }
+        }
+
+        function fallbackCopyToClipboard(text, callback) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed";
+            textArea.style.opacity = "0";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                callback();
+            } catch (err) {
+                console.error('Fallback copy failed: ', err);
+            }
+            document.body.removeChild(textArea);
         }
     </script>
-
 </body>
 </html>
