@@ -100,7 +100,7 @@ Gunakan akun berikut untuk masuk dan menguji alur sistem:
 ### Akun Administrator (SSO Portal)
 * **Email**: `admin@kpi.com`
 * **Kata Sandi**: `password123`
-* **Peran**: Administrator (Memiliki akses ke panel persetujuan pengguna baru, persetujuan perubahan profil, dan permohonan akses aplikasi).
+* **Peran**: Administrator (Memiliki akses ke panel persetujuan pengguna baru dan permohonan akses aplikasi).
 
 > [!NOTE]
 > Akun pengguna biasa tidak ditambahkan secara default melalui seeder. Anda dapat mendaftarkan akun baru secara mandiri melalui tombol **Registrasi** pada halaman login utama, lalu menyetujuinya (*approve*) melalui Dashboard Admin (`admin@kpi.com`).

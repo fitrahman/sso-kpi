@@ -17,6 +17,7 @@ Dokumen ini adalah **panduan standar dari awal hingga akhir** untuk menyambungka
 | 7 | `app/Http/Controllers/AuthController.php` | Buat controller login, callback, & single logout |
 | 8 | `routes/web.php` | Daftarkan rute `/login`, `/auth/sso/callback`, `/logout`, & Discovery API |
 | 9 | `.env` | Tambahkan variabel SSO (`SSO_CLIENT_ID`, `SSO_CLIENT_SECRET`, dll.) |
+| 10 | `app/Http/Controllers/SsoWebhookController.php` | Buat controller penerima Webhook (Real-time Sync & Deactivation) |
 
 ---
 
@@ -358,3 +359,111 @@ Setelah mengisi `.env`, jalankan:
 php artisan config:clear
 php artisan cache:clear
 ```
+
+---
+
+## 📌 Langkah 10: Integrasi Webhook (Real-time Sync & Deactivation)
+
+Webhook digunakan agar ketika Administrator memodifikasi akses atau peran pengguna di Dashboard SSO, aplikasi lokal Anda langsung memperbarui data penggunanya secara real-time tanpa menunggu sesi lokal habis.
+
+### A. Buat Webhook Controller (`app/Http/Controllers/SsoWebhookController.php`)
+
+Buatlah berkas controller untuk memproses data event yang dikirimkan oleh SSO Server:
+
+```php
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+
+class SsoWebhookController extends Controller
+{
+    /**
+     * Handle incoming real-time Webhook dari SSO Server
+     */
+    public function handle(Request $request)
+    {
+        $event = $request->input('event');
+        $data  = $request->input('data');
+
+        Log::info('SSO Webhook Received:', [
+            'event' => $event,
+            'data'  => $data,
+        ]);
+
+        if (empty($data['email'])) {
+            return response()->json(['success' => false, 'message' => 'Missing user email.'], 400);
+        }
+
+        // 1. Menangani pemblokiran akses langsung (user.access_revoked)
+        if ($event === 'user.access_revoked') {
+            $user = User::where('email', $data['email'])->first();
+            if ($user) {
+                $user->update(['is_active' => false]);
+            }
+            return response()->json([
+                'success' => true, 
+                'message' => "User {$data['email']} deactivated successfully."
+            ]);
+        }
+
+        // 2. Menangani pembaruan peran & status akses (user.role_updated)
+        if ($event === 'user.role_updated') {
+            $rawRole = strtolower(trim($data['role'] ?? 'pegawai'));
+            
+            // Periksa status akses (access_status)
+            $accessStatus = strtolower(trim($data['access_status'] ?? 'approved'));
+            $isActive = !in_array($accessStatus, ['rejected', 'none']);
+
+            // Petakan role kiriman SSO ke role lokal aplikasi Anda
+            if (in_array($rawRole, ['admin', 'superadmin', 'administrator'])) {
+                $roleLokal = 'admin';
+            } elseif (in_array($rawRole, ['atasan', 'manager', 'supervisor'])) {
+                $roleLokal = 'atasan';
+            } else {
+                $roleLokal = 'pegawai';
+            }
+
+            // Simpan perubahan secara lokal
+            $user = User::updateOrCreate(
+                ['email' => $data['email']],
+                [
+                    'name'      => $data['name'] ?? $data['email'],
+                    'role'      => $roleLokal,
+                    'is_active' => $isActive,
+                    'password'  => Hash::make(Str::random(16)),
+                ]
+            );
+
+            Log::info("User Role updated to {$roleLokal} for {$data['email']} (is_active: " . ($isActive ? 'true' : 'false') . ")");
+
+            return response()->json([
+                'success' => true,
+                'message' => "Role for {$data['email']} updated in real-time to {$roleLokal}",
+            ]);
+        }
+
+        return response()->json(['success' => false, 'message' => 'Unhandled webhook event.'], 200);
+    }
+}
+```
+
+### B. Daftarkan Rute Webhook Tanpa CSRF Protection
+
+Daftarkan rute webhook Anda. Agar tidak terkena proteksi CSRF token (karena dipanggil oleh server SSO eksternal), daftarkan rute ini pada **`routes/api.php`** (sehingga otomatis mendapat prefix `/api` dan melewati middleware `web`):
+
+```php
+use App\Http\Controllers\SsoWebhookController;
+
+Route::post('/sso/webhook', [SsoWebhookController::class, 'handle']);
+```
+
+> [!NOTE]
+> URL Webhook lengkap yang harus Anda daftarkan di SSO Admin Portal (Langkah 1) pada bagian **Webhook URL** adalah:
+> `http://sistem1.test/api/sso/webhook`
+
