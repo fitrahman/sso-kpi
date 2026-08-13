@@ -92,7 +92,7 @@ class AuthController extends Controller
             if ($user->status === 'pending') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Akun Anda masih menunggu persetujuan dari Administrator.',
+                    'message' => 'Akun anda masih menunggu persetujuan dari Administrator.',
                 ], 403);
             }
 
