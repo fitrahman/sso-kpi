@@ -353,7 +353,8 @@ class DashboardController extends Controller
                 'name' => 'required|string|max:255',
                 'redirect' => 'required|url|max:500',
                 'description' => 'nullable|string|max:500',
-                'supported_roles' => 'nullable|string|max:500',
+                'discovery_url' => 'nullable|url|max:500',
+                'discovery_secret' => 'nullable|string|max:255',
                 'display_order' => 'nullable|integer|min:0',
                 'is_visible' => 'nullable|boolean',
                 'logo' => 'nullable|image|mimes:png,jpg,jpeg,svg|max:2048',
@@ -383,7 +384,8 @@ class DashboardController extends Controller
                 'name' => 'required|string|max:255',
                 'redirect' => 'required|url|max:500',
                 'description' => 'nullable|string|max:500',
-                'supported_roles' => 'nullable|string|max:500',
+                'discovery_url' => 'nullable|url|max:500',
+                'discovery_secret' => 'nullable|string|max:255',
                 'maintenance_message' => 'nullable|string|max:500',
                 'display_order' => 'nullable|integer|min:0',
                 'is_visible' => 'nullable|boolean',
@@ -400,6 +402,8 @@ class DashboardController extends Controller
             return back()->withErrors(['error' => 'Gagal memperbarui aplikasi: '.$e->getMessage()]);
         }
     }
+
+
 
     public function toggleMaintenance($id)
     {
@@ -507,6 +511,19 @@ class DashboardController extends Controller
     {
         try {
             $client = PassportClient::findOrFail($id);
+
+            // Automatically sync roles from the client's discovery URL on page load
+            if (! empty($client->discovery_url)) {
+                try {
+                    $discoveryService = new \App\Services\RoleDiscoveryService();
+                    $discoveryService->syncRoles($client);
+                    // Refresh the client model to pick up the updated supported_roles
+                    $client->refresh();
+                } catch (\Exception $e) {
+                    // Fail silently so page loads even if client app is offline
+                }
+            }
+
             $search = $request->get('search');
             $roleFilter = $request->get('role');
             $accessFilter = $request->get('access');

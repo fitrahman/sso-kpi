@@ -296,21 +296,16 @@
                                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
                                 Pengguna & Role
                             </a>
-
+                            
                             <!-- Edit Button -->
                             @php
-                                $rolesStr = '';
-                                if (!empty($client->supported_roles)) {
-                                    $rArr = json_decode($client->supported_roles, true);
-                                    if (is_array($rArr)) {
-                                        $rolesStr = implode(', ', $rArr);
-                                    }
-                                }
+                                $discoveryUrl = $client->discovery_url ?? '';
+                                $discoverySecret = $client->discovery_secret ?? '';
                                 $webhookUrl = $client->webhookEndpoint ? $client->webhookEndpoint->url : '';
                                 $webhookSecret = $client->webhookEndpoint ? $client->webhookEndpoint->secret : '';
                                 $webhookActive = $client->webhookEndpoint ? ($client->webhookEndpoint->is_active ? 1 : 0) : 1;
                             @endphp
-                            <button onclick="openEditModal({{ $client->id }}, '{{ addslashes($client->name) }}', '{{ addslashes($client->redirect) }}', '{{ addslashes($client->description ?? '') }}', '{{ addslashes($rolesStr) }}', '{{ addslashes($client->maintenance_message ?? '') }}', {{ $client->display_order }}, {{ $client->is_visible ? 1 : 0 }}, '{{ addslashes($webhookUrl) }}', '{{ addslashes($webhookSecret) }}', {{ $webhookActive }})"
+                            <button onclick="openEditModal({{ $client->id }}, '{{ addslashes($client->name) }}', '{{ addslashes($client->redirect) }}', '{{ addslashes($client->description ?? '') }}', '{{ addslashes($discoveryUrl) }}', '{{ addslashes($discoverySecret) }}', '{{ addslashes($client->maintenance_message ?? '') }}', {{ $client->display_order }}, {{ $client->is_visible ? 1 : 0 }}, '{{ addslashes($webhookUrl) }}', '{{ addslashes($webhookSecret) }}', {{ $webhookActive }})"
                                 class="inline-flex justify-center items-center gap-1.5 px-3 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg text-xs font-semibold hover:bg-slate-50 transition-colors">
                                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                 Edit
@@ -433,13 +428,6 @@
                             placeholder="Deskripsi singkat modul/fitur aplikasi ini..."></textarea>
                     </div>
 
-                    <div>
-                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">Role Lokal yang Didukung (Pisahkan dengan koma)</label>
-                        <input type="text" name="supported_roles" placeholder="Contoh: Admin, Supervisor, Operator"
-                            class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500 focus:border-transparent">
-                        <p class="text-xs text-slate-400 mt-1">Role spesifik aplikasi yang bisa dipilih Admin saat pemetaan peran pengguna.</p>
-                    </div>
-
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-semibold text-slate-700 mb-1.5">Urutan Tampil</label>
@@ -461,6 +449,22 @@
                         <input type="file" name="logo" accept="image/png,image/jpeg,image/jpg,image/svg+xml"
                             class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-slate-100 file:text-slate-700 file:font-semibold hover:file:bg-slate-200 cursor-pointer">
                         <p class="text-xs text-slate-400 mt-1">Format: PNG, JPG, SVG. Maks. 2MB.</p>
+                    </div>
+
+                    <div class="border-t border-slate-100 pt-4 space-y-4">
+                        <h4 class="text-sm font-bold text-slate-900">Konfigurasi Sinkronisasi Peran (Pull/Discovery)</h4>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1.5">Discovery URL</label>
+                            <input type="url" name="discovery_url" placeholder="Contoh: https://client-app.test/api/sso/supported-roles"
+                                class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500 focus:border-transparent">
+                            <p class="text-xs text-slate-400 mt-1">URL endpoint aplikasi klien tempat server SSO menarik daftar peran.</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1.5">Discovery Secret</label>
+                            <input type="text" name="discovery_secret" placeholder="Masukkan secret key untuk otorisasi pull"
+                                class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500 focus:border-transparent">
+                            <p class="text-xs text-slate-400 mt-1">Dikirim sebagai header X-SSO-Secret saat server SSO melakukan GET request.</p>
+                        </div>
                     </div>
 
                     <div class="border-t border-slate-100 pt-4 space-y-4">
@@ -539,13 +543,6 @@
                     </div>
 
                     <div>
-                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">Role Lokal yang Didukung (Pisahkan dengan koma)</label>
-                        <input type="text" name="supported_roles" id="edit-supported-roles" placeholder="Contoh: Admin, Staff, pengguna"
-                            class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500 focus:border-transparent">
-                        <p class="text-xs text-slate-400 mt-1">Role spesifik aplikasi yang bisa dipilih Admin saat pemetaan peran pengguna.</p>
-                    </div>
-
-                    <div>
                         <label class="block text-sm font-semibold text-slate-700 mb-1.5">Pesan Pemeliharaan (opsional)</label>
                         <textarea name="maintenance_message" id="edit-maintenance-message" rows="2"
                             class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500 focus:border-transparent resize-none"
@@ -573,6 +570,22 @@
                         <input type="file" name="logo" accept="image/png,image/jpeg,image/jpg,image/svg+xml"
                             class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-slate-100 file:text-slate-700 file:font-semibold hover:file:bg-slate-200 cursor-pointer">
                         <p class="text-xs text-slate-400 mt-1">Format: PNG, JPG, SVG. Maks. 2MB.</p>
+                    </div>
+
+                    <div class="border-t border-slate-100 pt-4 space-y-4">
+                        <h4 class="text-sm font-bold text-slate-900">Konfigurasi Sinkronisasi Peran (Pull/Discovery)</h4>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1.5">Discovery URL</label>
+                            <input type="url" name="discovery_url" id="edit-discovery-url" placeholder="Contoh: https://client-app.test/api/sso/supported-roles"
+                                class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500 focus:border-transparent">
+                            <p class="text-xs text-slate-400 mt-1">URL tempat server SSO menarik daftar peran dari aplikasi klien.</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1.5">Discovery Secret</label>
+                            <input type="text" name="discovery_secret" id="edit-discovery-secret" placeholder="Masukkan secret key"
+                                class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500 focus:border-transparent">
+                            <p class="text-xs text-slate-400 mt-1">Shared secret yang digunakan untuk otorisasi pull request.</p>
+                        </div>
                     </div>
 
                     <div class="border-t border-slate-100 pt-4 space-y-4">
@@ -771,14 +784,15 @@
             document.getElementById('createModal').classList.remove('active');
         }
 
-        function openEditModal(id, name, redirect, description, supportedRoles, maintenanceMsg, displayOrder, isVisible, webhookUrl = '', webhookSecret = '', webhookActive = 1) {
+        function openEditModal(id, name, redirect, description, discoveryUrl, discoverySecret, maintenanceMsg, displayOrder, isVisible, webhookUrl = '', webhookSecret = '', webhookActive = 1) {
             currentEditAppId = id;
             currentEditAppName = name;
             document.getElementById('editForm').action = '/admin/applications/' + id;
             document.getElementById('edit-name').value = name;
             document.getElementById('edit-redirect').value = redirect;
             document.getElementById('edit-description').value = description;
-            document.getElementById('edit-supported-roles').value = supportedRoles;
+            document.getElementById('edit-discovery-url').value = discoveryUrl;
+            document.getElementById('edit-discovery-secret').value = discoverySecret;
             document.getElementById('edit-maintenance-message').value = maintenanceMsg;
             document.getElementById('edit-display-order').value = displayOrder;
             document.getElementById('edit-is-visible').value = isVisible;

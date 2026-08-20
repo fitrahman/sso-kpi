@@ -216,43 +216,7 @@ class AuthController extends Controller
         ]);
     }
 
-    /**
-     * Sync/Update supported roles for a client application via API
-     */
-    public function syncClientRoles(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'client_id' => 'required|integer',
-            'client_secret' => 'required|string',
-            'roles' => 'required|array',
-            'roles.*' => 'string|max:100',
-        ]);
 
-        if ($validator->fails()) {
-            return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
-        }
-
-        $client = PassportClient::find($request->client_id);
-        if (! $client) {
-            return response()->json(['success' => false, 'message' => 'Client application not found'], 404);
-        }
-
-        // Always verify client_secret
-        if ($client->secret !== $request->client_secret) {
-            return response()->json(['success' => false, 'message' => 'Invalid client secret'], 401);
-        }
-
-        $rolesArray = array_values(array_unique(array_map('trim', $request->roles)));
-        $client->supported_roles = json_encode($rolesArray);
-        $client->save();
-
-        return response()->json([
-            'success' => true,
-            'message' => "Roles for '{$client->name}' synchronized successfully.",
-            'client_id' => $client->id,
-            'supported_roles' => $rolesArray,
-        ]);
-    }
 
     /**
      * Logout user (Revoke token)

@@ -134,7 +134,7 @@ class UserApiTest extends TestCase
     }
 
     /** @test */
-    public function authenticated_user_can_get_and_sync_client_supported_roles()
+    public function authenticated_user_can_get_client_supported_roles()
     {
         $user = User::factory()->create();
         Passport::actingAs($user);
@@ -159,20 +159,6 @@ class UserApiTest extends TestCase
                 'success' => true,
                 'client_id' => 10,
                 'supported_roles' => ['Admin', 'Staff'],
-            ]);
-
-        // Test POST /api/v1/client-roles/sync
-        $postRes = $this->postJson('/api/v1/client-roles/sync', [
-            'client_id' => 10,
-            'client_secret' => 'secret',
-            'roles' => ['Admin', 'Supervisor', 'Operator', 'Staff'],
-        ]);
-
-        $postRes->assertStatus(200)
-            ->assertJson([
-                'success' => true,
-                'client_id' => 10,
-                'supported_roles' => ['Admin', 'Supervisor', 'Operator', 'Staff'],
             ]);
     }
 }

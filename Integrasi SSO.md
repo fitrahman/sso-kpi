@@ -1,4 +1,4 @@
-﻿# 📖 Panduan Lengkap Integrasi Aplikasi Klien dengan SSO Server KPI
+# 📖 Panduan Lengkap Integrasi Aplikasi Klien dengan SSO Server KPI
 
 Dokumen ini adalah **panduan resmi dan menyeluruh** untuk menghubungkan aplikasi lokal (Laravel) dengan **SSO Server KPI (`sso-kpi.test`)** sebagai Identity Provider (IdP). Panduan ini mencakup **dua skenario**: aplikasi baru (*greenfield*) dan aplikasi lama yang sudah memiliki database pengguna sendiri (*legacy integration*).
 
@@ -708,21 +708,9 @@ class VerifySsoSecret
 
 **Tujuan:** Memberitahu SSO Server peran apa saja yang ada di aplikasi Anda, agar Administrator SSO dapat memilihnya saat menetapkan akses pengguna.
 
-### Cara A: Push via API (Dijalankan Sekali)
+### Sinkronisasi Otomatis via Discovery URL
 
-```bash
-curl -X POST http://sso-kpi.test/api/v1/client-roles/sync \
-  -H "Content-Type: application/json" \
-  -d '{
-    "client_id": "2",
-    "client_secret": "isi-client-secret-anda",
-    "roles": ["admin", "manager", "staff", "user"]
-  }'
-```
-
-### Cara B: Pull Otomatis via Discovery URL
-
-Jika Anda sudah mendaftarkan `Discovery URL` di Langkah C, SSO Server akan secara otomatis menarik daftar peran dari endpoint `/api/sso/supported-roles` yang Anda buat di Langkah H.
+Jika Anda sudah mendaftarkan `Discovery URL` saat registrasi aplikasi di Admin Portal SSO, SSO Server akan menarik daftar peran secara otomatis dari endpoint `/api/sso/supported-roles` yang Anda buat di Langkah H ketika administrator menekan tombol **Sync Peran** di portal SSO.
 
 > [!NOTE]
 > Pastikan SSO Server bisa mengakses URL Discovery aplikasi Anda dari jaringannya. Di lingkungan lokal Laragon, pastikan semua domain sudah terdaftar di Virtual Host.

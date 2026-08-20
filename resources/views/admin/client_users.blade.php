@@ -405,22 +405,46 @@
                                     $supportedRoles = json_decode($client->supported_roles, true);
                                 }
                                 if (empty($supportedRoles) || !is_array($supportedRoles)) {
-                                    $supportedRoles = ['pengguna', 'admin', 'editor', 'superadmin', 'atasan', 'pegawai', 'view'];
+                                    $supportedRoles = ['admin', 'atasan', 'pegawai'];
+                                }
+
+                                // Tentukan role default (terendah) dari supported_roles
+                                $defaultRole = 'user';
+                                if (!empty($supportedRoles)) {
+                                    $commonLowest = ['pegawai', 'staff', 'user', 'pengguna', 'member', 'operator', 'employee'];
+                                    foreach ($commonLowest as $low) {
+                                        if (in_array(strtolower($low), array_map('strtolower', $supportedRoles))) {
+                                            foreach ($supportedRoles as $sRole) {
+                                                if (strtolower($sRole) === strtolower($low)) {
+                                                    $defaultRole = $sRole;
+                                                    break 2;
+                                                }
+                                            }
+                                        }
+                                    }
+                                    if ($defaultRole === 'user' && !in_array('user', $supportedRoles)) {
+                                        $defaultRole = end($supportedRoles);
+                                    }
                                 }
                             @endphp
                             @forelse ($users as $u)
                                 @php
                                     $hasAccess = (bool) ($accessMap[$u->id] ?? false);
-                                    $currentLocalRole = $localRolesMap[$u->id] ?? 'user';
+                                    
+                                    $dbRole = $localRolesMap[$u->id] ?? null;
+                                    $currentLocalRole = $defaultRole;
+                                    
+                                    if ($dbRole !== null) {
+                                        foreach ($supportedRoles as $sRole) {
+                                            if (strtolower($sRole) === strtolower($dbRole)) {
+                                                $currentLocalRole = $sRole;
+                                                break;
+                                            }
+                                        }
+                                    }
 
-                                    // Build role list including 'user' and current role if custom
+                                    // Pilihan role hanya yang didukung oleh aplikasi (tidak ada role nyangkut)
                                     $roleOptions = $supportedRoles;
-                                    if (!in_array('user', $roleOptions)) {
-                                        $roleOptions[] = 'user';
-                                    }
-                                    if (!empty($currentLocalRole) && !in_array($currentLocalRole, $roleOptions)) {
-                                        $roleOptions[] = $currentLocalRole;
-                                    }
                                 @endphp
                                 <tr class="user-app-row hover:bg-slate-50/80 transition-colors">
                                     <!-- No / Checkbox -->
@@ -595,6 +619,20 @@
                                 <option value="1" {{ $client->is_visible ? 'selected' : '' }}>Ya (Tampil)</option>
                                 <option value="0" {{ !$client->is_visible ? 'selected' : '' }}>Tidak (Sembunyikan)</option>
                             </select>
+                        </div>
+                    </div>
+
+                    <div class="border-t border-slate-100 pt-4 space-y-4">
+                        <h4 class="text-sm font-bold text-slate-900">Konfigurasi Sinkronisasi Peran (Pull/Discovery)</h4>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1.5">Discovery URL</label>
+                            <input type="url" name="discovery_url" value="{{ $client->discovery_url }}" placeholder="Contoh: https://client-app.test/api/sso/supported-roles"
+                                class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1.5">Discovery Secret</label>
+                            <input type="text" name="discovery_secret" value="{{ $client->discovery_secret }}" placeholder="Masukkan secret key"
+                                class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpi-500">
                         </div>
                     </div>
 

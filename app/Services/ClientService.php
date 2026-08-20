@@ -21,15 +21,6 @@ class ClientService
         $admin = Auth::user();
         $secret = Str::random(40);
 
-        $rolesArray = [];
-        if (! empty($validatedData['supported_roles'])) {
-            $rolesArray = array_map('trim', explode(',', $validatedData['supported_roles']));
-            $rolesArray = array_values(array_filter($rolesArray));
-        }
-        if (empty($rolesArray)) {
-            $rolesArray = ['Admin', 'Staff'];
-        }
-
         $logoPath = null;
         if ($logoFile) {
             $logoPath = $logoFile->store('app-logos', 'public');
@@ -46,7 +37,9 @@ class ClientService
             'is_visible' => isset($validatedData['is_visible']) ? (bool) $validatedData['is_visible'] : true,
             'description' => $validatedData['description'] ?? null,
             'display_order' => $validatedData['display_order'] ?? 0,
-            'supported_roles' => json_encode($rolesArray),
+            'supported_roles' => json_encode(['Admin', 'Staff']),
+            'discovery_url' => $validatedData['discovery_url'] ?? null,
+            'discovery_secret' => $validatedData['discovery_secret'] ?? null,
             'logo_path' => $logoPath,
         ]);
 
@@ -105,22 +98,22 @@ class ClientService
             $changes[] = "Redirect URL: '{$client->redirect}' → '{$validatedData['redirect']}'";
         }
 
-        $rolesArray = [];
-        if (! empty($validatedData['supported_roles'])) {
-            $rolesArray = array_map('trim', explode(',', $validatedData['supported_roles']));
-            $rolesArray = array_values(array_filter($rolesArray));
+        if ($client->discovery_url !== ($validatedData['discovery_url'] ?? null)) {
+            $changes[] = "Discovery URL diperbarui";
         }
-        if (empty($rolesArray)) {
-            $rolesArray = ['Admin', 'Staff', 'pengguna'];
+
+        if ($client->discovery_secret !== ($validatedData['discovery_secret'] ?? null)) {
+            $changes[] = "Discovery Secret diperbarui";
         }
 
         $client->name = $validatedData['name'];
         $client->redirect = $validatedData['redirect'];
         $client->description = $validatedData['description'] ?? null;
-        $client->supported_roles = json_encode($rolesArray);
         $client->maintenance_message = $validatedData['maintenance_message'] ?? null;
         $client->display_order = $validatedData['display_order'] ?? 0;
         $client->is_visible = isset($validatedData['is_visible']) ? (bool) $validatedData['is_visible'] : true;
+        $client->discovery_url = $validatedData['discovery_url'] ?? null;
+        $client->discovery_secret = $validatedData['discovery_secret'] ?? null;
 
         if ($logoFile) {
             if ($client->logo_path) {
